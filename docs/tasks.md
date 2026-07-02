@@ -12,12 +12,12 @@
 - [x] Zustand ストア雛形（recordingStore / transcriptStore / summaryStore）
 
 ## Phase 1: 録音機能
-- [ ] マイク権限リクエスト＋エラーハンドリングUI
-- [ ] `MediaRecorder` による録音開始/一時停止/再開/停止
-- [ ] 録音中の経過時間表示
-- [ ] 簡易波形表示（Web Audio API の AnalyserNode）
-- [ ] 録音終了時に Blob を Dexie へ保存
-- [ ] 録音一覧（HistoryList）に新規録音を表示
+- [x] マイク権限リクエスト＋エラーハンドリングUI
+- [x] `MediaRecorder` による録音開始/一時停止/再開/停止
+- [x] 録音中の経過時間表示
+- [x] 簡易波形表示（Web Audio API の AnalyserNode）
+- [x] 録音終了時に Blob を Dexie へ保存
+- [x] 録音一覧（HistoryList）に新規録音を表示
 
 ## Phase 2: 文字起こしエンジン統合
 - [ ] transformers.js 導入、WebGPU/WASM 動作確認（環境判定ロジック）
