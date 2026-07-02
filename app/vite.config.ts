@@ -8,4 +8,10 @@ export default defineConfig({
   worker: {
     format: 'es',
   },
+  optimizeDeps: {
+    // Pre-bundle transformers.js up front so the dev server doesn't trigger a
+    // mid-session dependency-optimization reload the first time the ASR
+    // worker imports it (which would abort an in-flight model download).
+    include: ['@huggingface/transformers'],
+  },
 })

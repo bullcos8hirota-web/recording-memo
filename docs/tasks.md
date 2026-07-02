@@ -20,14 +20,14 @@
 - [x] 録音一覧（HistoryList）に新規録音を表示
 
 ## Phase 2: 文字起こしエンジン統合
-- [ ] transformers.js 導入、WebGPU/WASM 動作確認（環境判定ロジック）
-- [ ] Whisper モデル候補（base/small量子化版）でPoC、日本語会議音声で精度・速度を比較 → モデル確定
-- [ ] `asr.worker.ts` 実装（Blob受信 → デコード → 推論 → セグメント返却）
-- [ ] モデルダウンロード進捗UI（`ModelLoadingIndicator`）
-- [ ] Cache API によるモデルキャッシュ確認（2回目以降の起動高速化）
-- [ ] 文字起こし結果を `Transcript` として保存
-- [ ] `TranscriptView`: セグメント表示、テキスト編集機能
-- [ ] 長時間録音時のチャンク分割処理（メモリ対策）
+- [x] transformers.js 導入、WebGPU/WASM 動作確認（環境判定ロジック）— `device: 'auto'` でWebGPU失敗時にWASMへ自動フォールバックすることを確認
+- [x] Whisper モデル（`onnx-community/whisper-small`、多言語）を暫定選定 — ⚠️ base/smallの実音声WER比較PoCは未実施。実運用で精度不足なら `lib/asr/config.ts` のモデルIDを差し替えて再評価する
+- [x] `asr.worker.ts` 実装（Blob受信 → デコード → 推論 → セグメント返却）
+- [x] モデルダウンロード進捗UI（`ModelLoadingIndicator`）
+- [ ] Cache API によるモデルキャッシュ確認 — ⚠️ 検証中に `Unable to add response to browser cache` という警告が毎回発生しキャッシュ書き込みに失敗していた。ヘッドレスChromium固有の問題か実ブラウザでも起きるか要確認（次回、通常のChrome/Edgeで2回目の読み込みが速くなるか実機確認が必要）
+- [x] 文字起こし結果を `Transcript` として保存
+- [x] `TranscriptView`: セグメント表示、テキスト編集機能
+- [x] 長時間録音時のチャンク分割処理（30秒超のみ `chunk_length_s`/`stride_length_s` を適用、ライブラリ組み込み機能を利用）
 
 ## Phase 3: 要約エンジン統合
 - [ ] 軽量Instruct LLM候補を2〜3種選定、日本語構造化要約でPoC → モデル確定
