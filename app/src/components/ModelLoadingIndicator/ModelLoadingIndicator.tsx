@@ -1,8 +1,9 @@
 interface ModelLoadingIndicatorProps {
   progress: number
+  label: string
 }
 
-export function ModelLoadingIndicator({ progress }: ModelLoadingIndicatorProps) {
+export function ModelLoadingIndicator({ progress, label }: ModelLoadingIndicatorProps) {
   const clamped = Math.min(100, Math.max(0, progress))
   return (
     <div className="mt-2">
@@ -13,7 +14,7 @@ export function ModelLoadingIndicator({ progress }: ModelLoadingIndicatorProps) 
         />
       </div>
       <p className="mt-1 text-xs text-neutral-500">
-        文字起こしモデルを準備中... {Math.round(clamped)}%
+        {label}を準備中... {Math.round(clamped)}%
         （初回のみ数百MBのダウンロードが発生します。2回目以降はキャッシュから高速に読み込まれます）
       </p>
     </div>
