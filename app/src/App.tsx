@@ -15,10 +15,18 @@ function App() {
         </div>
       </header>
       <main className="mx-auto max-w-3xl px-4 py-4 pb-[calc(2rem+env(safe-area-inset-bottom))] sm:px-6 sm:py-8">
-        <AiSettings />
-        <DriveSettings />
         <Recorder />
         <HistoryList />
+        <div className="mt-8 border-t border-neutral-200 pt-6 dark:border-neutral-800">
+          <h2 className="text-lg font-semibold">設定</h2>
+          <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+            AIやGoogle Driveを使う場合だけ設定してください。
+          </p>
+          <div className="mt-4">
+            <AiSettings />
+            <DriveSettings />
+          </div>
+        </div>
       </main>
     </div>
   )
