@@ -9,68 +9,52 @@ export function TranscriptView({ recordingId }: TranscriptViewProps) {
   const current = useTranscriptStore((s) => s.current)
   const load = useTranscriptStore((s) => s.load)
   const save = useTranscriptStore((s) => s.save)
-  const [editingIndex, setEditingIndex] = useState<number | null>(null)
-  const [draftText, setDraftText] = useState('')
+  const [fullTextDraft, setFullTextDraft] = useState('')
 
   useEffect(() => {
     load(recordingId)
   }, [recordingId, load])
 
+  useEffect(() => {
+    if (current?.recordingId === recordingId) {
+      setFullTextDraft(current.fullText)
+    }
+  }, [current, recordingId])
+
   if (!current || current.recordingId !== recordingId) {
-    return <p className="mt-3 text-sm text-neutral-500">読み込み中...</p>
+    return <p className="mt-3 text-sm text-neutral-500">文字起こしを読み込み中です。</p>
   }
 
-  const startEdit = (index: number) => {
-    setEditingIndex(index)
-    setDraftText(current.segments[index].text)
-  }
-
-  const commitEdit = async () => {
-    if (editingIndex === null) return
-    const segments = current.segments.map((seg, i) =>
-      i === editingIndex ? { ...seg, text: draftText } : seg,
-    )
-    const fullText = segments.map((s) => s.text).join(' ')
-    await save({ ...current, segments, fullText, editedAt: Date.now() })
-    setEditingIndex(null)
+  const commitFullText = async () => {
+    if (fullTextDraft !== current.fullText) {
+      await save({
+        ...current,
+        fullText: fullTextDraft,
+        segments:
+          current.segments.length > 0
+            ? current.segments
+            : [{ start: 0, end: 0, text: fullTextDraft }],
+        editedAt: Date.now(),
+      })
+    }
   }
 
   return (
-    <div className="mt-3 space-y-2 rounded border border-neutral-200 p-3 dark:border-neutral-800">
-      {current.segments.length === 0 && (
-        <p className="text-sm text-neutral-500">文字起こし結果がありません</p>
-      )}
-      {current.segments.map((segment, index) => (
-        <div key={`${segment.start}-${index}`} className="flex gap-3 text-sm">
-          <span className="w-12 shrink-0 font-mono text-neutral-400">
-            {Math.floor(segment.start)}s
-          </span>
-          {editingIndex === index ? (
-            <div className="flex flex-1 gap-2">
-              <input
-                autoFocus
-                value={draftText}
-                onChange={(e) => setDraftText(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') commitEdit()
-                  if (e.key === 'Escape') setEditingIndex(null)
-                }}
-                className="flex-1 rounded border border-neutral-300 px-2 py-1 dark:border-neutral-700 dark:bg-neutral-900"
-              />
-              <button type="button" onClick={commitEdit} className="text-blue-600">
-                保存
-              </button>
-            </div>
-          ) : (
-            <p
-              onClick={() => startEdit(index)}
-              className="flex-1 cursor-text hover:bg-neutral-50 dark:hover:bg-neutral-800"
-            >
-              {segment.text}
-            </p>
-          )}
-        </div>
-      ))}
+    <div className="mt-4 space-y-2 rounded border border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-800 dark:bg-neutral-950">
+      <div>
+        <h3 className="text-base font-semibold">文字起こし</h3>
+        <p className="mt-1 text-xs text-neutral-500">
+          必要なら修正できます。編集内容は自動で保存されます。
+        </p>
+      </div>
+      <textarea
+        value={fullTextDraft}
+        onChange={(event) => setFullTextDraft(event.target.value)}
+        onBlur={commitFullText}
+        rows={8}
+        className="w-full resize-y rounded border border-neutral-300 bg-white px-3 py-2 text-sm leading-6 dark:border-neutral-700 dark:bg-neutral-900"
+        placeholder="文字起こしはまだありません。"
+      />
     </div>
   )
 }

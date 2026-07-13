@@ -13,41 +13,49 @@ function EditableList({ label, items, onChange }: EditableListProps) {
     next[index] = value
     onChange(next)
   }
+
   const removeItem = (index: number) => onChange(items.filter((_, i) => i !== index))
   const addItem = () => onChange([...items, ''])
 
   return (
-    <div>
-      <p className="text-sm font-medium text-neutral-600 dark:text-neutral-300">{label}</p>
+    <section className="space-y-2">
+      <div className="flex items-center justify-between gap-3">
+        <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-200">{label}</h4>
+        <button
+          type="button"
+          onClick={addItem}
+          className="rounded border border-neutral-300 px-2 py-1 text-xs hover:bg-neutral-100 dark:border-neutral-700 dark:hover:bg-neutral-800"
+        >
+          追加
+        </button>
+      </div>
       {items.length === 0 && <p className="text-sm text-neutral-400">なし</p>}
-      <ul className="mt-1 space-y-1">
+      <div className="space-y-2">
         {items.map((item, index) => (
-          <li key={index} className="flex gap-2">
-            <input
+          <div key={index} className="flex gap-2">
+            <textarea
               value={item}
-              onChange={(e) => updateItem(index, e.target.value)}
-              className="flex-1 rounded border border-neutral-300 px-2 py-1 text-sm dark:border-neutral-700 dark:bg-neutral-900"
+              onChange={(event) => updateItem(index, event.target.value)}
+              rows={2}
+              className="min-h-11 flex-1 resize-y rounded border border-neutral-300 bg-white px-3 py-2 text-sm leading-6 dark:border-neutral-700 dark:bg-neutral-900"
             />
             <button
               type="button"
               onClick={() => removeItem(index)}
-              className="text-xs text-red-600 hover:underline"
+              className="shrink-0 rounded border border-red-200 px-2 py-1 text-xs text-red-600 hover:bg-red-50 dark:border-red-900 dark:hover:bg-red-950"
             >
               削除
             </button>
-          </li>
+          </div>
         ))}
-      </ul>
-      <button type="button" onClick={addItem} className="mt-1 text-xs text-blue-600 hover:underline">
-        + 追加
-      </button>
-    </div>
+      </div>
+    </section>
   )
 }
 
 interface SummaryViewProps {
   recordingId: string
-  onRegenerate: () => void
+  onRegenerate: () => void | Promise<void>
   regenerating: boolean
 }
 
@@ -68,7 +76,7 @@ export function SummaryView({ recordingId, onRegenerate, regenerating }: Summary
   }, [current, recordingId])
 
   if (!current || current.recordingId !== recordingId) {
-    return <p className="mt-3 text-sm text-neutral-500">要約がまだありません</p>
+    return <p className="mt-3 text-sm text-neutral-500">メモを読み込み中です。</p>
   }
 
   const commitOverview = () => {
@@ -78,38 +86,47 @@ export function SummaryView({ recordingId, onRegenerate, regenerating }: Summary
   }
 
   return (
-    <div className="mt-3 space-y-4 rounded border border-neutral-200 p-3 dark:border-neutral-800">
-      <div className="flex items-center justify-between">
-        <p className="text-sm font-medium text-neutral-600 dark:text-neutral-300">概要</p>
+    <div className="mt-4 space-y-5 rounded border border-neutral-200 bg-neutral-50 p-4 dark:border-neutral-800 dark:bg-neutral-950">
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h3 className="text-base font-semibold">AIメモ</h3>
+          <p className="mt-1 text-xs text-neutral-500">
+            必要ならこのまま編集できます。編集内容は自動で保存されます。
+          </p>
+        </div>
         <button
           type="button"
           onClick={onRegenerate}
           disabled={regenerating}
-          className="text-xs text-blue-600 hover:underline disabled:opacity-50"
+          className="rounded border border-neutral-300 px-3 py-1.5 text-sm hover:bg-neutral-100 disabled:opacity-50 dark:border-neutral-700 dark:hover:bg-neutral-800"
         >
-          再実行
+          作り直す
         </button>
       </div>
-      <textarea
-        value={overviewDraft}
-        onChange={(e) => setOverviewDraft(e.target.value)}
-        onBlur={commitOverview}
-        rows={3}
-        className="w-full rounded border border-neutral-300 px-2 py-1 text-sm dark:border-neutral-700 dark:bg-neutral-900"
-      />
+
+      <section className="space-y-2">
+        <h4 className="text-sm font-semibold text-neutral-700 dark:text-neutral-200">要約</h4>
+        <textarea
+          value={overviewDraft}
+          onChange={(event) => setOverviewDraft(event.target.value)}
+          onBlur={commitOverview}
+          rows={5}
+          className="w-full resize-y rounded border border-neutral-300 bg-white px-3 py-2 text-sm leading-6 dark:border-neutral-700 dark:bg-neutral-900"
+        />
+      </section>
 
       <EditableList
-        label="主な論点"
+        label="大事なこと"
         items={current.keyPoints}
         onChange={(keyPoints) => save({ ...current, keyPoints, editedAt: Date.now() })}
       />
       <EditableList
-        label="決定事項"
+        label="決まったこと"
         items={current.decisions}
         onChange={(decisions) => save({ ...current, decisions, editedAt: Date.now() })}
       />
       <EditableList
-        label="アクションアイテム"
+        label="次にやること"
         items={current.actionItems}
         onChange={(actionItems) => save({ ...current, actionItems, editedAt: Date.now() })}
       />

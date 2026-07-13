@@ -6,7 +6,7 @@ interface RecordingState {
   isLoading: boolean
   loadAll: () => Promise<void>
   add: (recording: Recording) => Promise<void>
-  updateStatus: (id: string, status: Recording['status']) => Promise<void>
+  update: (id: string, details: Partial<Recording>) => Promise<void>
   remove: (id: string) => Promise<void>
 }
 
@@ -25,11 +25,11 @@ export const useRecordingStore = create<RecordingState>((set) => ({
     set((state) => ({ recordings: [recording, ...state.recordings] }))
   },
 
-  updateStatus: async (id, status) => {
-    await db.recordings.update(id, { status })
+  update: async (id, details) => {
+    await db.recordings.update(id, details)
     set((state) => ({
-      recordings: state.recordings.map((r) =>
-        r.id === id ? { ...r, status } : r,
+      recordings: state.recordings.map((recording) =>
+        recording.id === id ? { ...recording, ...details } : recording,
       ),
     }))
   },
@@ -39,7 +39,7 @@ export const useRecordingStore = create<RecordingState>((set) => ({
     await db.transcripts.delete(id)
     await db.summaries.delete(id)
     set((state) => ({
-      recordings: state.recordings.filter((r) => r.id !== id),
+      recordings: state.recordings.filter((recording) => recording.id !== id),
     }))
   },
 }))

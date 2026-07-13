@@ -1,8 +1,6 @@
 export type RecordingStatus =
-  | 'recording'
   | 'recorded'
   | 'transcribing'
-  | 'transcribed'
   | 'summarizing'
   | 'done'
   | 'error'
@@ -15,6 +13,9 @@ export interface Recording {
   audioBlob: Blob
   tags: string[]
   status: RecordingStatus
+  driveUrl?: string
+  errorMessage?: string
+  processedAt?: number
 }
 
 export interface TranscriptSegment {

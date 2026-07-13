@@ -6,4 +6,21 @@
 
 body {
   margin: 0;
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior-y: none;
+  text-size-adjust: 100%;
+}
+
+:where(button) {
+  min-height: 44px;
+  touch-action: manipulation;
+  white-space: nowrap;
+}
+
+:where(input, textarea, select) {
+  font-size: 16px;
+}
+
+:where(h1, h2, h3) {
+  word-break: keep-all;
 }

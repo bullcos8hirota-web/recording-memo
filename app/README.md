@@ -1,32 +1,52 @@
-# React + TypeScript + Vite
+# 録音メモ
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+スマートフォンやPCのブラウザで録音し、文字起こしと議事録を端末内に保存するPWAです。Gemini APIキーを設定すると、録音音声からタイトル・タグ・全文文字起こし・要約・決定事項・TODO候補を自動生成します。
 
-Currently, two official plugins are available:
+## 主な機能
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- 録音、一時停止、再開、端末内保存
+- 対応ブラウザでのライブ文字起こし
+- Geminiによる文字起こし・議事録作成（任意）
+- 録音の再生、タイトル・文字起こし・要約の編集
+- タイトル・文字起こし・要約を対象にした検索
+- Markdown、テキスト、音声の共有・ダウンロード
+- GoogleドキュメントとしてDriveへ保存（任意）
+- オフライン起動とホーム画面追加
 
-## React Compiler
+録音、文字起こし、議事録はIndexedDBに保存されます。Gemini APIキー未設定時は音声を外部へ送信せず、ブラウザの音声認識と簡易整理だけを利用します。APIキー設定時は、録音音声を利用者自身のキーでGoogle Gemini APIへ直接送信します。
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## 起動方法
 
-## Expanding the Oxlint configuration
+Node.jsを用意し、`app`フォルダーで次を実行します。
 
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm install
+npm run dev
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+同じWi-Fi内のスマートフォンから試す場合は、次を実行し、表示されたPCのIPアドレスへアクセスします。
+
+```bash
+npm run dev:lan
+```
+
+マイクはHTTPSまたはlocalhostでのみ利用できるブラウザがあります。実機利用ではHTTPSで公開してください。
+
+## 本番ビルド
+
+```bash
+npm run build
+npm run preview
+```
+
+生成物は`dist`フォルダーに出力されます。静的サイトとして配信できます。
+
+## AI設定
+
+画面上部の「本気AI(Gemini)」からGoogle AI Studioで発行したAPIキーを保存します。キーは現在のブラウザのlocalStorageだけに保存されます。共有端末では使用せず、Google Cloud側でも利用範囲、レート制限、予算アラートを設定してください。
+
+1件の音声は18MB未満が目安です。端末側の月額上限は概算による呼び出し停止機能であり、Google Cloudの請求上限ではありません。
+
+## 対応環境
+
+最新版のChrome、Edge、Safariを推奨します。ライブ文字起こし、ファイル共有、PWAインストール、Google Drive連携はブラウザやOSによって利用可否が異なりますが、基本の録音と端末内保存は対応ブラウザだけで完結します。

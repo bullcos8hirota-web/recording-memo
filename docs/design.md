@@ -1,4 +1,4 @@
-# 設計書 — 高精度録音・自動要約アプリ
+# 設計書 — スマホでサクッと使えるAI録音メモアプリ
 
 [requirements.md](./requirements.md) を前提とする。
 
@@ -6,7 +6,7 @@
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│                     ブラウザ (単一SPA)                     │
+│                  ブラウザ (単一SPA / PWA)                   │
 │                                                           │
 │  ┌───────────┐   ┌────────────┐   ┌──────────────────┐  │
 │  │ UI Layer  │   │  Stores    │   │  Storage Layer     │  │
@@ -15,21 +15,20 @@
 │        │               │                     │            │
 │        ▼               ▼                     │            │
 │  ┌───────────┐   ┌──────────────────────┐    │            │
-│  │ Audio     │   │  Web Workers          │    │            │
-│  │ Capture   │   │  - ASR Worker         │    │            │
-│  │ (MediaRec)│   │    (transformers.js   │    │            │
-│  └───────────┘   │     + Whisper)        │    │            │
-│                   │  - Summarize Worker    │    │            │
-│                   │    (transformers.js   │    │            │
-│                   │     + 小型LLM)         │    │            │
-│                   └──────────────────────┘    │            │
-│                                                 ▼            │
-│                                    音声Blob / 文字起こし / 要約 │
-└─────────────────────────────────────────────────────────┘
-         ネットワーク送信なし（モデルの初回ダウンロードのみ外部CDN/HFへアクセス）
+│  │ Audio     │   │  lib/gemini          │    │            │
+│  │ Capture   │   │  ブラウザから直接      │    │            │
+│  │ (MediaRec)│   │  Gemini APIを呼ぶ      │    │            │
+│  └───────────┘   │  (fetch, APIキーは    │    │            │
+│                   │  localStorageに保存)  │    │            │
+│                   └──────────┬───────────┘    │            │
+│                              │                 ▼            │
+│                              │    音声Blob / 文字起こし / 要約 │
+└──────────────────────────────┼───────────────────────────┘
+                               ▼
+                  Google Gemini API（オプトイン時のみ・利用者自身のAPIキー）
 ```
 
-**設計原則**: 音声・テキストデータは常にブラウザ内（メモリ／IndexedDB）に留まる。外部通信はモデルファイルの取得（初回のみ、キャッシュ後は不要）に限定する。
+**設計原則**: 自前サーバーを持たない。APIキー未設定時は音声・テキストが一切外部に出ない。APIキー設定時のみ、ブラウザから直接Gemini APIへ音声を送信する（利用者自身のAPIキー・課金）。中間サーバーがない分、構成がシンプルになり、運用コストとサーバー故障点をゼロにできる。
 
 ## 2. 技術スタック
 
@@ -37,31 +36,36 @@
 |---|---|---|
 | フレームワーク | React + TypeScript + Vite | 個人開発でのスピード、型安全性 |
 | スタイリング | Tailwind CSS | 高速にUI構築 |
-| 状態管理 | Zustand | Reduxより軽量、Worker連携がシンプル |
+| 状態管理 | Zustand | Reduxより軽量 |
 | ローカルDB | IndexedDB + Dexie.js | 大容量Blob保存に対応、クエリが書きやすい |
-| ASR | [transformers.js](https://github.com/huggingface/transformers.js)（Xenova/Whisper, whisper-base or small, 量子化版） | ブラウザ内WebGPU/WASM推論の実績が最も豊富 |
-| 要約LLM | transformers.js + 軽量Instructモデル（例: Qwen2.5-1.5B-Instruct 量子化版、日本語対応を精度検証の上で選定） | オンデバイスで動く現実的なサイズ |
+| AI（文字起こし・要約） | Gemini API（`gemini-2.5-flash-lite` 既定、`gemini-2.5-flash` 選択可）をブラウザから直接 `fetch` で呼び出し | サーバー不要・音声を1回のAPI呼び出しで文字起こし+要約まで生成できる |
+| ライブ文字起こし（AI未設定時の補助） | Web Speech API（ブラウザ標準） | ダウンロード不要・軽量。Gemini未設定時の簡易表示に使う |
 | 音声処理 | Web Audio API / MediaRecorder API | ブラウザ標準機能 |
-| PWA化 | vite-plugin-pwa（Phase後半） | オフライン起動・モデルキャッシュ |
+| PWA化 | 手書きService Worker + manifest | オフライン起動、ホーム画面追加 |
+| 共有・保存 | Web Share API（`navigator.share`） | Google Driveなど任意のアプリへスマホの共有シート経由で保存。OAuth連携は持たない |
 
 ## 3. コンポーネント構成（UI）
 
 ```
 src/
   components/
-    Recorder/           録音操作パネル（開始/停止/波形/タイマー）
-    Player/              音声プレイヤー（シーク/速度変更）
-    TranscriptView/      文字起こし表示・編集・ハイライト同期
-    SummaryView/         要約表示・編集
-    HistoryList/         録音一覧・検索・タグ
-    ModelLoadingIndicator/ モデルDL進捗表示
-  workers/
-    asr.worker.ts        文字起こし処理（transformers.js + Whisper）
-    summarize.worker.ts  要約処理（transformers.js + LLM）
+    Recorder/            録音操作パネル（開始/停止/波形/タイマー）
+    AiSettings/           Gemini APIキー・モデル・月次予算の設定
+    HistoryList/          録音一覧・検索
+      RecordingItem       1件ごとの操作（詳しく見る/共有・保存/削除）
+    SummaryView/          要約表示・編集・作り直す
+    TranscriptView/       文字起こし表示・編集
   lib/
-    audio/               録音・波形生成ユーティリティ
-    db/                  Dexie スキーマ・CRUD
+    audio/                録音ユーティリティ
+    db/                   Dexie スキーマ・CRUD
     export/               Markdown/テキストエクスポート
+    speech/               ライブ文字起こし（Web Speech API）
+    summarize/fallback.ts AI未設定時の簡易要約（キーワードベース）
+    gemini/
+      settings.ts          APIキー・モデル・月次予算の保存（localStorage）
+      usage.ts              月次利用量・概算コストの記録、上限チェック
+      client.ts             Gemini API直接呼び出し（音声→文字起こし+要約のJSON）
+      runGeminiPipeline.ts  録音1件に対する一連の処理（DB更新含む）
   stores/
     recordingStore.ts
     transcriptStore.ts
@@ -74,88 +78,81 @@ src/
 ```ts
 // recordings テーブル
 interface Recording {
-  id: string;              // UUID
-  title: string;
-  createdAt: number;       // epoch ms
-  durationMs: number;
-  audioBlob: Blob;         // 音声本体
-  tags: string[];
-  status: 'recording' | 'recorded' | 'transcribing' | 'transcribed' | 'summarizing' | 'done' | 'error';
+  id: string
+  title: string
+  createdAt: number
+  durationMs: number
+  audioBlob: Blob
+  tags: string[]
+  status: 'recorded' | 'transcribing' | 'summarizing' | 'done' | 'error'
+  errorMessage?: string
+  processedAt?: number
 }
 
 // transcripts テーブル（recordingId で1対1）
 interface Transcript {
-  recordingId: string;
-  segments: TranscriptSegment[];
-  fullText: string;         // 全文検索用に結合済みテキストを保持
-  editedAt?: number;
+  recordingId: string
+  segments: TranscriptSegment[]
+  fullText: string
+  editedAt?: number
 }
 
 interface TranscriptSegment {
-  start: number;   // 秒
-  end: number;     // 秒
-  text: string;
-  speaker?: string; // Phase 2以降
+  start: number
+  end: number
+  text: string
+  speaker?: string
 }
 
 // summaries テーブル（recordingId で1対1）
 interface Summary {
-  recordingId: string;
-  overview: string;
-  keyPoints: string[];
-  decisions: string[];
-  actionItems: string[];
-  editedAt?: number;
+  recordingId: string
+  overview: string
+  keyPoints: string[]
+  decisions: string[]
+  actionItems: string[]
+  editedAt?: number
 }
 ```
 
 ## 5. 処理フロー
 
 ### 5.1 録音〜保存
-1. `Recorder` が `MediaRecorder` でマイク入力をキャプチャ（`audio/webm;codecs=opus`）
-2. 停止時に Blob 化し、`Recording` レコードとして Dexie に保存（status: `recorded`）
-3. 一覧に即座に反映（文字起こしはバックグラウンドで開始）
+1. `Recorder` が `MediaRecorder` でマイク入力をキャプチャ
+2. 停止時に Blob 化し、`Recording` レコードとして Dexie に保存
+3. 一覧に即座に反映。Gemini APIキー設定済みなら、バックグラウンドで `runGeminiPipeline` を起動
 
-### 5.2 文字起こし
-1. `Recording.audioBlob` を `asr.worker.ts` に転送（Transferable/構造化複製）
-2. Worker 内で Blob → PCM デコード → Whisper モデル（初回はモデルDL＋Cache API保存）で推論
-3. セグメント単位の結果を逐次 `transcriptStore` に反映し、UIへストリーミング的に表示
-4. 完了後 `Transcript` を保存、`Recording.status` を `transcribed` に更新
+### 5.2 AI議事録化（Gemini APIキー設定時）
+1. `lib/gemini/client.ts` が音声Blobをbase64化し、`generateContent` エンドポイントへ1回のリクエストで送信（プロンプト＋音声のinlineData、`responseSchema` でJSON構造を指定）
+2. レスポンスの `usageMetadata` から概算コストを算出し、`lib/gemini/usage.ts` に月次集計として記録
+3. 結果（title/tags/transcript/summary）を `Transcript` `Summary` としてDexieに保存、`Recording.status` を `done` に更新
+4. 失敗時は `status: 'error'` とエラーメッセージを保存し、UIから「作り直す」で再実行できる
 
-### 5.3 要約
-1. 文字起こし完了をトリガに `summarize.worker.ts` へ全文を渡す
-2. プロンプトテンプレートで「概要／要点／決定事項／アクションアイテム」の構造化出力を指示
-3. LLM出力をパースして `Summary` として保存
-4. 失敗・低品質時は再実行ボタンをUIに用意（MVPでは自動リトライはしない）
+### 5.3 コスト上限
+- `runGeminiPipeline` 実行前に `assertBudgetAvailable()` を呼び、今月の概算コストが自己申告の上限を超えていればAPI呼び出し自体を行わずエラーにする
+- 上限・モデル・APIキーは `AiSettings` コンポーネントから設定する
 
-### 5.4 再生・同期
-- `Player` の `timeupdate` イベントで現在秒数を `transcriptStore` に渡し、該当セグメントをハイライト
-- セグメントクリックで `audio.currentTime` をシーク
+### 5.4 AI未設定時のフォールバック
+- `useLiveSpeechRecognition`（Web Speech API）でライブ文字起こしを試み、`buildFallbackSummary` で簡易な要点抽出を行う
+- いつでも `AiSettings` でAPIキーを入れれば、次回録音から本格的なAI議事録に切り替わる
 
-## 6. Web Worker 設計の理由
-- Whisper / LLM の推論は数百ms〜数秒単位でメインスレッドをブロックしうるため、UIの応答性を保つために両方とも Worker 内で実行する
-- モデルロード状態・推論進捗は `postMessage` でストア経由でUIに反映する
-- 将来 WebGPU が使えない環境向けに WASM フォールバックを Worker 内で自動判定する
-
-## 7. モデル選定方針（Phase 1で検証）
-- ASR: `whisper-base` または `whisper-small` の量子化版から、日本語会議音声でのWER（誤り率）とレイテンシを比較して選定
-- 要約LLM: 日本語Instructionに対応する軽量モデル（1.5B〜3B級）を2〜3種試し、構造化要約の再現性・崩れにくさで選定
-- 両モデルとも `transformers.js` の `AutoModel` / `pipeline` API 経由でロードし、モデル差し替えを容易にする（設定ファイルでモデルIDを外出し）
-
-## 8. エラー・エッジケース対応方針
+## 6. エラー・エッジケース対応方針
 | ケース | 対応 |
 |---|---|
-| WebGPU非対応ブラウザ | WASM推論にフォールバック、速度低下を通知 |
+| Gemini APIキー未設定 | 端末内簡易整理にフォールバック。「詳しく見る」操作時などにキー未設定である旨を案内 |
+| 音声が18MBを超える | 事前にサイズチェックしてエラー表示（長時間録音は将来チャンク分割を検討） |
+| 月次予算超過 | API呼び出し前にブロックし、上限に達した旨を表示。設定で上限変更可能 |
+| Gemini APIエラー・JSONパース失敗 | `status: 'error'` にしてエラーメッセージを表示、「作り直す」で再実行 |
 | マイク権限拒否 | 録音開始前に権限エラーをわかりやすく表示 |
-| モデルDL失敗（オフライン等） | リトライ導線、エラーメッセージ表示 |
-| ストレージ容量逼迫 | `navigator.storage.estimate()` で使用量監視、警告表示 |
-| 長時間録音（1時間超） | チャンク分割してASR処理し、メモリ使用量を抑える（Phase 1後半で検証） |
-| 要約生成の出力崩れ（JSON等パース失敗） | フォールバックで生テキストをそのまま概要欄に表示し、手動編集を促す |
+| Web Speech API非対応ブラウザ | ライブ文字起こし欄を非表示・エラー表示のみ |
 
-## 9. 将来拡張（Phase 2以降・スコープ外だが設計に含み込む余地を残す）
-- 話者分離（speaker diarization）
+## 7. 今回見送った構成（検討はしたが不採用）
+- **自前Node.jsサーバー経由でGemini APIキーを隠す構成**: セキュリティ上はAPIキーをサーバー側に隠せる利点があったが、個人の軽い利用ではCloud Run等の常時デプロイ・課金アカウント登録の管理負担がメリットを上回ると判断し、ブラウザから直接Gemini APIを呼ぶ構成に変更した。共有端末で使う場合は、Google Cloud Console側でAPIキーの利用範囲・レート制限をかけることを推奨する
+- **Google Drive自動アップロード（OAuth連携）**: 設定の手間に対して個人利用でのメリットが小さいため、スマホの共有シート（`navigator.share`）経由での手動保存に統一した
+- **オンデバイスWhisper/軽量LLM（transformers.js）**: モデルダウンロードが数百MB〜と重く、スマホでの「サクッと使える」体験と相性が悪いため撤去し、Gemini API一本化とした
+
+## 8. 将来拡張（スコープ外だが余地を残す）
+- 話者分離の精度向上
+- 長時間録音のチャンク分割対応
 - 要約⇄文字起こしの対応箇所ジャンプ
-- 多言語対応
-- クラウドAPIとのハイブリッド利用（オプトイン、より高精度が必要な場合）
-- PWA化・オフライン起動の完全対応
-- モバイルブラウザ対応
+- 複数端末間の同期（現状は端末ローカル完結）
