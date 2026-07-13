@@ -1,13 +1,13 @@
-const CACHE_NAME = 'recording-summary-app-v3'
+const CACHE_NAME = 'recording-summary-app-v4'
 const SCOPE_URL = self.registration.scope
 const INDEX_URL = new URL('index.html', SCOPE_URL).href
 const APP_SHELL = [
   SCOPE_URL,
   INDEX_URL,
   new URL('favicon.svg', SCOPE_URL).href,
-  new URL('icon-192.png', SCOPE_URL).href,
-  new URL('icon-512.png', SCOPE_URL).href,
-  new URL('manifest.webmanifest', SCOPE_URL).href,
+  new URL('icon-192.png?v=4', SCOPE_URL).href,
+  new URL('icon-512.png?v=4', SCOPE_URL).href,
+  new URL('manifest.webmanifest?v=4', SCOPE_URL).href,
 ]
 
 self.addEventListener('install', (event) => {
