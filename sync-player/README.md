@@ -31,6 +31,9 @@
 
 ### 1. 司令塔PCの準備（1回だけ）
 
+> 🪟 **Windowsで、ダブルクリック起動の一番やさしい手順は [`WINDOWS-setup.md`](WINDOWS-setup.md) を見てください。**
+> （司令塔PCは動画を流しません。時刻を配る“指揮者”役です）
+
 1. PCに **Node.js** をインストールします（https://nodejs.org/ からLTS版）。
    - `npm install` は不要です。標準機能だけで動きます。
 2. この `sync-player/server/sync-server.js` をPCに置きます。
@@ -125,8 +128,10 @@
 ```
 sync-player/
 ├── server/
-│   └── sync-server.js   … 司令塔PCで動かすサーバー（Node.js標準機能のみ）
+│   ├── sync-server.js               … 司令塔PCで動かすサーバー（Node.js標準機能のみ）
+│   └── start-server-windows.bat     … Windows用・ダブルクリック起動ファイル
 ├── tablet/
-│   └── index.html       … 各タブレットに入れるプレイヤー
-└── README.md            … このファイル
+│   └── index.html                   … 各タブレットに入れるプレイヤー
+├── WINDOWS-setup.md                 … Windowsでのかんたんセットアップ手順
+└── README.md                        … このファイル
 ```
