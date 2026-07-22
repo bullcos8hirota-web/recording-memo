@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Studio Sync Player</title>
+  <style>
+    html, body { margin: 0; height: 100%; background-color: black; overflow: hidden; font-family: sans-serif; }
+    video { width: 100vw; height: 100vh; object-fit: contain; background: black; }
+    /* デバッグ表示（ #debug=1 のときだけ表示） */
+    #dbg {
+      position: fixed; left: 8px; top: 8px; z-index: 10;
+      color: #7dd3fc; background: rgba(0,0,0,.55); padding: 6px 10px;
+      font: 12px/1.5 monospace; border-radius: 6px; white-space: pre; display: none;
+    }
+  </style>
+</head>
+<body>
+  <video id="syncVideo" playsinline></video>
+  <div id="dbg"></div>
+
+  <script>
+  /* =========================================================================
+   *  スタジオ映像同期プレイヤー
+   *  -----------------------------------------------------------------------
+   *  司令塔PC(sync-server.js)を「共通の時計」として全タブレットの再生位置を
+   *  合わせます。手動offset調整は不要です。全タブレットで同じこのファイルを
+   *  使えます（違うのは各端末のローカル動画ファイルだけ）。
+   *
+   *  ▼設定はこの CONFIG だけ。基本は server を書き換えるだけでOK。
+   *    URLの後ろに #server=... のように書けば、その場で上書きもできます。
+   *    例: index.html#server=http://192.168.1.50:8080&video=A.mp4&debug=1
+   * ======================================================================= */
+  const CONFIG = {
+    // 司令塔PCのアドレス。全タブレット共通。ここを環境に合わせて書き換える。
+    server: 'http://192.168.1.50:8080',
+    // このタブレットで再生する動画ファイル名（このindex.htmlと同じfilesフォルダ内）
+    video: 'exercise.mp4',
+    // 動画の長さ(秒)。0なら司令塔PCの設定→動画のメタデータ、の順で自動取得。
+    duration: 0,
+  };
+
+  // ---- URLハッシュでの上書き（任意） -------------------------------------
+  const hp = new URLSearchParams(location.hash.substring(1));
+  if (hp.get('server'))   CONFIG.server   = hp.get('server');
+  if (hp.get('video'))    CONFIG.video    = hp.get('video');
+  if (hp.get('duration')) CONFIG.duration = parseFloat(hp.get('duration'));
+  const DEBUG = hp.get('debug') === '1';
+
+  const SERVER = CONFIG.server.replace(/\/+$/, '');
+  const video = document.getElementById('syncVideo');
+  const dbg = document.getElementById('dbg');
+  if (DEBUG) dbg.style.display = 'block';
+
+  video.src = CONFIG.video;
+  video.loop = true;        // 継ぎ目なくループ（補正は下のループで行う）
+  video.playsInline = true;
+  // 再生速度を微調整しても音程が変わらないように
+  try { video.preservesPitch = true; video.mozPreservesPitch = true; video.webkitPreservesPitch = true; } catch (e) {}
+
+  // ---- 共通の時計（司令塔との時刻差） ------------------------------------
+  let clockOffset = 0;      // serverNow = Date.now() + clockOffset
+  let clockSynced = false;
+  let duration = CONFIG.duration > 0 ? CONFIG.duration : 0;
+
+  function serverNow() { return Date.now() + clockOffset; }        // ミリ秒
+  function targetTime() { return (serverNow() / 1000) % duration; } // 秒（このタブレットが今いるべき位置）
+
+  // NTP風の時計合わせ。往復遅延が最小のサンプルを採用して精度を上げる。
+  async function syncClock(samples = 7) {
+    const measured = [];
+    for (let i = 0; i < samples; i++) {
+      const t0 = Date.now();
+      try {
+        const r = await fetch(SERVER + '/time?t0=' + t0, { cache: 'no-store' });
+        const t3 = Date.now();
+        const j = await r.json();
+        const rtt = t3 - t0;
+        // サーバーは往復のちょうど中間で時刻を刻んだと仮定
+        const offset = j.server - (t0 + rtt / 2);
+        measured.push({ offset, rtt });
+      } catch (e) { /* 1回くらいの失敗は無視 */ }
+    }
+    if (!measured.length) return false;
+    measured.sort((a, b) => a.rtt - b.rtt);
+    clockOffset = measured[0].offset;   // 最速往復＝最も信頼できるサンプル
+    clockSynced = true;
+    return true;
+  }
+
+  // 司令塔から動画の長さ(共通値)を取得。全タブレットが完全に同じ値を使うことで
+  // ループの足並みが長時間ズレないようにする。
+  async function loadConfig() {
+    if (CONFIG.duration > 0) { duration = CONFIG.duration; return; }
+    try {
+      const r = await fetch(SERVER + '/config', { cache: 'no-store' });
+      const j = await r.json();
+      if (j && j.duration > 0) duration = j.duration;
+    } catch (e) { /* サーバー未接続なら後で動画のメタデータを使う */ }
+  }
+
+  // ---- 補正パラメータ ----------------------------------------------------
+  const DEADBAND   = 0.03;  // これ以内のズレは無視（±30ms）
+  const HARD_SEEK  = 1.5;   // これ以上ズレたらシークで一気に合わせる（起動直後や停止復帰時）
+  const RATE_GAIN  = 0.5;   // 速度補正の強さ
+  const RATE_MIN   = 0.94;  // 再生速度の下限
+  const RATE_MAX   = 1.06;  // 再生速度の上限（±6%＝目にも耳にもほぼ分からない範囲）
+
+  // ズレ = 現在位置 - あるべき位置。ループ境界をまたぐ場合を補正して最短差にする。
+  function signedDiff() {
+    let d = video.currentTime - targetTime();
+    if (d >  duration / 2) d -= duration;
+    if (d < -duration / 2) d += duration;
+    return d;
+  }
+
+  // 一定間隔で位置を合わせ続ける（速度微調整でカクつかせずに寄せる）
+  function correctionLoop() {
+    if (!duration || video.readyState < 2) return;
+    const d = signedDiff();
+    const abs = Math.abs(d);
+
+    if (abs > HARD_SEEK) {
+      // 大きくズレている（起動直後・バッファ停止からの復帰など）→ 一気に合わせる
+      video.currentTime = targetTime();
+      video.playbackRate = 1.0;
+      if (video.paused) video.play().catch(() => {});
+    } else if (abs > DEADBAND) {
+      // 小さなズレ → 再生速度をわずかに変えて滑らかに寄せる
+      // 遅れている(d<0)なら速く、進みすぎ(d>0)なら遅く
+      let rate = 1.0 - d * RATE_GAIN;
+      video.playbackRate = Math.max(RATE_MIN, Math.min(RATE_MAX, rate));
+    } else {
+      video.playbackRate = 1.0;
+    }
+  }
+
+  // ---- デバッグ表示 ------------------------------------------------------
+  function renderDebug() {
+    if (!DEBUG) return;
+    const d = duration ? signedDiff() : 0;
+    dbg.textContent =
+      'server : ' + (clockSynced ? 'OK' : '未接続(ローカル時計)') + '\n' +
+      'offset : ' + clockOffset.toFixed(0) + ' ms\n' +
+      'duration: ' + duration.toFixed(2) + ' s\n' +
+      'target : ' + (duration ? targetTime().toFixed(2) : '-') + ' s\n' +
+      'current: ' + video.currentTime.toFixed(2) + ' s\n' +
+      'diff   : ' + (d * 1000).toFixed(0) + ' ms\n' +
+      'rate   : ' + video.playbackRate.toFixed(3);
+  }
+
+  // ---- 起動シーケンス ----------------------------------------------------
+  async function start() {
+    await loadConfig();
+    await syncClock();
+
+    // 動画メタデータが読めたら、まだ長さが未確定ならそれを使う
+    if (!duration && video.duration && isFinite(video.duration)) {
+      duration = video.duration;
+    }
+    if (!duration) {
+      // 最終手段: メタデータ読み込みを待つ
+      await new Promise((res) => {
+        if (video.readyState >= 1) return res();
+        video.addEventListener('loadedmetadata', res, { once: true });
+      });
+      duration = CONFIG.duration > 0 ? CONFIG.duration : video.duration;
+    }
+
+    // 最初の位置合わせ
+    try { video.currentTime = targetTime(); } catch (e) {}
+    video.play().catch(() => {});
+
+    // 補正ループ（0.4秒ごと）
+    setInterval(correctionLoop, 400);
+    // 時計は30秒ごとに合わせ直す（ネットワークのゆらぎ対策）
+    setInterval(() => { syncClock(); }, 30000);
+    // デバッグ表示更新
+    setInterval(renderDebug, 200);
+  }
+
+  // メタデータが取れ次第スタート（サーバー未接続でもローカルで動くようにする）
+  if (video.readyState >= 1) {
+    start();
+  } else {
+    video.addEventListener('loadedmetadata', start, { once: true });
+    // 万一 loadedmetadata が来なくても数秒で起動
+    setTimeout(() => { if (!duration) start(); }, 4000);
+  }
+  </script>
+</body>
+</html>
