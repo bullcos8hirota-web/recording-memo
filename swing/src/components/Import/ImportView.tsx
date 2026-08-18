@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useAppStore } from '../../stores/appStore'
+import { parseQuoteLines, type QuoteLine } from '../../lib/market/quickUpdate'
 import {
   matchExecutions,
   parsePriceCsv,
@@ -19,11 +20,117 @@ import {
 export function ImportView() {
   return (
     <div className="space-y-4">
+      <QuickUpdate />
       <PriceImport />
       <ManualBarForm />
       <HistoryImport />
       <SampleData />
     </div>
+  )
+}
+
+/**
+ * 毎日の更新をいちばん短くするための入口。銘柄ごとにフォームを開かなくても、
+ * 画面からコピーした文字列を貼れば、複数銘柄の終値をまとめて更新できる。
+ */
+function QuickUpdate() {
+  const stocks = useAppStore((s) => s.stocks)
+  const importBars = useAppStore((s) => s.importBars)
+  const [text, setText] = useState('')
+  const [date, setDate] = useState(today())
+  const [message, setMessage] = useState<string | null>(null)
+
+  const rows: QuoteLine[] = text.trim() ? parseQuoteLines(text, stocks, date) : []
+  const known = new Set(stocks.map((stock) => stock.code.toUpperCase()))
+  const ready = rows.filter((row) => row.bar !== null && row.code !== null)
+  const appliable = ready.filter((row) => known.has(row.code!))
+
+  const apply = async () => {
+    for (const row of appliable) {
+      await importBars(row.code!, [row.bar!])
+    }
+    setMessage(`${appliable.length}銘柄の${date}の値を更新しました。`)
+    setText('')
+  }
+
+  return (
+    <Card
+      title="まとめて終値を更新"
+      description="SBI証券のポートフォリオ画面などをコピーして貼るだけで、登録済みの銘柄をまとめて更新します。毎日の更新はこれがいちばん速いです。"
+    >
+      <div className="grid gap-3 sm:grid-cols-[10rem_1fr]">
+        <Field label="日付">
+          <input
+            type="date"
+            className={inputClass}
+            value={date}
+            onChange={(e) => setDate(e.target.value)}
+          />
+        </Field>
+      </div>
+      <Field label="貼り付け" hint="1行に1銘柄。コードか登録済みの銘柄名と、価格が入っていれば読み取ります。">
+        <textarea
+          className={`${inputClass} min-h-32 font-mono text-sm`}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          placeholder={'7203 2850\n9984 9,300\nトヨタ自動車 7203 2,850 +1.2%'}
+        />
+      </Field>
+
+      {rows.length > 0 && (
+        <div className="mt-3 overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-800">
+          <table className="w-full text-sm">
+            <thead className="bg-neutral-50 text-left text-xs text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">
+              <tr>
+                <th className="px-3 py-2">銘柄</th>
+                <th className="px-3 py-2 text-right">終値</th>
+                <th className="px-3 py-2 text-right">状態</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-neutral-200 dark:divide-neutral-800">
+              {rows.map((row, index) => {
+                const unknown = row.code !== null && !known.has(row.code)
+                return (
+                  <tr key={`${row.raw}-${index}`}>
+                    <td className="px-3 py-2">
+                      <span className="font-mono text-xs text-neutral-500">{row.code ?? '—'}</span>{' '}
+                      {row.name ?? ''}
+                      {row.error && (
+                        <span className="block text-xs text-neutral-400">{row.raw}</span>
+                      )}
+                    </td>
+                    <td className="px-3 py-2 text-right tabular-nums">
+                      {row.bar ? price(row.bar.close) : '—'}
+                    </td>
+                    <td className="px-3 py-2 text-right text-xs">
+                      {row.error ? (
+                        <span className="text-rose-600 dark:text-rose-400">{row.error}</span>
+                      ) : unknown ? (
+                        <span className="text-neutral-400">未登録なので飛ばします</span>
+                      ) : (
+                        <span className="text-neutral-500">更新できます</span>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <div className="mt-3 flex flex-wrap items-center gap-3">
+        <button
+          type="button"
+          className={buttonClass}
+          disabled={appliable.length === 0}
+          onClick={() => void apply()}
+        >
+          {appliable.length > 0 ? `${appliable.length}銘柄を更新` : 'まとめて更新'}
+        </button>
+        {message && <span className="text-sm text-neutral-600 dark:text-neutral-300">{message}</span>}
+      </div>
+    </Card>
   )
 }
 

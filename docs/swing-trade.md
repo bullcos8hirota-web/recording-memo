@@ -31,6 +31,7 @@ swing/src/
 │   │   ├── indicators.ts   SMA/EMA/RSI/MACD/ボリンジャー/ATR/高安/クロス判定
 │   │   ├── signals.ts      指標のスナップショットとシグナル抽出、スコア化
 │   │   ├── csv.ts          CSVパーサ、株価CSV、SBI取引履歴CSV、FIFO突き合わせ
+│   │   ├── quickUpdate.ts  画面からコピーした文字列を銘柄コード+価格に読み替える
 │   │   ├── sampleData.ts   動作確認用の架空データ生成(乱数の種を固定)
 │   │   └── types.ts
 │   ├── money/
