@@ -3,6 +3,7 @@ import { useAppStore } from '../../stores/appStore'
 import { analyze, MIN_BARS, VERDICT_LABEL, type Analysis } from '../../lib/market/signals'
 import type { Stock } from '../../lib/market/types'
 import { percent, price, shortDate, toneClass } from '../../lib/format'
+import { useIsPhone } from '../../lib/useMediaQuery'
 import {
   Badge,
   buttonClass,
@@ -72,13 +73,13 @@ export function ScreenerView({ onOpen }: { onOpen: (code: string) => void }) {
           title="ウォッチリスト"
           description="スイング目線のスコア順。スコアはチャートの状態を点数化したもので、売買の指示ではありません。"
         >
-          <div className="mb-3 flex flex-wrap gap-2">
+          <div className="-mx-1 mb-3 flex gap-2 overflow-x-auto px-1 pb-1">
             {FILTERS.map((item) => (
               <button
                 key={item.id}
                 type="button"
                 onClick={() => setFilter(item.id)}
-                className={`rounded-full px-3 py-1 text-xs font-medium transition ${
+                className={`shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition ${
                   filter === item.id
                     ? 'bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900'
                     : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-300'
@@ -120,9 +121,11 @@ function ScreenerRow({
   holding: boolean
   onOpen: (code: string) => void
 }) {
+  const isPhone = useIsPhone()
   const { stock, analysis } = row
   const snapshot = analysis?.snapshot
-  const positives = analysis?.signals.filter((s) => s.tone === 'bull').slice(0, 2) ?? []
+  // 画面が狭いときはバッジを減らして、1行に収まるようにする。
+  const positives = analysis?.signals.filter((s) => s.tone === 'bull').slice(0, isPhone ? 1 : 2) ?? []
   const negatives = analysis?.signals.filter((s) => s.tone === 'bear').slice(0, 1) ?? []
 
   return (
@@ -130,17 +133,21 @@ function ScreenerRow({
       <button
         type="button"
         onClick={() => onOpen(stock.code)}
-        className="w-full py-3 text-left transition hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
+        className="w-full py-3.5 text-left transition active:bg-neutral-100 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 dark:active:bg-neutral-800"
       >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="font-mono text-sm text-neutral-500 dark:text-neutral-400">
+            <div className="flex items-center gap-2">
+              <span className="shrink-0 font-mono text-sm text-neutral-500 dark:text-neutral-400">
                 {stock.code}
               </span>
               <span className="truncate font-medium">{stock.name}</span>
               {holding && <Badge tone="info">建玉あり</Badge>}
-              {stock.demo && <Badge>サンプル</Badge>}
+              {stock.demo && (
+                <span className="hidden sm:inline-flex">
+                  <Badge>サンプル</Badge>
+                </span>
+              )}
             </div>
             <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
               <span className="tabular-nums">{price(snapshot?.close)}円</span>
@@ -191,7 +198,7 @@ function ScoreDial({ analysis }: { analysis: Analysis | null }) {
       <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-700">
         <div className={`h-full rounded-full ${color}`} style={{ width: `${analysis.score}%` }} />
       </div>
-      <div className="mt-1 text-[11px] text-neutral-500 dark:text-neutral-400">
+      <div className="mt-1 whitespace-nowrap text-[10px] text-neutral-500 dark:text-neutral-400 sm:text-[11px]">
         {VERDICT_LABEL[analysis.verdict]}
       </div>
     </div>
@@ -201,6 +208,7 @@ function ScoreDial({ analysis }: { analysis: Analysis | null }) {
 function AddStockForm() {
   const addStock = useAppStore((s) => s.addStock)
   const defaultLot = useAppStore((s) => s.settings.defaultLot)
+  const [open, setOpen] = useState(false)
   const [code, setCode] = useState('')
   const [name, setName] = useState('')
   const [lot, setLot] = useState(String(defaultLot))
@@ -211,15 +219,36 @@ function AddStockForm() {
     void addStock({ code, name, lot: Number(lot) || defaultLot })
     setCode('')
     setName('')
+    setOpen(false)
+  }
+
+  if (!open) {
+    return (
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-neutral-300 text-sm font-medium text-neutral-600 transition hover:bg-neutral-100 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800"
+      >
+        ＋ 銘柄を追加
+      </button>
+    )
   }
 
   return (
-    <Card title="銘柄を追加" description="証券コードと銘柄名を登録します。価格データは「取込」タブで入れます。">
+    <Card
+      title="銘柄を追加"
+      description="証券コードと銘柄名を登録します。価格データは「取込」タブで入れます。"
+      actions={
+        <button type="button" className={subtleButtonClass} onClick={() => setOpen(false)}>
+          閉じる
+        </button>
+      }
+    >
       <form onSubmit={submit} className="flex flex-wrap items-end gap-2">
-        <label className="text-sm">
+        <label className="min-w-32 flex-1 text-sm sm:flex-none">
           <span className="text-neutral-600 dark:text-neutral-300">コード</span>
           <input
-            className={`${inputClass} w-28`}
+            className={`${inputClass} w-full sm:w-28`}
             value={code}
             onChange={(e) => setCode(e.target.value)}
             placeholder="7203"
@@ -235,16 +264,16 @@ function AddStockForm() {
             placeholder="銘柄名"
           />
         </label>
-        <label className="text-sm">
+        <label className="min-w-28 flex-1 text-sm sm:flex-none">
           <span className="text-neutral-600 dark:text-neutral-300">売買単位</span>
           <input
-            className={`${inputClass} w-24`}
+            className={`${inputClass} w-full sm:w-24`}
             value={lot}
             onChange={(e) => setLot(e.target.value)}
             inputMode="numeric"
           />
         </label>
-        <button type="submit" className={buttonClass}>
+        <button type="submit" className={`${buttonClass} w-full sm:w-auto`}>
           追加
         </button>
       </form>

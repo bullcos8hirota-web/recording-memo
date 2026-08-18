@@ -1,4 +1,4 @@
-const CACHE_NAME = 'swing-trade-app-v1'
+const CACHE_NAME = 'swing-trade-app-v2'
 const SCOPE_URL = self.registration.scope
 const INDEX_URL = new URL('index.html', SCOPE_URL).href
 const APP_SHELL = [
@@ -7,6 +7,7 @@ const APP_SHELL = [
   new URL('favicon.svg', SCOPE_URL).href,
   new URL('icon-192.png', SCOPE_URL).href,
   new URL('icon-512.png', SCOPE_URL).href,
+  new URL('icon-maskable-512.png', SCOPE_URL).href,
   new URL('manifest.webmanifest', SCOPE_URL).href,
 ]
 

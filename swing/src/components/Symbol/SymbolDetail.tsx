@@ -50,12 +50,12 @@ export function SymbolDetail({ onGoImport }: { onGoImport: () => void }) {
   return (
     <div className="space-y-4">
       <Card>
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2">
+          <div className="flex min-w-0 flex-1 items-center gap-2">
             <select
               value={stock.code}
               onChange={(e) => select(e.target.value)}
-              className="rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-950"
+              className="min-h-11 w-full min-w-0 rounded-lg border border-neutral-300 bg-white px-3 py-2 text-base dark:border-neutral-700 dark:bg-neutral-950 sm:w-auto sm:text-sm"
             >
               {stocks.map((item) => (
                 <option key={item.code} value={item.code}>
@@ -63,24 +63,27 @@ export function SymbolDetail({ onGoImport }: { onGoImport: () => void }) {
                 </option>
               ))}
             </select>
-            {analysis && (
-              <Badge tone={analysis.verdict === 'ready' ? 'bull' : analysis.verdict === 'avoid' ? 'bear' : 'info'}>
-                スコア {analysis.score} / {VERDICT_LABEL[analysis.verdict]}
-              </Badge>
-            )}
           </div>
           <button
             type="button"
-            className={subtleButtonClass}
+            aria-label="この銘柄を削除"
+            className={`${subtleButtonClass} shrink-0 px-3`}
             onClick={() => {
               if (confirm(`${stock.name} を削除しますか?価格データも消えます。`)) {
                 void removeStock(stock.code)
               }
             }}
           >
-            銘柄を削除
+            削除
           </button>
         </div>
+        {analysis && (
+          <div className="mt-2">
+            <Badge tone={analysis.verdict === 'ready' ? 'bull' : analysis.verdict === 'avoid' ? 'bear' : 'info'}>
+              スコア {analysis.score} / {VERDICT_LABEL[analysis.verdict]}
+            </Badge>
+          </div>
+        )}
         {stock.memo && (
           <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">{stock.memo}</p>
         )}

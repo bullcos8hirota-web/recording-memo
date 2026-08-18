@@ -21,4 +21,10 @@ export class SwingDatabase extends Dexie {
 
 export const db = new SwingDatabase()
 
+// IndexedDBが使えない環境では open() が失敗する。ここで受けておかないと
+// 未処理のPromise拒否としてコンソールに残る(画面はストア側で救済している)。
+db.open().catch((error: unknown) => {
+  console.warn('保存領域を開けませんでした', error)
+})
+
 export * from './schema'

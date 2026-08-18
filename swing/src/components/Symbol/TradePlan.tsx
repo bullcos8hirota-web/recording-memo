@@ -111,7 +111,7 @@ export function TradePlan({
       title="売買プラン"
       description="許容損失から株数を決めます。損切り価格を先に決めるのがスイングの肝です。"
     >
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <Field label="エントリー価格(円)">
           <input
             className={inputClass}
@@ -128,7 +128,7 @@ export function TradePlan({
             inputMode="decimal"
           />
         </Field>
-        <Field label="利確倍率(リスクの何倍)">
+        <Field label="利確倍率(リスクの何倍)" className="col-span-2 sm:col-span-1">
           <input
             className={inputClass}
             value={rewardRatio}

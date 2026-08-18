@@ -2,6 +2,7 @@ import { useEffect, useMemo, useRef } from 'react'
 import type { Series } from '../../lib/market/indicators'
 import type { Bar } from '../../lib/market/types'
 import { shortDate } from '../../lib/format'
+import { useIsPhone } from '../../lib/useMediaQuery'
 
 export type Overlay = { label: string; color: string; values: Series }
 export type Level = { label: string; value: number; color: string; dashed?: boolean }
@@ -22,15 +23,18 @@ export function CandleChart({
   bars,
   overlays = [],
   levels = [],
-  visibleBars = 120,
+  visibleBars,
 }: {
   bars: Bar[]
   overlays?: Overlay[]
   levels?: Level[]
   visibleBars?: number
 }) {
+  // スマホで120本詰め込むとローソクが潰れるので、直近だけを大きく見せる。
+  const isPhone = useIsPhone()
+  const shownBars = visibleBars ?? (isPhone ? 60 : 120)
   const view = useMemo(() => {
-    const start = Math.max(0, bars.length - visibleBars)
+    const start = Math.max(0, bars.length - shownBars)
     const slice = bars.slice(start)
     if (slice.length === 0) return null
 
@@ -77,20 +81,20 @@ export function CandleChart({
     })
 
     const gridValues = [0, 0.25, 0.5, 0.75, 1].map((r) => min + (max - min) * r)
-    const labelStep = Math.max(1, Math.floor(slice.length / 6))
+    const labelStep = Math.max(1, Math.floor(slice.length / 5))
     const dateLabels = slice
       .map((bar, i) => ({ bar, i }))
       .filter(({ i }) => i % labelStep === 0)
 
     return { slice, start, x, y, volumeY, candleWidth, overlayPaths, gridValues, dateLabels }
-  }, [bars, overlays, levels, visibleBars])
+  }, [bars, overlays, levels, shownBars])
 
   // 画面が狭いと横スクロールになるので、いちばん見たい直近の足を先頭に出す。
   const scrollRef = useRef<HTMLDivElement>(null)
   useEffect(() => {
     const element = scrollRef.current
     if (element) element.scrollLeft = element.scrollWidth
-  }, [bars, visibleBars])
+  }, [bars, shownBars])
 
   if (!view) {
     return (
@@ -106,7 +110,7 @@ export function CandleChart({
     <div className="overflow-x-auto" ref={scrollRef}>
       <svg
         viewBox={`0 0 ${WIDTH} ${TOTAL_HEIGHT}`}
-        className="h-auto w-full min-w-[520px]"
+        className="h-auto w-full sm:min-w-[520px]"
         role="img"
         aria-label="ローソク足チャート"
       >

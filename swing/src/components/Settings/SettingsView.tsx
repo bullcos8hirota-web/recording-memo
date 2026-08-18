@@ -4,6 +4,7 @@ import { db, DEFAULT_CHECKLIST } from '../../lib/db'
 import { STANDARD_PLAN_TIERS } from '../../lib/money/fees'
 import { yen } from '../../lib/format'
 import { buttonClass, Card, Field, inputClass, subtleButtonClass } from '../ui/Primitives'
+import { usePwaInstall } from '../../lib/usePwaInstall'
 
 export function SettingsView() {
   const settings = useAppStore((s) => s.settings)
@@ -15,6 +16,8 @@ export function SettingsView() {
 
   return (
     <div className="space-y-4">
+      <InstallCard />
+
       <Card
         title="資金管理"
         description="ここで決めた許容損失から、売買プランの株数が自動で決まります。"
@@ -186,5 +189,43 @@ export function SettingsView() {
         </p>
       </Card>
     </div>
+  )
+}
+
+/** スマホのホーム画面に追加してもらうための案内。 */
+function InstallCard() {
+  const { installed, canInstall, isIos, install } = usePwaInstall()
+
+  if (installed) {
+    return (
+      <Card title="アプリとして起動中">
+        <p className="text-sm text-neutral-600 dark:text-neutral-300">
+          ホーム画面から起動しています。オフラインでも開けます。
+        </p>
+      </Card>
+    )
+  }
+
+  return (
+    <Card
+      title="スマホのホーム画面に追加"
+      description="追加すると、ブラウザのバーが消えてアプリのように使えます。電波が無くても開けます。"
+    >
+      {canInstall ? (
+        <button type="button" className={buttonClass} onClick={() => void install()}>
+          ホーム画面に追加
+        </button>
+      ) : isIos ? (
+        <ol className="list-decimal space-y-1 pl-5 text-sm text-neutral-600 dark:text-neutral-300">
+          <li>Safariの下にある共有ボタン(□に↑)を押す</li>
+          <li>メニューを下にスクロールして「ホーム画面に追加」を選ぶ</li>
+          <li>右上の「追加」を押す</li>
+        </ol>
+      ) : (
+        <p className="text-sm text-neutral-600 dark:text-neutral-300">
+          ブラウザのメニューから「ホーム画面に追加」または「アプリをインストール」を選んでください。
+        </p>
+      )}
+    </Card>
   )
 }

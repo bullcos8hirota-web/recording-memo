@@ -12,7 +12,7 @@ export function Card({
   children: ReactNode
 }) {
   return (
-    <section className="rounded-2xl border border-neutral-200 bg-white p-4 shadow-sm dark:border-neutral-800 dark:bg-neutral-900 sm:p-5">
+    <section className="rounded-2xl border border-neutral-200 bg-white p-3.5 shadow-sm dark:border-neutral-800 dark:bg-neutral-900 sm:p-5">
       {(title || actions) && (
         <header className="mb-3 flex items-start justify-between gap-3">
           <div>
@@ -58,14 +58,16 @@ export function Stat({
 export function Field({
   label,
   hint,
+  className,
   children,
 }: {
   label: string
   hint?: string
+  className?: string
   children: ReactNode
 }) {
   return (
-    <label className="block text-sm">
+    <label className={`block text-sm ${className ?? ''}`}>
       <span className="text-neutral-600 dark:text-neutral-300">{label}</span>
       {children}
       {hint && (
@@ -75,14 +77,15 @@ export function Field({
   )
 }
 
+// text-base(16px)にしておかないと、iOS Safariが入力欄にフォーカスした瞬間に拡大する。
 export const inputClass =
-  'mt-1 w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-sm tabular-nums outline-none focus:border-neutral-900 dark:border-neutral-700 dark:bg-neutral-950 dark:focus:border-neutral-300'
+  'mt-1 w-full min-h-11 rounded-lg border border-neutral-300 bg-white px-3 py-2 text-base tabular-nums outline-none focus:border-neutral-900 dark:border-neutral-700 dark:bg-neutral-950 dark:focus:border-neutral-300 sm:text-sm'
 
 export const buttonClass =
-  'rounded-lg bg-neutral-900 px-3 py-2 text-sm font-medium text-white transition hover:bg-neutral-700 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-300'
+  'inline-flex min-h-11 items-center justify-center rounded-lg bg-neutral-900 px-4 py-2 text-sm font-medium text-white transition hover:bg-neutral-700 active:opacity-80 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-neutral-100 dark:text-neutral-900 dark:hover:bg-neutral-300'
 
 export const subtleButtonClass =
-  'rounded-lg border border-neutral-300 px-3 py-2 text-sm font-medium transition hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-40 dark:border-neutral-700 dark:hover:bg-neutral-800'
+  'inline-flex min-h-11 items-center justify-center rounded-lg border border-neutral-300 px-4 py-2 text-sm font-medium transition hover:bg-neutral-100 active:opacity-80 disabled:cursor-not-allowed disabled:opacity-40 dark:border-neutral-700 dark:hover:bg-neutral-800'
 
 export function Badge({
   children,
