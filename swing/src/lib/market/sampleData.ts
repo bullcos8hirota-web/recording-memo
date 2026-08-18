@@ -1,4 +1,4 @@
-import type { Bar, Stock } from './types'
+import type { Bar, Stock, StockFundamentals } from './types'
 
 /**
  * 使い始めにデータが空だと何も試せないので、動作確認用のサンプルを用意する。
@@ -98,6 +98,8 @@ const DEFINITIONS: {
   price: number
   seed: number
   memo: string
+  /** 企業カルテのサンプル。実在の企業の数字ではない。 */
+  fundamentals: Omit<StockFundamentals, 'updatedAt'>
 }[] = [
   {
     code: 'SMPL1',
@@ -106,6 +108,17 @@ const DEFINITIONS: {
     price: 1_800,
     seed: 11,
     memo: '上昇トレンド中に25日線まで調整した形',
+    fundamentals: {
+      roe: 17,
+      operatingMargin: 19,
+      equityRatio: 61,
+      epsGrowth: 12,
+      debtToProfit: 1.4,
+      per: 17,
+      pbr: 2.4,
+      fcfPositive: true,
+      note: 'サンプル(架空の数字)',
+    },
   },
   {
     code: 'SMPL2',
@@ -114,6 +127,17 @@ const DEFINITIONS: {
     price: 950,
     seed: 23,
     memo: 'もみ合いから出来高を伴って上放れた形',
+    fundamentals: {
+      roe: 12,
+      operatingMargin: 9,
+      equityRatio: 44,
+      epsGrowth: 7,
+      debtToProfit: 4.5,
+      per: 22,
+      pbr: 1.8,
+      fcfPositive: true,
+      note: 'サンプル(架空の数字)',
+    },
   },
   {
     code: 'SMPL3',
@@ -122,6 +146,17 @@ const DEFINITIONS: {
     price: 3_200,
     seed: 37,
     memo: '買い向かうと逆行しやすい形',
+    fundamentals: {
+      roe: 4,
+      operatingMargin: 3,
+      equityRatio: 22,
+      epsGrowth: -6,
+      debtToProfit: 11,
+      per: 34,
+      pbr: 0.9,
+      fcfPositive: false,
+      note: 'サンプル(架空の数字)',
+    },
   },
   {
     code: 'SMPL4',
@@ -130,6 +165,17 @@ const DEFINITIONS: {
     price: 640,
     seed: 51,
     memo: '方向感が出ていない形',
+    fundamentals: {
+      roe: 8,
+      operatingMargin: 6,
+      equityRatio: 52,
+      epsGrowth: 2,
+      debtToProfit: 3.2,
+      per: 13,
+      pbr: 0.8,
+      fcfPositive: true,
+      note: 'サンプル(架空の数字)',
+    },
   },
   {
     code: 'SMPL5',
@@ -138,6 +184,17 @@ const DEFINITIONS: {
     price: 2_400,
     seed: 67,
     memo: '25日線から上に離れすぎた形',
+    fundamentals: {
+      roe: 21,
+      operatingMargin: 26,
+      equityRatio: 58,
+      epsGrowth: 18,
+      debtToProfit: 0.8,
+      per: 46,
+      pbr: 8.2,
+      fcfPositive: true,
+      note: 'サンプル(架空の数字)',
+    },
   },
 ]
 
@@ -149,10 +206,16 @@ export function buildSampleData(bars = 180): SampleStock[] {
       name: definition.name,
       lot: 100,
       memo: definition.memo,
+      fundamentals: { ...definition.fundamentals, updatedAt: now },
       demo: true,
       createdAt: now + index,
     },
-    bars: generateBars(definition.seed, definition.pattern, definition.price, bars),
+    bars: generateBars(
+      definition.seed,
+      definition.pattern,
+      definition.price,
+      bars,
+    ),
   }))
 }
 

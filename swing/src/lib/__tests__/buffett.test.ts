@@ -87,3 +87,23 @@ describe('企業チェッカー', () => {
     }
   })
 })
+
+describe('サンプル銘柄の企業カルテ', () => {
+  it('サンプルごとに狙った財務の性格になっている', async () => {
+    const { buildSampleData } = await import('../market/sampleData')
+    const score = (code: string) => {
+      const stock = buildSampleData().find((s) => s.stock.code === code)?.stock
+      expect(stock?.fundamentals, code).toBeDefined()
+      return evaluateFundamentals(stock!.fundamentals!).score
+    }
+    // A: 中身もチャートも良い
+    expect(score('SMPL1')).toBeGreaterThanOrEqual(70)
+    // C: 財務が弱い
+    expect(score('SMPL3')).toBeLessThan(40)
+    // E: 業績は良いが株価が高い(PERだけ弱い)
+    const expensive = buildSampleData().find((s) => s.stock.code === 'SMPL5')!.stock.fundamentals!
+    const result = evaluateFundamentals(expensive)
+    expect(result.score).toBeGreaterThanOrEqual(70)
+    expect(result.checks.find((c) => c.id === 'per')?.verdict).toBe('weak')
+  })
+})

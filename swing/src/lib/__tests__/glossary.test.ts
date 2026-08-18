@@ -50,3 +50,24 @@ describe('シグナルと用語の対応', () => {
     }
   })
 })
+
+describe('クイズ', () => {
+  it('答えの番号が選択肢の範囲に収まっている', async () => {
+    const { QUESTIONS } = await import('../learn/quiz')
+    for (const question of QUESTIONS) {
+      expect(question.choices.length, question.id).toBeGreaterThanOrEqual(3)
+      expect(question.answer, question.id).toBeGreaterThanOrEqual(0)
+      expect(question.answer, question.id).toBeLessThan(question.choices.length)
+      expect(question.explanation.length, question.id).toBeGreaterThan(10)
+    }
+  })
+
+  it('IDが重複せず、解説から用語集に飛べる', async () => {
+    const { QUESTIONS } = await import('../learn/quiz')
+    const ids = QUESTIONS.map((q) => q.id)
+    expect(new Set(ids).size).toBe(ids.length)
+    for (const question of QUESTIONS) {
+      expect(findTerm(question.term), question.id).toBeDefined()
+    }
+  })
+})

@@ -2,12 +2,12 @@ import { useMemo, useState } from 'react'
 import {
   EMPTY_FUNDAMENTALS,
   evaluateFundamentals,
-  grahamVerdict,
   type Fundamentals,
-  type Verdict,
 } from '../../lib/learn/buffett'
-import { Card, Field, inputClass, subtleButtonClass } from '../ui/Primitives'
-import { HelpButton, TermChip, TermLink } from './HelpButton'
+import { Card, subtleButtonClass } from '../ui/Primitives'
+import { TermChip, TermLink } from './HelpButton'
+import { FundamentalsForm } from './FundamentalsForm'
+import { FundamentalsChecks, FundamentalsSummary } from './FundamentalsResult'
 
 const PRINCIPLES: { title: string; body: string; terms: string[] }[] = [
   {
@@ -37,13 +37,6 @@ const PRINCIPLES: { title: string; body: string; terms: string[] }[] = [
   },
 ]
 
-const VERDICT_STYLE: Record<Verdict, { label: string; className: string }> = {
-  good: { label: '良い', className: 'bg-rose-50 text-rose-700 dark:bg-rose-950/50 dark:text-rose-300' },
-  ok: { label: 'まずまず', className: 'bg-amber-50 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300' },
-  weak: { label: '弱い', className: 'bg-sky-50 text-sky-700 dark:bg-sky-950/50 dark:text-sky-300' },
-  unknown: { label: '未入力', className: 'bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400' },
-}
-
 const SAMPLE: Fundamentals = {
   roe: 18,
   operatingMargin: 22,
@@ -56,43 +49,9 @@ const SAMPLE: Fundamentals = {
 }
 
 export function BuffettSection() {
-  const [form, setForm] = useState<Record<string, string>>({})
-  const [fcf, setFcf] = useState<'plus' | 'minus' | null>(null)
-
-  const fundamentals = useMemo<Fundamentals>(() => {
-    const num = (key: string): number | null => {
-      const raw = form[key]
-      if (raw === undefined || raw.trim() === '') return null
-      const value = Number(raw)
-      return Number.isFinite(value) ? value : null
-    }
-    return {
-      ...EMPTY_FUNDAMENTALS,
-      roe: num('roe'),
-      operatingMargin: num('operatingMargin'),
-      equityRatio: num('equityRatio'),
-      epsGrowth: num('epsGrowth'),
-      debtToProfit: num('debtToProfit'),
-      per: num('per'),
-      pbr: num('pbr'),
-      fcfPositive: fcf === null ? null : fcf === 'plus',
-    }
-  }, [form, fcf])
-
+  const [fundamentals, setFundamentals] = useState<Fundamentals>(EMPTY_FUNDAMENTALS)
   const result = useMemo(() => evaluateFundamentals(fundamentals), [fundamentals])
-
-  const loadSample = () => {
-    setForm({
-      roe: String(SAMPLE.roe),
-      operatingMargin: String(SAMPLE.operatingMargin),
-      equityRatio: String(SAMPLE.equityRatio),
-      epsGrowth: String(SAMPLE.epsGrowth),
-      debtToProfit: String(SAMPLE.debtToProfit),
-      per: String(SAMPLE.per),
-      pbr: String(SAMPLE.pbr),
-    })
-    setFcf('plus')
-  }
+  const loadSample = () => setFundamentals(SAMPLE)
 
   return (
     <div className="space-y-4">
@@ -179,161 +138,20 @@ export function BuffettSection() {
           </button>
         }
       >
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="ROE(%)" help="roe">
-            <input
-              className={inputClass}
-              value={form.roe ?? ''}
-              onChange={(e) => setForm({ ...form, roe: e.target.value })}
-              inputMode="decimal"
-              placeholder="15"
-            />
-          </Field>
-          <Field label="営業利益率(%)" help="operating-margin">
-            <input
-              className={inputClass}
-              value={form.operatingMargin ?? ''}
-              onChange={(e) => setForm({ ...form, operatingMargin: e.target.value })}
-              inputMode="decimal"
-              placeholder="12"
-            />
-          </Field>
-          <Field label="自己資本比率(%)" help="equity-ratio">
-            <input
-              className={inputClass}
-              value={form.equityRatio ?? ''}
-              onChange={(e) => setForm({ ...form, equityRatio: e.target.value })}
-              inputMode="decimal"
-              placeholder="55"
-            />
-          </Field>
-          <Field label="EPS成長率(年率%)" help="eps">
-            <input
-              className={inputClass}
-              value={form.epsGrowth ?? ''}
-              onChange={(e) => setForm({ ...form, epsGrowth: e.target.value })}
-              inputMode="decimal"
-              placeholder="8"
-            />
-          </Field>
-          <Field label="有利子負債÷営業利益(年)" help="debt-to-profit">
-            <input
-              className={inputClass}
-              value={form.debtToProfit ?? ''}
-              onChange={(e) => setForm({ ...form, debtToProfit: e.target.value })}
-              inputMode="decimal"
-              placeholder="2"
-            />
-          </Field>
-          <Field label="PER(倍)" help="per">
-            <input
-              className={inputClass}
-              value={form.per ?? ''}
-              onChange={(e) => setForm({ ...form, per: e.target.value })}
-              inputMode="decimal"
-              placeholder="15"
-            />
-          </Field>
-          <Field label="PBR(倍)" help="pbr">
-            <input
-              className={inputClass}
-              value={form.pbr ?? ''}
-              onChange={(e) => setForm({ ...form, pbr: e.target.value })}
-              inputMode="decimal"
-              placeholder="1.5"
-            />
-          </Field>
-          <div className="text-sm">
-            <span className="inline-flex items-center gap-1.5 text-neutral-600 dark:text-neutral-300">
-              フリーCF
-              <HelpButton term="free-cash-flow" label="フリーキャッシュフロー" />
-            </span>
-            <div className="mt-1 flex gap-2">
-              {(
-                [
-                  ['plus', 'プラス'],
-                  ['minus', 'マイナス'],
-                ] as const
-              ).map(([key, label]) => (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => setFcf(fcf === key ? null : key)}
-                  className={`min-h-11 flex-1 rounded-lg border px-2 text-sm transition ${
-                    fcf === key
-                      ? 'border-neutral-900 bg-neutral-900 text-white dark:border-neutral-100 dark:bg-neutral-100 dark:text-neutral-900'
-                      : 'border-neutral-300 dark:border-neutral-700'
-                  }`}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
+        <FundamentalsForm value={fundamentals} onChange={setFundamentals} />
 
         <p className="mt-3 text-xs leading-relaxed text-neutral-500 dark:text-neutral-400">
           数字の出どころ: SBI証券アプリの銘柄情報(業績・財務)、会社四季報、企業のIRページの決算短信。
           ROEやPER、PBRは銘柄情報にそのまま載っています。
         </p>
 
-        <div className="mt-4 rounded-2xl bg-neutral-50 p-3 dark:bg-neutral-800/60">
-          <div className="flex items-center justify-between gap-3">
-            <div>
-              <div className="text-xs text-neutral-500 dark:text-neutral-400">
-                入力した{result.answered}項目での評価
-              </div>
-              <div className="text-2xl font-semibold tabular-nums">
-                {result.score === null ? '—' : `${result.score}点`}
-              </div>
-            </div>
-            {result.earningsYield !== null && (
-              <div className="text-right">
-                <div className="text-xs text-neutral-500 dark:text-neutral-400">益回り(1÷PER)</div>
-                <div className="text-lg font-semibold tabular-nums">
-                  {result.earningsYield.toFixed(1)}%
-                </div>
-              </div>
-            )}
-          </div>
-          <p className="mt-2 text-sm text-neutral-700 dark:text-neutral-300">{result.summary}</p>
-          {result.grahamNumber !== null && (
-            <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
-              PER × PBR = {result.grahamNumber.toFixed(1)}
-              （グレアムの目安は22.5以下 →{' '}
-              {VERDICT_STYLE[grahamVerdict(result.grahamNumber)].label}）
-            </p>
-          )}
+        <div className="mt-4">
+          <FundamentalsSummary result={result} />
         </div>
 
-        <ul className="mt-3 space-y-2">
-          {result.checks.map((check) => (
-            <li
-              key={check.id}
-              className="rounded-xl border border-neutral-200 px-3 py-2.5 dark:border-neutral-800"
-            >
-              <div className="flex flex-wrap items-center gap-2">
-                <span className="font-medium">{check.label}</span>
-                <HelpButton term={check.term} label={check.label} />
-                <span
-                  className={`ml-auto rounded-full px-2 py-0.5 text-xs font-medium ${VERDICT_STYLE[check.verdict].className}`}
-                >
-                  {VERDICT_STYLE[check.verdict].label}
-                </span>
-                <span className="tabular-nums text-sm">{check.display}</span>
-              </div>
-              <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-                目安: {check.target}
-              </p>
-              <p className="mt-1 text-sm text-neutral-700 dark:text-neutral-300">{check.why}</p>
-              {check.verdict !== 'unknown' && (
-                <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-                  → {check.comment}
-                </p>
-              )}
-            </li>
-          ))}
-        </ul>
+        <div className="mt-3">
+          <FundamentalsChecks result={result} />
+        </div>
       </Card>
 
       <Card title="そのまま真似できない点" description="鵜呑みにしないための注意書きです。">

@@ -121,6 +121,13 @@ UIは含めず、判断を左右するロジックだけを対象にしている
 - `lib/learn/signalTerms.ts` — シグナルID → 用語IDの対応表。判定結果から直接解説に飛べる
 - `components/Learn/LearnView.tsx` — 学ぶタブ。流れ / チャートの型(サンプルデータの実チャート) / 資金管理(連敗シミュレーター) / バフェット / 用語集
 - `lib/learn/buffett.ts` + `components/Learn/BuffettSection.tsx` — バリュー投資の観点。ROE・営業利益率・自己資本比率・EPS成長率・有利子負債÷営業利益・PER・FCFを入力して判定する。判定は純関数にしてテストしている
+- `lib/learn/quiz.ts` + `components/Learn/QuizSection.tsx` — 20問からランダムに5問出す理解度チェック。解説から用語集へ飛べる
+- `components/Learn/FundamentalsForm.tsx` / `FundamentalsResult.tsx` — 財務データの入力と判定表示。学ぶタブの練習用チェッカーと、銘柄ごとの企業カルテで共用する
+- `components/Symbol/CompanyCard.tsx` — 銘柄に紐づく企業カルテ。`Stock.fundamentals` としてDexieに保存する(索引は張っていないのでスキーマ変更は不要)
+
+監視タブには財務スコア(`evaluateFundamentals` の点数)を表示し、
+「中身が良い」「中身◎ × チャート◎」で絞り込めるようにしている。
+チャートのスコアと財務スコアは別物として並べ、掛け合わせるかどうかは利用者が選ぶ。
 
 バフェット流はスイングトレードと時間軸が正反対(数日 vs 10年)なので、
 「併用するなら、何を買うかは企業の中身で絞り、いつ買うかはチャートで測る」

@@ -6,6 +6,7 @@ import { CandleChart } from '../Symbol/CandleChart'
 import { useGlossary } from './glossaryContext'
 import { TermChip, TermLink } from './HelpButton'
 import { BuffettSection } from './BuffettSection'
+import { QuizSection } from './QuizSection'
 import { useAppStore } from '../../stores/appStore'
 import { yen } from '../../lib/format'
 import { Card, inputClass } from '../ui/Primitives'
@@ -16,6 +17,7 @@ const SECTIONS = [
   { id: 'money', label: '資金管理' },
   { id: 'buffett', label: 'バフェット' },
   { id: 'glossary', label: '用語集' },
+  { id: 'quiz', label: 'クイズ' },
 ] as const
 
 type SectionId = (typeof SECTIONS)[number]['id']
@@ -47,6 +49,7 @@ export function LearnView({ onGoTab }: { onGoTab: (tab: 'screener' | 'import') =
       {section === 'money' && <MoneySection />}
       {section === 'buffett' && <BuffettSection />}
       {section === 'glossary' && <GlossarySection />}
+      {section === 'quiz' && <QuizSection />}
     </div>
   )
 }

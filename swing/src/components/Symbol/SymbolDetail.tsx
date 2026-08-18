@@ -4,6 +4,7 @@ import { analyze, MIN_BARS, VERDICT_LABEL } from '../../lib/market/signals'
 import { closes, sma } from '../../lib/market/indicators'
 import { CandleChart, type Level } from './CandleChart'
 import { TradePlan } from './TradePlan'
+import { CompanyCard } from './CompanyCard'
 import { count, percent, price, shortDate, toneClass } from '../../lib/format'
 import { Badge, Card, EmptyState, Stat, subtleButtonClass } from '../ui/Primitives'
 import { HelpButton } from '../Learn/HelpButton'
@@ -160,6 +161,8 @@ export function SymbolDetail({ onGoImport }: { onGoImport: () => void }) {
       )}
 
       <TradePlan stock={stock} analysis={analysis} onPlanChange={setPlan} />
+
+      <CompanyCard stock={stock} />
     </div>
   )
 }

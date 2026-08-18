@@ -8,6 +8,15 @@ export type Bar = {
   volume: number
 }
 
+import type { Fundamentals } from '../learn/buffett'
+
+/** 銘柄ごとに保存する財務データ(企業カルテ)。 */
+export type StockFundamentals = Fundamentals & {
+  /** 決算期などのメモ。 */
+  note?: string
+  updatedAt: number
+}
+
 /** ウォッチリストに登録した銘柄。 */
 export type Stock = {
   /** 証券コード。日本株は4桁が基本だが自由入力を許す。 */
@@ -17,6 +26,8 @@ export type Stock = {
   lot: number
   /** 自由メモ(決算日、テーマなど)。 */
   memo?: string
+  /** 財務データ。入力していない銘柄では未設定。 */
+  fundamentals?: StockFundamentals
   /** サンプルデータとして投入した銘柄かどうか。 */
   demo?: boolean
   createdAt: number
