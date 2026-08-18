@@ -1,4 +1,4 @@
-name: Deploy apps to GitHub Pages
+name: Deploy recording memo to GitHub Pages
 
 on:
   push:
@@ -26,33 +26,17 @@ jobs:
         with:
           node-version: 22
           cache: npm
-          cache-dependency-path: |
-            app/package-lock.json
-            swing/package-lock.json
+          cache-dependency-path: app/package-lock.json
 
-      - name: Install dependencies (recording memo)
+      - name: Install dependencies
         working-directory: app
         run: npm ci
 
-      - name: Build recording memo
+      - name: Build
         working-directory: app
         env:
           VITE_BASE_PATH: /${{ github.event.repository.name }}/
         run: npm run build
-
-      - name: Install dependencies (swing)
-        working-directory: swing
-        run: npm ci
-
-      - name: Build swing trade app
-        working-directory: swing
-        env:
-          VITE_BASE_PATH: /${{ github.event.repository.name }}/swing/
-        run: npm run build
-
-      # 録音メモをルート、スイングアプリを /swing/ に置く
-      - name: Merge sites
-        run: cp -r swing/dist app/dist/swing
 
       - name: Configure Pages
         uses: actions/configure-pages@v5
