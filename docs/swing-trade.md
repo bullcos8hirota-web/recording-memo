@@ -119,7 +119,12 @@ UIは含めず、判断を左右するロジックだけを対象にしている
 - `components/Learn/GlossaryProvider.tsx` — どの画面からでも `openTerm(id)` で解説シートを開ける。関連語をたどれるよう履歴を持つ
 - `components/Learn/HelpButton.tsx` — 用語の横に置く「?」と、文中に置く下線リンク
 - `lib/learn/signalTerms.ts` — シグナルID → 用語IDの対応表。判定結果から直接解説に飛べる
-- `components/Learn/LearnView.tsx` — 学ぶタブ。流れ / チャートの型(サンプルデータの実チャート) / 資金管理(連敗シミュレーター) / 用語集
+- `components/Learn/LearnView.tsx` — 学ぶタブ。流れ / チャートの型(サンプルデータの実チャート) / 資金管理(連敗シミュレーター) / バフェット / 用語集
+- `lib/learn/buffett.ts` + `components/Learn/BuffettSection.tsx` — バリュー投資の観点。ROE・営業利益率・自己資本比率・EPS成長率・有利子負債÷営業利益・PER・FCFを入力して判定する。判定は純関数にしてテストしている
+
+バフェット流はスイングトレードと時間軸が正反対(数日 vs 10年)なので、
+「併用するなら、何を買うかは企業の中身で絞り、いつ買うかはチャートで測る」
+「途中で目的をすり替えると塩漬けになる」という注意を本文に明記している。
 
 テストで、用語IDの重複・関連語のリンク切れ・シグナルに対応する解説の欠落を防いでいる。
 

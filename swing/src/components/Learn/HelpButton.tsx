@@ -41,3 +41,20 @@ export function TermLink({ term, children }: { term: string; children?: React.Re
     </button>
   )
 }
+
+/** 用語集へのリンクになるチップ。解説の下に並べて使う。 */
+export function TermChip({ id, label }: { id: string; label?: string }) {
+  const { openTerm } = useGlossary()
+  const entry = findTerm(id)
+  if (!entry) return null
+
+  return (
+    <button
+      type="button"
+      onClick={() => openTerm(id)}
+      className="rounded-full bg-neutral-100 px-3 py-1.5 text-xs font-medium text-neutral-700 transition hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
+    >
+      {label ?? entry.term}
+    </button>
+  )
+}

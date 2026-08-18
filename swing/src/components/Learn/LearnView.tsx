@@ -4,7 +4,8 @@ import { buildSampleData } from '../../lib/market/sampleData'
 import { closes, sma } from '../../lib/market/indicators'
 import { CandleChart } from '../Symbol/CandleChart'
 import { useGlossary } from './glossaryContext'
-import { TermLink } from './HelpButton'
+import { TermChip, TermLink } from './HelpButton'
+import { BuffettSection } from './BuffettSection'
 import { useAppStore } from '../../stores/appStore'
 import { yen } from '../../lib/format'
 import { Card, inputClass } from '../ui/Primitives'
@@ -13,6 +14,7 @@ const SECTIONS = [
   { id: 'flow', label: '流れ' },
   { id: 'chart', label: 'チャート' },
   { id: 'money', label: '資金管理' },
+  { id: 'buffett', label: 'バフェット' },
   { id: 'glossary', label: '用語集' },
 ] as const
 
@@ -43,6 +45,7 @@ export function LearnView({ onGoTab }: { onGoTab: (tab: 'screener' | 'import') =
       {section === 'flow' && <FlowSection onGoTab={onGoTab} />}
       {section === 'chart' && <ChartSection />}
       {section === 'money' && <MoneySection />}
+      {section === 'buffett' && <BuffettSection />}
       {section === 'glossary' && <GlossarySection />}
     </div>
   )
@@ -95,6 +98,7 @@ function FlowSection({ onGoTab }: { onGoTab: (tab: 'screener' | 'import') => voi
         <p className="mt-3 text-sm leading-relaxed text-neutral-700 dark:text-neutral-300">
           このアプリは、下の6ステップを毎回同じ順番でやらせるための道具です。
           用語に下線が引いてあるところと「?」ボタンは、押すと意味が出ます。
+          チャートではなく企業の中身から選ぶ考え方(バフェット流)は、上の「バフェット」タブにまとめています。
         </p>
       </Card>
 
@@ -137,21 +141,6 @@ function FlowSection({ onGoTab }: { onGoTab: (tab: 'screener' | 'import') => voi
         </button>
       </Card>
     </div>
-  )
-}
-
-function TermChip({ id }: { id: string }) {
-  const { openTerm } = useGlossary()
-  const term = TERMS.find((t) => t.id === id)
-  if (!term) return null
-  return (
-    <button
-      type="button"
-      onClick={() => openTerm(id)}
-      className="rounded-full bg-neutral-100 px-3 py-1.5 text-xs font-medium text-neutral-700 transition hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
-    >
-      {term.term}
-    </button>
   )
 }
 
