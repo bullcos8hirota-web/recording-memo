@@ -24,7 +24,13 @@ const FILTERS = [
 
 type FilterId = (typeof FILTERS)[number]['id']
 
-export function ScreenerView({ onOpen }: { onOpen: (code: string) => void }) {
+export function ScreenerView({
+  onOpen,
+  onGoLearn,
+}: {
+  onOpen: (code: string) => void
+  onGoLearn: () => void
+}) {
   const stocks = useAppStore((s) => s.stocks)
   const series = useAppStore((s) => s.series)
   const trades = useAppStore((s) => s.trades)
@@ -64,9 +70,17 @@ export function ScreenerView({ onOpen }: { onOpen: (code: string) => void }) {
       {stocks.length === 0 ? (
         <EmptyState title="まだ銘柄が登録されていません">
           <p>上のフォームで銘柄を追加し、「取込」タブで株価CSVを読み込んでください。</p>
-          <button type="button" className={`${subtleButtonClass} mt-3`} onClick={() => void loadSample()}>
-            サンプルデータで試す
-          </button>
+          <p className="mt-2">
+            株の用語や進め方が分からない場合は、「学ぶ」タブから始めるのがおすすめです。
+          </p>
+          <div className="mt-3 flex flex-wrap justify-center gap-2">
+            <button type="button" className={buttonClass} onClick={onGoLearn}>
+              学ぶタブを開く
+            </button>
+            <button type="button" className={subtleButtonClass} onClick={() => void loadSample()}>
+              サンプルデータで試す
+            </button>
+          </div>
         </EmptyState>
       ) : (
         <Card

@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { HelpButton } from '../Learn/HelpButton'
 
 export function Card({
   title,
@@ -36,15 +37,21 @@ export function Stat({
   value,
   hint,
   tone,
+  help,
 }: {
   label: string
   value: ReactNode
   hint?: string
   tone?: string
+  /** 用語集のID。渡すとラベルの横に「?」が出る。 */
+  help?: string
 }) {
   return (
     <div className="rounded-xl bg-neutral-50 px-3 py-2 dark:bg-neutral-800/60">
-      <div className="text-xs text-neutral-500 dark:text-neutral-400">{label}</div>
+      <div className="flex items-center gap-1.5 text-xs text-neutral-500 dark:text-neutral-400">
+        <span>{label}</span>
+        {help && <HelpButton term={help} label={label} />}
+      </div>
       <div className={`mt-0.5 text-base font-semibold tabular-nums ${tone ?? ''}`}>
         {value}
       </div>
@@ -59,16 +66,22 @@ export function Field({
   label,
   hint,
   className,
+  help,
   children,
 }: {
   label: string
   hint?: string
   className?: string
+  /** 用語集のID。渡すとラベルの横に「?」が出る。 */
+  help?: string
   children: ReactNode
 }) {
   return (
     <label className={`block text-sm ${className ?? ''}`}>
-      <span className="text-neutral-600 dark:text-neutral-300">{label}</span>
+      <span className="inline-flex items-center gap-1.5 text-neutral-600 dark:text-neutral-300">
+        {label}
+        {help && <HelpButton term={help} label={label} />}
+      </span>
       {children}
       {hint && (
         <span className="mt-1 block text-xs text-neutral-500 dark:text-neutral-400">{hint}</span>

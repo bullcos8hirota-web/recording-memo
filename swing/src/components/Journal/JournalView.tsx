@@ -39,19 +39,20 @@ export function JournalView() {
           <Card title="成績" description="手数料を引いた税引前の損益で集計しています。">
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
               <Stat label="トレード数" value={`${stats.total}回`} hint={`勝ち${stats.wins} / 負け${stats.losses}`} />
-              <Stat label="勝率" value={`${stats.winRate.toFixed(1)}%`} />
+              <Stat help="win-rate" label="勝率" value={`${stats.winRate.toFixed(1)}%`} />
               <Stat label="損益合計" value={yen(stats.totalProfit)} tone={toneClass(stats.totalProfit)} />
-              <Stat label="プロフィットファクター" value={ratio(stats.profitFactor)} hint="総利益÷総損失。1.0未満は負け越し" />
+              <Stat help="profit-factor" label="プロフィットファクター" value={ratio(stats.profitFactor)} hint="総利益÷総損失。1.0未満は負け越し" />
               <Stat label="平均利益" value={yen(stats.averageWin)} tone="text-rose-600 dark:text-rose-400" />
               <Stat label="平均損失" value={yen(-stats.averageLoss)} tone="text-sky-600 dark:text-sky-400" />
-              <Stat label="ペイオフレシオ" value={ratio(stats.payoffRatio)} hint="平均利益÷平均損失" />
+              <Stat help="payoff-ratio" label="ペイオフレシオ" value={ratio(stats.payoffRatio)} hint="平均利益÷平均損失" />
               <Stat
+                help="expectancy"
                 label="期待値"
                 value={yen(stats.expectancy)}
                 hint={stats.expectancyR === null ? '1トレードあたり' : `${ratio(stats.expectancyR)}R / トレード`}
                 tone={toneClass(stats.expectancy)}
               />
-              <Stat label="最大ドローダウン" value={yen(-stats.maxDrawdown)} hint="累積損益の落ち込み幅" />
+              <Stat help="drawdown" label="最大ドローダウン" value={yen(-stats.maxDrawdown)} hint="累積損益の落ち込み幅" />
               <Stat label="最大連敗" value={`${stats.maxConsecutiveLosses}回`} />
               <Stat
                 label="平均保有日数"

@@ -31,7 +31,7 @@ export function SettingsView() {
               inputMode="numeric"
             />
           </Field>
-          <Field label="1トレードの許容損失(%)" hint="1〜2%が一般的。大きくすると連敗時の傷が深くなります。">
+          <Field help="risk-per-trade" label="1トレードの許容損失(%)" hint="1〜2%が一般的。大きくすると連敗時の傷が深くなります。">
             <input
               className={inputClass}
               value={settings.riskPercent}
@@ -39,7 +39,7 @@ export function SettingsView() {
               inputMode="decimal"
             />
           </Field>
-          <Field label="1銘柄への投入上限(%)" hint="資金が偏りすぎないための上限です。">
+          <Field help="position-sizing" label="1銘柄への投入上限(%)" hint="資金が偏りすぎないための上限です。">
             <input
               className={inputClass}
               value={settings.maxPositionPercent}
@@ -47,7 +47,7 @@ export function SettingsView() {
               inputMode="decimal"
             />
           </Field>
-          <Field label="利確倍率(リスクの何倍)" hint="2なら、損切り幅の2倍の値幅を利確目標にします。">
+          <Field help="risk-reward" label="利確倍率(リスクの何倍)" hint="2なら、損切り幅の2倍の値幅を利確目標にします。">
             <input
               className={inputClass}
               value={settings.rewardRatio}
@@ -55,7 +55,7 @@ export function SettingsView() {
               inputMode="decimal"
             />
           </Field>
-          <Field label="損切り幅(ATRの何倍)" hint="値動きの荒い銘柄ほど損切りが自動で広がります。">
+          <Field help="atr" label="損切り幅(ATRの何倍)" hint="値動きの荒い銘柄ほど損切りが自動で広がります。">
             <input
               className={inputClass}
               value={settings.atrMultiple}
@@ -63,7 +63,7 @@ export function SettingsView() {
               inputMode="decimal"
             />
           </Field>
-          <Field label="既定の売買単位" hint="単元株は100株、S株(単元未満株)なら1。">
+          <Field help="unit-share" label="既定の売買単位" hint="単元株は100株、S株(単元未満株)なら1。">
             <input
               className={inputClass}
               value={settings.defaultLot}

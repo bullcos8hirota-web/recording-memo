@@ -6,6 +6,8 @@ import { CandleChart, type Level } from './CandleChart'
 import { TradePlan } from './TradePlan'
 import { count, percent, price, shortDate, toneClass } from '../../lib/format'
 import { Badge, Card, EmptyState, Stat, subtleButtonClass } from '../ui/Primitives'
+import { HelpButton } from '../Learn/HelpButton'
+import { SIGNAL_TERMS } from '../../lib/learn/signalTerms'
 
 const MA_COLORS = { sma5: '#f59e0b', sma25: '#2563eb', sma75: '#a855f7' }
 
@@ -112,24 +114,24 @@ export function SymbolDetail({ onGoImport }: { onGoImport: () => void }) {
         <>
           <Card title="いまの状態" description={`${snapshot.date} 終値ベース`}>
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-              <Stat label="終値" value={`${price(snapshot.close)}円`} tone={toneClass(snapshot.changeRate)} hint={percent(snapshot.changeRate)} />
-              <Stat label="5日線" value={price(snapshot.sma5)} />
-              <Stat label="25日線" value={price(snapshot.sma25)} hint={`乖離 ${percent(snapshot.deviation25)}`} />
-              <Stat label="75日線" value={price(snapshot.sma75)} />
-              <Stat label="RSI(14)" value={snapshot.rsi14 === null ? '—' : snapshot.rsi14.toFixed(1)} hint="30以下で売られすぎ / 70以上で買われすぎ" />
-              <Stat label="MACD" value={snapshot.macd === null ? '—' : snapshot.macd.toFixed(1)} hint={`シグナル ${snapshot.macdSignal?.toFixed(1) ?? '—'}`} />
-              <Stat label="ATR(14)" value={`${price(snapshot.atr14)}円`} hint={`終値の${snapshot.atrRate?.toFixed(1) ?? '—'}%`} />
-              <Stat label="出来高" value={count(snapshot.volume)} hint={`20日平均の${snapshot.volumeRatio ? (snapshot.volumeRatio * 100).toFixed(0) : '—'}%`} />
-              <Stat label="20日高値" value={price(snapshot.high20)} hint="前日までの高値" />
-              <Stat label="20日安値" value={price(snapshot.low20)} hint="前日までの安値" />
-              <Stat label="直近5日安値" value={price(snapshot.low5)} hint="損切り位置の候補" />
-              <Stat label="ボリンジャー" value={`${price(snapshot.bbLower)}〜${price(snapshot.bbUpper)}`} hint="20日 ±2σ" />
+              <Stat label="終値" help="ohlc" value={`${price(snapshot.close)}円`} tone={toneClass(snapshot.changeRate)} hint={percent(snapshot.changeRate)} />
+              <Stat label="5日線" help="moving-average" value={price(snapshot.sma5)} />
+              <Stat label="25日線" help="moving-average" value={price(snapshot.sma25)} hint={`乖離 ${percent(snapshot.deviation25)}`} />
+              <Stat label="75日線" help="moving-average" value={price(snapshot.sma75)} />
+              <Stat label="RSI(14)" help="rsi" value={snapshot.rsi14 === null ? '—' : snapshot.rsi14.toFixed(1)} hint="30以下で売られすぎ / 70以上で買われすぎ" />
+              <Stat label="MACD" help="macd" value={snapshot.macd === null ? '—' : snapshot.macd.toFixed(1)} hint={`シグナル ${snapshot.macdSignal?.toFixed(1) ?? '—'}`} />
+              <Stat label="ATR(14)" help="atr" value={`${price(snapshot.atr14)}円`} hint={`終値の${snapshot.atrRate?.toFixed(1) ?? '—'}%`} />
+              <Stat label="出来高" help="volume" value={count(snapshot.volume)} hint={`20日平均の${snapshot.volumeRatio ? (snapshot.volumeRatio * 100).toFixed(0) : '—'}%`} />
+              <Stat label="20日高値" help="high-low" value={price(snapshot.high20)} hint="前日までの高値" />
+              <Stat label="20日安値" help="high-low" value={price(snapshot.low20)} hint="前日までの安値" />
+              <Stat label="直近5日安値" help="stop-loss" value={price(snapshot.low5)} hint="損切り位置の候補" />
+              <Stat label="ボリンジャー" help="bollinger" value={`${price(snapshot.bbLower)}〜${price(snapshot.bbUpper)}`} hint="20日 ±2σ" />
             </div>
           </Card>
 
           <Card
             title="チャートから読めること"
-            description="買いの根拠になりそうな点と、警戒したい点を並べています。"
+            description="買いの根拠になりそうな点と、警戒したい点を並べています。「?」で用語の意味を見られます。"
           >
             {analysis.signals.length === 0 ? (
               <p className="text-sm text-neutral-500 dark:text-neutral-400">
@@ -146,6 +148,9 @@ export function SymbolDetail({ onGoImport }: { onGoImport: () => void }) {
                     <span className="flex-1 text-sm text-neutral-600 dark:text-neutral-300">
                       {signal.detail}
                     </span>
+                    {SIGNAL_TERMS[signal.id] && (
+                      <HelpButton term={SIGNAL_TERMS[signal.id]} label={signal.label} />
+                    )}
                   </li>
                 ))}
               </ul>

@@ -44,8 +44,8 @@ export function PositionsView() {
       <Card title="建玉サマリー">
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
           <Stat label="保有銘柄数" value={`${open.length}件`} />
-          <Stat label="投入資金" value={yen(exposure)} hint={`資金の${((exposure / settings.capital) * 100).toFixed(1)}%`} />
-          <Stat label="含み損益" value={yen(unrealized)} tone={toneClass(unrealized)} />
+          <Stat help="position" label="投入資金" value={yen(exposure)} hint={`資金の${((exposure / settings.capital) * 100).toFixed(1)}%`} />
+          <Stat help="unrealized" label="含み損益" value={yen(unrealized)} tone={toneClass(unrealized)} />
           <Stat label="現金余力(概算)" value={yen(settings.capital - exposure)} />
         </div>
       </Card>
@@ -136,9 +136,10 @@ function PositionCard({ trade, bars }: { trade: Trade; bars: Bar[] }) {
 
       <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
         <Stat label="現在値" value={last ? `${price(last.close)}円` : '—'} hint={last ? `${shortDate(last.date)}時点` : undefined} />
-        <Stat label="損切り" value={trade.stopPrice === null ? '未設定' : `${price(trade.stopPrice)}円`} />
-        <Stat label="利確目標" value={trade.targetPrice === null ? '未設定' : `${price(trade.targetPrice)}円`} />
+        <Stat help="stop-loss" label="損切り" value={trade.stopPrice === null ? '未設定' : `${price(trade.stopPrice)}円`} />
+        <Stat help="take-profit" label="利確目標" value={trade.targetPrice === null ? '未設定' : `${price(trade.targetPrice)}円`} />
         <Stat
+          help="trailing-stop"
           label="トレーリング目安"
           value={trailing === null ? '—' : `${price(trailing)}円`}
           hint="高値からATR分下"
@@ -146,7 +147,7 @@ function PositionCard({ trade, bars }: { trade: Trade; bars: Bar[] }) {
       </div>
 
       <div className="mt-3 flex flex-wrap items-end gap-2">
-        <Field label="損切りを更新(円)">
+        <Field label="損切りを更新(円)" help="stop-order">
           <input
             className={`${inputClass} w-32`}
             value={stopInput}

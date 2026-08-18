@@ -6,6 +6,7 @@ import { buildExitPlan, calculatePosition, stopCandidates } from '../../lib/mone
 import { capitalGainTax, tradeFee } from '../../lib/money/fees'
 import { percent, price, ratio, today, yen } from '../../lib/format'
 import { Badge, buttonClass, Card, Field, inputClass, Stat } from '../ui/Primitives'
+import { HelpButton } from '../Learn/HelpButton'
 
 /**
  * 「いくらで、何株、どこで損切りするか」を先に決めるための画面。
@@ -112,7 +113,7 @@ export function TradePlan({
       description="許容損失から株数を決めます。損切り価格を先に決めるのがスイングの肝です。"
     >
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        <Field label="エントリー価格(円)">
+        <Field label="エントリー価格(円)" help="order-type">
           <input
             className={inputClass}
             value={entryInput}
@@ -120,7 +121,7 @@ export function TradePlan({
             inputMode="decimal"
           />
         </Field>
-        <Field label="損切り価格(円)" hint={`呼値に丸めて ${price(plan.stop)}円`}>
+        <Field label="損切り価格(円)" help="stop-loss" hint={`呼値に丸めて ${price(plan.stop)}円`}>
           <input
             className={inputClass}
             value={stopInput}
@@ -128,7 +129,7 @@ export function TradePlan({
             inputMode="decimal"
           />
         </Field>
-        <Field label="利確倍率(リスクの何倍)" className="col-span-2 sm:col-span-1">
+        <Field label="利確倍率(リスクの何倍)" help="risk-reward" className="col-span-2 sm:col-span-1">
           <input
             className={inputClass}
             value={rewardRatio}
@@ -162,18 +163,21 @@ export function TradePlan({
         <>
           <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
             <Stat
+              help="position-sizing"
               label="株数"
               value={`${sizing.shares.toLocaleString('ja-JP')}株`}
               hint={sizing.limitedBy === 'position-cap' ? '1銘柄あたりの上限で頭打ち' : '許容損失から逆算'}
             />
-            <Stat label="必要資金" value={yen(sizing.cost)} hint={`資金の${((sizing.cost / settings.capital) * 100).toFixed(1)}%`} />
+            <Stat help="spot-trading" label="必要資金" value={yen(sizing.cost)} hint={`資金の${((sizing.cost / settings.capital) * 100).toFixed(1)}%`} />
             <Stat
+              help="risk-per-trade"
               label="想定損失"
               value={yen(-sizing.riskAmount)}
               hint={`資金の${sizing.riskRatio.toFixed(2)}%`}
               tone="text-sky-600 dark:text-sky-400"
             />
             <Stat
+              help="tax"
               label="想定利益(税引後)"
               value={yen(afterTax)}
               hint={`利確 ${price(plan.target)}円`}
@@ -184,8 +188,8 @@ export function TradePlan({
           <dl className="mt-3 grid gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
             <Row label="損切りまでの値幅" value={`${price(plan.riskPerShare)}円 (${percent(-plan.riskPercent)})`} />
             <Row label="利確までの値幅" value={`${price(plan.rewardPerShare)}円 (${percent(plan.rewardPercent)})`} />
-            <Row label="リスクリワード" value={`1 : ${ratio(plan.rewardRatio)}`} />
-            <Row label="手数料(往復概算)" value={yen(entryFee + exitFee)} />
+            <Row help="risk-reward" label="リスクリワード" value={`1 : ${ratio(plan.rewardRatio)}`} />
+            <Row help="commission" label="手数料(往復概算)" value={yen(entryFee + exitFee)} />
           </dl>
         </>
       )}
@@ -225,10 +229,13 @@ export function TradePlan({
   )
 }
 
-function Row({ label, value }: { label: string; value: string }) {
+function Row({ label, value, help }: { label: string; value: string; help?: string }) {
   return (
     <div className="flex justify-between gap-4 border-b border-dashed border-neutral-200 py-1 dark:border-neutral-800">
-      <dt className="text-neutral-500 dark:text-neutral-400">{label}</dt>
+      <dt className="flex items-center gap-1.5 text-neutral-500 dark:text-neutral-400">
+        {label}
+        {help && <HelpButton term={help} label={label} />}
+      </dt>
       <dd className="tabular-nums">{value}</dd>
     </div>
   )

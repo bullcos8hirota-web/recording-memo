@@ -1,6 +1,13 @@
 import type { ReactNode } from 'react'
 
-export type TabId = 'screener' | 'symbol' | 'positions' | 'journal' | 'import' | 'settings'
+export type TabId =
+  | 'screener'
+  | 'symbol'
+  | 'positions'
+  | 'journal'
+  | 'import'
+  | 'learn'
+  | 'settings'
 
 const icon = (path: ReactNode) => (
   <svg
@@ -71,6 +78,16 @@ export const TABS: { id: TabId; label: string; icon: ReactNode }[] = [
         <path d="M12 4v11" />
         <path d="M8 11l4 4 4-4" />
         <path d="M4 19h16" />
+      </>,
+    ),
+  },
+  {
+    id: 'learn',
+    label: '学ぶ',
+    icon: icon(
+      <>
+        <path d="M4 6.5A1.5 1.5 0 0 1 5.5 5H10a2 2 0 0 1 2 2v12a2 2 0 0 0-2-2H4z" />
+        <path d="M20 6.5A1.5 1.5 0 0 0 18.5 5H14a2 2 0 0 0-2 2v12a2 2 0 0 1 2-2h6z" />
       </>,
     ),
   },
