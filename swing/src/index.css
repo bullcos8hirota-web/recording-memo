@@ -1,0 +1,27 @@
+@import 'tailwindcss';
+
+:root {
+  color-scheme: light dark;
+  font-family:
+    'Hiragino Sans', 'Noto Sans JP', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+body {
+  margin: 0;
+  -webkit-text-size-adjust: 100%;
+  /* スマホでタップしたときの青い反転を消し、端で跳ねる挙動も止める */
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+
+input[type='date'] {
+  min-height: 2.75rem;
+}
+
+/* iOSでselectやinputが独自の見た目にならないようにする */
+select,
+input,
+textarea,
+button {
+  font: inherit;
+}

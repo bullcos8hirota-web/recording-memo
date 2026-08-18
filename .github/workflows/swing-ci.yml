@@ -1,0 +1,42 @@
+name: Swing trade app CI
+
+on:
+  push:
+    paths:
+      - 'swing/**'
+      - '.github/workflows/swing-ci.yml'
+  pull_request:
+    paths:
+      - 'swing/**'
+      - '.github/workflows/swing-ci.yml'
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: swing/package-lock.json
+
+      - name: Install dependencies
+        working-directory: swing
+        run: npm ci
+
+      - name: Lint
+        working-directory: swing
+        run: npm run lint
+
+      - name: Test
+        working-directory: swing
+        run: npm test
+
+      - name: Build
+        working-directory: swing
+        run: npm run build
