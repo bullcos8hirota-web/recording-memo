@@ -211,3 +211,69 @@ describe('Yahoo!ファイナンスの時系列ページをコピーした場合'
     expect(result.skipped).toBe(0)
   })
 })
+
+describe('スマホでコピーした「1セルずつ改行」の表', () => {
+  // 見出しは1行、値は縦一列。有料のPER/PBRが鍵アイコンの行は値が欠ける。
+  const pasted = [
+    '日付\tPER\tPBR\t出来高\t始値\t高値\t安値\t終値\t調整後終値',
+    '26/8/19',
+    '18.41',
+    '5.07',
+    '69,400',
+    '1,384',
+    '1,423',
+    '1,384',
+    '1,411',
+    '1,411',
+    '26/8/18',
+    '17.86',
+    '4.92',
+    '102,500',
+    '1,360',
+    '1,388',
+    '1,345',
+    '1,377',
+    '1,377',
+    // 鍵アイコンでPER/PBRがコピーされなかった日
+    '26/8/5',
+    '79,200',
+    '1,181',
+    '1,194',
+    '1,177',
+    '1,190',
+    '1,190',
+  ].join('\n')
+
+  it('日付を区切りとして1日分ずつ読む', () => {
+    const result = parsePriceCsv(pasted)
+    expect(result.error).toBeNull()
+    expect(result.rows).toHaveLength(3)
+    expect(result.rows[2]).toEqual({
+      date: '2026-08-19',
+      open: 1384,
+      high: 1423,
+      low: 1384,
+      close: 1411,
+      volume: 69_400,
+    })
+  })
+
+  it('有料項目が欠けた行も、株価の並びを右端で揃えて読む', () => {
+    const result = parsePriceCsv(pasted)
+    expect(result.rows[0]).toEqual({
+      date: '2026-08-05',
+      open: 1181,
+      high: 1194,
+      low: 1177,
+      close: 1190,
+      volume: 79_200,
+    })
+  })
+
+  it('見出しも1語ずつ改行されている場合を読む', () => {
+    const oneWordPerLine = ['日付', '出来高', '始値', '高値', '安値', '終値', '26/8/18', '102,500', '1,360', '1,388', '1,345', '1,377'].join('\n')
+    const result = parsePriceCsv(oneWordPerLine)
+    expect(result.rows).toHaveLength(1)
+    expect(result.rows[0]).toMatchObject({ date: '2026-08-18', close: 1377, volume: 102_500 })
+  })
+})
