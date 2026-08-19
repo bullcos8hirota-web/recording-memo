@@ -139,3 +139,39 @@ describe('matchExecutions', () => {
     expect(trades[0].fees).toBe(200) // 買い100株分の100円 + 売り100円
   })
 })
+
+describe('時系列ページの表をコピーして貼った場合', () => {
+  it('タブ区切り・日本語ヘッダー・桁区切り・余分な列があっても読める', () => {
+    const pasted = [
+      '日付\t始値\t高値\t安値\t終値\t出来高\t終値調整値',
+      '2026年8月18日\t1,234\t1,250\t1,230\t1,245\t123,400\t1,245',
+      '2026年8月17日\t1,220\t1,240\t1,215\t1,232\t98,700\t1,232',
+    ].join('\n')
+    const result = parsePriceCsv(pasted)
+    expect(result.error).toBeNull()
+    expect(result.rows).toHaveLength(2)
+    expect(result.rows[1]).toEqual({
+      date: '2026-08-18',
+      open: 1234,
+      high: 1250,
+      low: 1230,
+      close: 1245,
+      volume: 123400,
+    })
+  })
+
+  it('前日比や騰落率の列が混ざっていても終値を取り違えない', () => {
+    const pasted = [
+      '日付,終値,前日比,前日比(%),始値,高値,安値,出来高',
+      '2026/08/18,"1,245","+13","+1.06%","1,234","1,250","1,230","123,400"',
+    ].join('\n')
+    const result = parsePriceCsv(pasted)
+    expect(result.rows[0]).toMatchObject({ close: 1245, open: 1234, volume: 123400 })
+  })
+
+  it('新しい日付が上にある表(降順)でも古い順に並べ直す', () => {
+    const pasted = '日付\t終値\n2026/08/18\t1245\n2026/08/17\t1232\n2026/08/14\t1210'
+    const result = parsePriceCsv(pasted)
+    expect(result.rows.map((b) => b.date)).toEqual(['2026-08-14', '2026-08-17', '2026-08-18'])
+  })
+})

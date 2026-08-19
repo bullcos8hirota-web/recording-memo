@@ -1,8 +1,21 @@
 import type { Bar } from './types'
 
+/**
+ * 区切り文字を1行目から判定する。表計算やWebページの表をコピーするとタブ区切りに
+ * なるが、その中の数値は「1,234」と桁区切りされている。カンマも区切りとして扱うと
+ * 数値が分断されるため、どちらか一方に決める。
+ */
+function detectDelimiter(source: string): ',' | '\t' {
+  const firstLine = source.split(/\r?\n/).find((line) => line.trim() !== '') ?? ''
+  const tabs = (firstLine.match(/\t/g) ?? []).length
+  const commas = (firstLine.match(/,/g) ?? []).length
+  return tabs > commas ? '\t' : ','
+}
+
 /** RFC4180風のCSVパーサ。引用符とCRLF、BOMを扱う。 */
 export function parseCsv(text: string): string[][] {
   const source = text.replace(/^﻿/, '')
+  const delimiter = detectDelimiter(source)
   const rows: string[][] = []
   let row: string[] = []
   let field = ''
@@ -25,7 +38,7 @@ export function parseCsv(text: string): string[][] {
     }
     if (char === '"') {
       quoted = true
-    } else if (char === ',' || char === '\t') {
+    } else if (char === delimiter) {
       row.push(field)
       field = ''
     } else if (char === '\n' || char === '\r') {
