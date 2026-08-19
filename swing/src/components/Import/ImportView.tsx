@@ -205,7 +205,7 @@ function PriceImport() {
   return (
     <Card
       title="株価データを取り込む"
-      description="日足のCSVを読み込みます。列は「日付,始値,高値,安値,終値,出来高」。ヘッダー行があれば列名から自動で判別します。"
+      description="日足のデータを読み込みます。表をコピーして貼るだけでも、見出しが無くても、日付と価格が並んでいれば読み取ります。分割して貼っても構いません。"
     >
       <div className="grid gap-3 sm:grid-cols-3">
         <Field label="銘柄コード">

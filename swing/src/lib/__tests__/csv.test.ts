@@ -277,3 +277,58 @@ describe('スマホでコピーした「1セルずつ改行」の表', () => {
     expect(result.rows[0]).toMatchObject({ date: '2026-08-18', close: 1377, volume: 102_500 })
   })
 })
+
+describe('見出しの無い、途中からの貼り付け', () => {
+  it('日付・出来高・4本値の並びを見出し無しで読む', () => {
+    // 実際に画面から途中だけコピーしたときの形
+    const pasted = ['26/5/29', '97,200', '1,073', '1,085', '1,051', '1,073', '1,073'].join('\n')
+    const result = parsePriceCsv(pasted)
+    expect(result.error).toBeNull()
+    expect(result.rows[0]).toEqual({
+      date: '2026-05-29',
+      open: 1073,
+      high: 1085,
+      low: 1051,
+      close: 1073,
+      volume: 97_200,
+    })
+  })
+
+  it('PER・PBRが前に付いていても4本値を見つける', () => {
+    const pasted = ['26/8/19', '18.41', '5.07', '69,400', '1,384', '1,423', '1,384', '1,411', '1,411'].join('\n')
+    const result = parsePriceCsv(pasted)
+    expect(result.rows[0]).toMatchObject({ open: 1384, high: 1423, low: 1384, close: 1411, volume: 69_400 })
+  })
+
+  it('前日比などが後ろに付く並び(株探の形)でも4本値を見つける', () => {
+    // 日付, 始値, 高値, 安値, 終値, 前日比, 前日比(%), 売買高
+    const pasted = ['26/8/19', '1,384', '1,423', '1,384', '1,411', '34', '2.47', '69,400'].join('\n')
+    const result = parsePriceCsv(pasted)
+    expect(result.rows[0]).toMatchObject({ open: 1384, high: 1423, low: 1384, close: 1411 })
+  })
+
+  it('日付と終値だけでも取り込める', () => {
+    const result = parsePriceCsv(['26/8/19', '1,411', '26/8/18', '1,377'].join('\n'))
+    expect(result.rows.map((b) => [b.date, b.close])).toEqual([
+      ['2026-08-18', 1377],
+      ['2026-08-19', 1411],
+    ])
+  })
+
+  it('複数日をまとめて、欠けた行が混ざっていても読む', () => {
+    const pasted = [
+      '26/8/19', '18.41', '5.07', '69,400', '1,384', '1,423', '1,384', '1,411', '1,411',
+      '26/8/18', '102,500', '1,360', '1,388', '1,345', '1,377', '1,377',
+      '26/8/17', '1,364',
+    ].join('\n')
+    const result = parsePriceCsv(pasted)
+    expect(result.rows).toHaveLength(3)
+    expect(result.rows.map((b) => b.close)).toEqual([1364, 1377, 1411])
+  })
+
+  it('価格として解釈できない並びは取り込まずに数える', () => {
+    const result = parsePriceCsv(['26/8/19', '4,828', '2,000,000', '0.5'].join('\n'))
+    expect(result.rows).toHaveLength(0)
+    expect(result.error).not.toBeNull()
+  })
+})
