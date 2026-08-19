@@ -204,108 +204,113 @@ export function parsePriceCsv(text: string): ParseResult<Bar> {
     // スマホのコピーでよくある「1セルずつ改行」の形を読み直す
     const vertical = parseVerticalQuoteTable(text)
     if (vertical.rows.length > 0) return vertical
-    return { rows: [], skipped, error: '読み取れる行がありませんでした。' }
+    return {
+      rows: [],
+      skipped,
+      error:
+        '読み取れる行がありませんでした。日付と株価が並んでいるか確認してください(日付と終値だけでも取り込めます)。',
+    }
   }
 
   return { rows: deduped, skipped, error: null }
 }
 
 
-/** 表の見出しとして現れる語。縦並びの貼り付けから見出しを見つけるのに使う。 */
-const KNOWN_HEADERS = [
-  '日付', '日時', '年月日', 'per', 'pbr', '出来高', '売買高', '始値', '高値', '安値',
-  '終値', '調整後終値', '終値調整値', '前日比', '前日比(%)', '騰落率', '売買代金',
-]
-
-const isKnownHeader = (token: string): boolean =>
-  KNOWN_HEADERS.includes(toHalfWidth(token).trim().toLowerCase())
-
 /**
- * スマホで表をコピーすると、1セルごとに改行された「縦並び」になることがある。
+ * スマホで表をコピーすると、1セルごとに改行された「縦並び」になる。
  *
- *   日付  PER  PBR  出来高  始値 ...   ← 見出しは1行にまとまっていることも、
- *   26/8/19                             1語ずつ改行されていることもある
- *   18.41
- *   5.07
- *   ...
+ *   26/5/29      ← 日付
+ *   97,200       ← 出来高
+ *   1,073        ← 始値
+ *   1,085        ← 高値
+ *   1,051        ← 安値
+ *   1,073        ← 終値
  *
- * 日付が現れたら1件の区切りとみなし、次の日付までの値をその日の値として扱う。
- * 有料項目が鍵アイコンでコピーされず値が欠ける場合があるので、見出しには
- * 右詰めで対応させる(欠けるのは左側のPERやPBRで、株価は右側に並ぶため)。
+ * 見出しが含まれるとは限らない(途中から貼ることもある)ので、見出しには頼らず、
+ * 日付を区切りにして「4本値らしい並び」を値の関係から探す。
+ * 始値・高値・安値・終値は必ず「2番目が最大、3番目が最小」になるため、
+ * この形の並びを後ろから探せば、列の順番が違うサイトでも拾える。
  */
+function findOhlcWindow(values: number[]): { index: number; ohlc: number[] } | null {
+  for (let i = values.length - 4; i >= 0; i -= 1) {
+    const window = values.slice(i, i + 4)
+    const high = Math.max(...window)
+    const low = Math.min(...window)
+    if (window[1] !== high || window[2] !== low) continue
+    // 1日の値幅としてありえない開きがあるものは別の列の並びとみなす
+    if (low <= 0 || high / low > 1.5) continue
+    return { index: i, ohlc: window }
+  }
+  return null
+}
+
+/** 出来高らしい値かどうか。株価より桁がはるかに大きい整数を出来高とみなす。 */
+const looksLikeVolume = (value: number, price: number): boolean =>
+  Number.isInteger(value) && value >= price * 5
+
 export function parseVerticalQuoteTable(text: string): ParseResult<Bar> {
   const lines = text
     .split(/\r?\n/)
     .map((line) => line.trim())
     .filter((line) => line !== '')
 
-  const headerLineIndex = lines.findIndex((line) =>
-    line.split(/[\t,\s]+/).some((token) => isKnownHeader(token)),
-  )
-  if (headerLineIndex < 0) return { rows: [], skipped: 0, error: null }
-
-  let header = lines[headerLineIndex].split(/[\t,\s]+/).filter(Boolean)
-  let bodyStart = headerLineIndex + 1
-  // 見出しも1語ずつ改行されている場合は、続く見出し語を集める
-  if (header.length === 1) {
-    while (bodyStart < lines.length && isKnownHeader(lines[bodyStart])) {
-      header.push(lines[bodyStart])
-      bodyStart += 1
-    }
-  }
-  header = header.filter(Boolean)
-
-  const dateColumn = header.findIndex((name) => findColumn([name], HEADER_ALIASES.date) === 0)
-  if (dateColumn < 0 || header.length < 3) return { rows: [], skipped: 0, error: null }
-
-  // 日付以外の見出し(順番は元のまま)
-  const valueHeaders = header.filter((_, index) => index !== dateColumn)
-
   type Record = { date: string; values: string[] }
   const records: Record[] = []
-  let skipped = 0
 
-  for (const line of lines.slice(bodyStart)) {
+  for (const line of lines) {
     const date = parseDate(line)
     if (date) {
       records.push({ date, values: [] })
       continue
     }
+    // 最初の日付より前(見出しなど)は捨てる
     if (records.length === 0) continue
     records[records.length - 1].values.push(line)
   }
 
   const bars: Bar[] = []
+  let skipped = 0
+
   for (const record of records) {
-    // 欠けた分を左側に寄せて、株価の並びが右端で揃うようにする
-    const offset = Math.max(0, valueHeaders.length - record.values.length)
-    const cells = new Array<string>(valueHeaders.length).fill('')
-    record.values.slice(-valueHeaders.length).forEach((value, index) => {
-      cells[offset + index] = value
-    })
+    const values = record.values
+      .map((value) => parseNumber(value))
+      .filter((value): value is number => value !== null && value > 0)
 
-    const pick = (aliases: string[]): number | null => {
-      const index = findColumn(valueHeaders, aliases)
-      return index >= 0 ? parseNumber(cells[index] ?? '') : null
-    }
-
-    const close = pick(HEADER_ALIASES.close)
-    if (close === null || close <= 0) {
-      skipped += 1
+    const window = findOhlcWindow(values)
+    if (window) {
+      const [open, high, low, close] = window.ohlc
+      const before = window.index > 0 ? values[window.index - 1] : null
+      bars.push({
+        date: record.date,
+        open,
+        high,
+        low,
+        close,
+        volume: before !== null && looksLikeVolume(before, high) ? before : 0,
+      })
       continue
     }
-    const open = pick(HEADER_ALIASES.open)
-    const high = pick(HEADER_ALIASES.high)
-    const low = pick(HEADER_ALIASES.low)
-    const volume = pick(HEADER_ALIASES.volume)
-    bars.push({
-      date: record.date,
-      open: open ?? close,
-      high: high ?? Math.max(open ?? close, close),
-      low: low ?? Math.min(open ?? close, close),
-      close,
-      volume: volume ?? 0,
-    })
+
+    // 日付と終値だけ、あるいは終値と出来高だけの並びも受け付ける
+    if (values.length === 1) {
+      const close = values[0]
+      bars.push({ date: record.date, open: close, high: close, low: close, close, volume: 0 })
+      continue
+    }
+    if (values.length === 2 && looksLikeVolume(values[1], values[0])) {
+      const close = values[0]
+      bars.push({
+        date: record.date,
+        open: close,
+        high: close,
+        low: close,
+        close,
+        volume: values[1],
+      })
+      continue
+    }
+
+    skipped += 1
   }
 
   bars.sort((a, b) => a.date.localeCompare(b.date))
