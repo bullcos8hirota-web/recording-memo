@@ -89,12 +89,21 @@ export function parseNumber(value: string): number | null {
   return Number.isFinite(num) ? num : null
 }
 
-/** 「2026/8/18」「2026-08-18」「20260818」「2026年8月18日」を YYYY-MM-DD にする。 */
+/**
+ * 「2026/8/18」「2026-08-18」「20260818」「2026年8月18日」「26/8/18」を YYYY-MM-DD にする。
+ * 証券会社や情報サイトの表は西暦2桁のことがあるため、年が2桁なら2000年代として扱う
+ * (株価データで1900年代を入力することは実質ないが、70以上は1900年代とみなす)。
+ */
 export function parseDate(value: string): string | null {
   if (!value) return null
   const text = toHalfWidth(value.trim())
   const ymd = text.match(/^(\d{4})[/\-年.](\d{1,2})[/\-月.](\d{1,2})/)
   if (ymd) return iso(Number(ymd[1]), Number(ymd[2]), Number(ymd[3]))
+  const shortYear = text.match(/^(\d{2})[/\-年.](\d{1,2})[/\-月.](\d{1,2})/)
+  if (shortYear) {
+    const year = Number(shortYear[1])
+    return iso(year <= 69 ? 2000 + year : 1900 + year, Number(shortYear[2]), Number(shortYear[3]))
+  }
   const compact = text.match(/^(\d{4})(\d{2})(\d{2})$/)
   if (compact) return iso(Number(compact[1]), Number(compact[2]), Number(compact[3]))
   return null
