@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import type { Fundamentals } from '../../lib/learn/buffett'
 import { Field, inputClass } from '../ui/Primitives'
 import { HelpButton } from './HelpButton'
@@ -26,6 +27,46 @@ const toNumber = (text: string): number | null => {
 }
 
 /**
+ * 未入力(null)を許す数値入力。入力中の文字列をそのまま保持するので、
+ * 「16.5」を打つ途中の「16.」が勝手に「16」へ戻ることがない。
+ */
+function NullableNumberInput({
+  value,
+  onCommit,
+  placeholder,
+}: {
+  value: number | null
+  onCommit: (value: number | null) => void
+  placeholder: string
+}) {
+  const [text, setText] = useState(() => toText(value))
+
+  useEffect(() => {
+    setText((current) => (toNumber(current) === value ? current : toText(value)))
+  }, [value])
+
+  return (
+    <input
+      className={inputClass}
+      value={text}
+      inputMode="decimal"
+      placeholder={placeholder}
+      onChange={(event) => {
+        const raw = event.target.value
+        setText(raw)
+        if (raw.trim() === '') {
+          onCommit(null)
+          return
+        }
+        const parsed = toNumber(raw)
+        if (parsed !== null) onCommit(parsed)
+      }}
+      onBlur={() => setText(toText(value))}
+    />
+  )
+}
+
+/**
  * 財務データの入力欄。学ぶタブの練習用チェッカーと、銘柄ごとのカルテで共用する。
  */
 export function FundamentalsForm({
@@ -39,11 +80,9 @@ export function FundamentalsForm({
     <div className="grid grid-cols-2 gap-3">
       {NUMBER_FIELDS.map((field) => (
         <Field key={field.key} label={field.label} help={field.term}>
-          <input
-            className={inputClass}
-            value={toText(value[field.key])}
-            onChange={(e) => onChange({ ...value, [field.key]: toNumber(e.target.value) })}
-            inputMode="decimal"
+          <NullableNumberInput
+            value={value[field.key]}
+            onCommit={(next) => onChange({ ...value, [field.key]: next })}
             placeholder={field.placeholder}
           />
         </Field>

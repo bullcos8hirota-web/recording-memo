@@ -5,7 +5,7 @@ import type { Stock } from '../../lib/market/types'
 import { buildExitPlan, calculatePosition, stopCandidates } from '../../lib/money/position'
 import { capitalGainTax, tradeFee } from '../../lib/money/fees'
 import { percent, price, ratio, today, yen } from '../../lib/format'
-import { Badge, buttonClass, Card, Field, inputClass, Stat } from '../ui/Primitives'
+import { Badge, buttonClass, Card, Field, inputClass, NumberField, Stat } from '../ui/Primitives'
 import { HelpButton } from '../Learn/HelpButton'
 
 /**
@@ -129,14 +129,13 @@ export function TradePlan({
             inputMode="decimal"
           />
         </Field>
-        <Field label="利確倍率(リスクの何倍)" help="risk-reward" className="col-span-2 sm:col-span-1">
-          <input
-            className={inputClass}
-            value={rewardRatio}
-            onChange={(e) => setRewardRatio(Number(e.target.value) || 0)}
-            inputMode="decimal"
-          />
-        </Field>
+        <NumberField
+          label="利確倍率(リスクの何倍)"
+          help="risk-reward"
+          className="col-span-2 sm:col-span-1"
+          value={rewardRatio}
+          onCommit={setRewardRatio}
+        />
       </div>
 
       {candidates.length > 0 && (
