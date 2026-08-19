@@ -200,11 +200,116 @@ export function parsePriceCsv(text: string): ParseResult<Bar> {
     deduped.push(bar)
   }
 
-  return {
-    rows: deduped,
-    skipped,
-    error: deduped.length === 0 ? '読み取れる行がありませんでした。' : null,
+  if (deduped.length === 0) {
+    // スマホのコピーでよくある「1セルずつ改行」の形を読み直す
+    const vertical = parseVerticalQuoteTable(text)
+    if (vertical.rows.length > 0) return vertical
+    return { rows: [], skipped, error: '読み取れる行がありませんでした。' }
   }
+
+  return { rows: deduped, skipped, error: null }
+}
+
+
+/** 表の見出しとして現れる語。縦並びの貼り付けから見出しを見つけるのに使う。 */
+const KNOWN_HEADERS = [
+  '日付', '日時', '年月日', 'per', 'pbr', '出来高', '売買高', '始値', '高値', '安値',
+  '終値', '調整後終値', '終値調整値', '前日比', '前日比(%)', '騰落率', '売買代金',
+]
+
+const isKnownHeader = (token: string): boolean =>
+  KNOWN_HEADERS.includes(toHalfWidth(token).trim().toLowerCase())
+
+/**
+ * スマホで表をコピーすると、1セルごとに改行された「縦並び」になることがある。
+ *
+ *   日付  PER  PBR  出来高  始値 ...   ← 見出しは1行にまとまっていることも、
+ *   26/8/19                             1語ずつ改行されていることもある
+ *   18.41
+ *   5.07
+ *   ...
+ *
+ * 日付が現れたら1件の区切りとみなし、次の日付までの値をその日の値として扱う。
+ * 有料項目が鍵アイコンでコピーされず値が欠ける場合があるので、見出しには
+ * 右詰めで対応させる(欠けるのは左側のPERやPBRで、株価は右側に並ぶため)。
+ */
+export function parseVerticalQuoteTable(text: string): ParseResult<Bar> {
+  const lines = text
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter((line) => line !== '')
+
+  const headerLineIndex = lines.findIndex((line) =>
+    line.split(/[\t,\s]+/).some((token) => isKnownHeader(token)),
+  )
+  if (headerLineIndex < 0) return { rows: [], skipped: 0, error: null }
+
+  let header = lines[headerLineIndex].split(/[\t,\s]+/).filter(Boolean)
+  let bodyStart = headerLineIndex + 1
+  // 見出しも1語ずつ改行されている場合は、続く見出し語を集める
+  if (header.length === 1) {
+    while (bodyStart < lines.length && isKnownHeader(lines[bodyStart])) {
+      header.push(lines[bodyStart])
+      bodyStart += 1
+    }
+  }
+  header = header.filter(Boolean)
+
+  const dateColumn = header.findIndex((name) => findColumn([name], HEADER_ALIASES.date) === 0)
+  if (dateColumn < 0 || header.length < 3) return { rows: [], skipped: 0, error: null }
+
+  // 日付以外の見出し(順番は元のまま)
+  const valueHeaders = header.filter((_, index) => index !== dateColumn)
+
+  type Record = { date: string; values: string[] }
+  const records: Record[] = []
+  let skipped = 0
+
+  for (const line of lines.slice(bodyStart)) {
+    const date = parseDate(line)
+    if (date) {
+      records.push({ date, values: [] })
+      continue
+    }
+    if (records.length === 0) continue
+    records[records.length - 1].values.push(line)
+  }
+
+  const bars: Bar[] = []
+  for (const record of records) {
+    // 欠けた分を左側に寄せて、株価の並びが右端で揃うようにする
+    const offset = Math.max(0, valueHeaders.length - record.values.length)
+    const cells = new Array<string>(valueHeaders.length).fill('')
+    record.values.slice(-valueHeaders.length).forEach((value, index) => {
+      cells[offset + index] = value
+    })
+
+    const pick = (aliases: string[]): number | null => {
+      const index = findColumn(valueHeaders, aliases)
+      return index >= 0 ? parseNumber(cells[index] ?? '') : null
+    }
+
+    const close = pick(HEADER_ALIASES.close)
+    if (close === null || close <= 0) {
+      skipped += 1
+      continue
+    }
+    const open = pick(HEADER_ALIASES.open)
+    const high = pick(HEADER_ALIASES.high)
+    const low = pick(HEADER_ALIASES.low)
+    const volume = pick(HEADER_ALIASES.volume)
+    bars.push({
+      date: record.date,
+      open: open ?? close,
+      high: high ?? Math.max(open ?? close, close),
+      low: low ?? Math.min(open ?? close, close),
+      close,
+      volume: volume ?? 0,
+    })
+  }
+
+  bars.sort((a, b) => a.date.localeCompare(b.date))
+  return { rows: bars, skipped, error: null }
 }
 
 /** SBI証券の取引履歴CSVから読み取った約定1件。 */
