@@ -175,3 +175,39 @@ describe('時系列ページの表をコピーして貼った場合', () => {
     expect(result.rows.map((b) => b.date)).toEqual(['2026-08-14', '2026-08-17', '2026-08-18'])
   })
 })
+
+describe('Yahoo!ファイナンスの時系列ページをコピーした場合', () => {
+  // 実際の列並び。PER/PBRは有料部分が鍵アイコンになり、コピーすると空欄になる。
+  const pasted = [
+    '日付\tPER\tPBR\t出来高\t始値\t高値\t安値\t終値',
+    '26/8/18\t17.86\t4.92\t102,500\t1,360\t1,388\t1,345\t1,377',
+    '26/8/17\t17.49\t4.82\t136,500\t1,364\t1,380\t1,348\t1,364',
+    '26/8/5\t\t\t79,200\t1,181\t1,194\t1,177\t1,190',
+  ].join('\n')
+
+  it('西暦2桁の日付を2000年代として読む', () => {
+    expect(parseDate('26/8/18')).toBe('2026-08-18')
+    expect(parseDate('26/12/1')).toBe('2026-12-01')
+    expect(parseDate('99/1/4')).toBe('1999-01-04')
+  })
+
+  it('PER/PBRの列や空欄が混ざっていても正しい列を読む', () => {
+    const result = parsePriceCsv(pasted)
+    expect(result.error).toBeNull()
+    expect(result.rows).toHaveLength(3)
+    expect(result.rows[2]).toEqual({
+      date: '2026-08-18',
+      open: 1360,
+      high: 1388,
+      low: 1345,
+      close: 1377,
+      volume: 102_500,
+    })
+  })
+
+  it('有料部分が空欄の行も株価は取り込める', () => {
+    const result = parsePriceCsv(pasted)
+    expect(result.rows[0]).toMatchObject({ date: '2026-08-05', close: 1190, volume: 79_200 })
+    expect(result.skipped).toBe(0)
+  })
+})

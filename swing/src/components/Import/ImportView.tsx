@@ -9,6 +9,7 @@ import {
   type MatchedTrade,
 } from '../../lib/market/csv'
 import { price, shortDate, today } from '../../lib/format'
+import { readClipboard } from '../../lib/clipboard'
 import {
   buttonClass,
   Card,
@@ -16,6 +17,34 @@ import {
   inputClass,
   subtleButtonClass,
 } from '../ui/Primitives'
+
+/** クリップボードの中身を入力欄に流し込むボタン。 */
+function PasteButton({ onPaste }: { onPaste: (text: string) => void }) {
+  const [error, setError] = useState<string | null>(null)
+
+  return (
+    <>
+      <button
+        type="button"
+        className={subtleButtonClass}
+        onClick={async () => {
+          const result = await readClipboard()
+          if (result.ok) {
+            setError(null)
+            onPaste(result.text)
+          } else {
+            setError(result.reason)
+          }
+        }}
+      >
+        クリップボードから貼り付け
+      </button>
+      {error && (
+        <p className="mt-2 text-sm text-amber-700 dark:text-amber-300">{error}</p>
+      )}
+    </>
+  )
+}
 
 export function ImportView() {
   return (
@@ -67,6 +96,9 @@ function QuickUpdate() {
             onChange={(e) => setDate(e.target.value)}
           />
         </Field>
+      </div>
+      <div className="mb-2">
+        <PasteButton onPaste={setText} />
       </div>
       <Field label="貼り付け" hint="1行に1銘柄。コードか登録済みの銘柄名と、価格が入っていれば読み取ります。">
         <textarea
@@ -210,6 +242,9 @@ function PriceImport() {
         </Field>
       </div>
 
+      <div className="mb-2">
+        <PasteButton onPaste={setText} />
+      </div>
       <Field label="貼り付けでも取り込めます">
         <textarea
           className={`${inputClass} min-h-28 font-mono text-xs`}
