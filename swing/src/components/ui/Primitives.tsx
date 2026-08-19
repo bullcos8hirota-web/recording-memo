@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { HelpButton } from '../Learn/HelpButton'
 
 export function Card({
@@ -128,5 +128,52 @@ export function EmptyState({ title, children }: { title: string; children?: Reac
         <div className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">{children}</div>
       )}
     </div>
+  )
+}
+
+/**
+ * 数値の入力欄。入力中の文字列をそのまま持ち、確定できる値になったときだけ通知する。
+ * 数値を直接 value に流し込むと「1.5」を打つ途中の「1.」が「1」に戻され、
+ * 小数が入力できなくなるため。
+ */
+export function NumberField({
+  label,
+  hint,
+  help,
+  value,
+  onCommit,
+  inputMode = 'decimal',
+  className,
+}: {
+  label: string
+  hint?: string
+  help?: string
+  value: number
+  onCommit: (value: number) => void
+  inputMode?: 'decimal' | 'numeric'
+  className?: string
+}) {
+  const [text, setText] = useState(() => String(value))
+
+  // 外から値が変わったときだけ追従する(入力途中の「1.」は書き換えない)。
+  useEffect(() => {
+    setText((current) => (Number(current) === value ? current : String(value)))
+  }, [value])
+
+  return (
+    <Field label={label} hint={hint} help={help} className={className}>
+      <input
+        className={inputClass}
+        value={text}
+        inputMode={inputMode}
+        onChange={(event) => {
+          const raw = event.target.value
+          setText(raw)
+          const parsed = Number(raw)
+          if (raw.trim() !== '' && Number.isFinite(parsed)) onCommit(parsed)
+        }}
+        onBlur={() => setText(String(value))}
+      />
+    </Field>
   )
 }

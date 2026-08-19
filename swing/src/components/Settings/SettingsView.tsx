@@ -3,7 +3,7 @@ import { useAppStore } from '../../stores/appStore'
 import { db, DEFAULT_CHECKLIST } from '../../lib/db'
 import { STANDARD_PLAN_TIERS } from '../../lib/money/fees'
 import { yen } from '../../lib/format'
-import { buttonClass, Card, Field, inputClass, subtleButtonClass } from '../ui/Primitives'
+import { buttonClass, Card, inputClass, NumberField, subtleButtonClass } from '../ui/Primitives'
 import { usePwaInstall } from '../../lib/usePwaInstall'
 
 export function SettingsView() {
@@ -20,57 +20,56 @@ export function SettingsView() {
 
       <Card
         title="資金管理"
-        description="ここで決めた許容損失から、売買プランの株数が自動で決まります。"
+        description="入力するとすぐ保存されます(保存ボタンはありません)。ここで決めた許容損失から、売買プランの株数が自動で決まります。"
       >
         <div className="grid gap-3 sm:grid-cols-2">
-          <Field label="運用資金(円)" hint={`1トレードの許容損失は ${yen(riskAmount)}`}>
-            <input
-              className={inputClass}
-              value={settings.capital}
-              onChange={(e) => void saveSettings({ capital: Number(e.target.value) || 0 })}
-              inputMode="numeric"
-            />
-          </Field>
-          <Field help="risk-per-trade" label="1トレードの許容損失(%)" hint="1〜2%が一般的。大きくすると連敗時の傷が深くなります。">
-            <input
-              className={inputClass}
-              value={settings.riskPercent}
-              onChange={(e) => void saveSettings({ riskPercent: Number(e.target.value) || 0 })}
-              inputMode="decimal"
-            />
-          </Field>
-          <Field help="position-sizing" label="1銘柄への投入上限(%)" hint="資金が偏りすぎないための上限です。">
-            <input
-              className={inputClass}
-              value={settings.maxPositionPercent}
-              onChange={(e) => void saveSettings({ maxPositionPercent: Number(e.target.value) || 0 })}
-              inputMode="decimal"
-            />
-          </Field>
-          <Field help="risk-reward" label="利確倍率(リスクの何倍)" hint="2なら、損切り幅の2倍の値幅を利確目標にします。">
-            <input
-              className={inputClass}
-              value={settings.rewardRatio}
-              onChange={(e) => void saveSettings({ rewardRatio: Number(e.target.value) || 0 })}
-              inputMode="decimal"
-            />
-          </Field>
-          <Field help="atr" label="損切り幅(ATRの何倍)" hint="値動きの荒い銘柄ほど損切りが自動で広がります。">
-            <input
-              className={inputClass}
-              value={settings.atrMultiple}
-              onChange={(e) => void saveSettings({ atrMultiple: Number(e.target.value) || 0 })}
-              inputMode="decimal"
-            />
-          </Field>
-          <Field help="unit-share" label="既定の売買単位" hint="単元株は100株、S株(単元未満株)なら1。">
-            <input
-              className={inputClass}
-              value={settings.defaultLot}
-              onChange={(e) => void saveSettings({ defaultLot: Number(e.target.value) || 1 })}
-              inputMode="numeric"
-            />
-          </Field>
+          <NumberField
+            label="運用資金(円)"
+            hint={`1トレードの許容損失は ${yen(riskAmount)}`}
+            value={settings.capital}
+            inputMode="numeric"
+            onCommit={(value) => void saveSettings({ capital: value || 0 })}
+          />
+          <NumberField
+            label="1トレードの許容損失(%)"
+            help="risk-per-trade"
+            hint="1〜2%が一般的。大きくすると連敗時の傷が深くなります。"
+            value={settings.riskPercent}
+            inputMode="decimal"
+            onCommit={(value) => void saveSettings({ riskPercent: value || 0 })}
+          />
+          <NumberField
+            label="1銘柄への投入上限(%)"
+            help="position-sizing"
+            hint="資金が偏りすぎないための上限です。"
+            value={settings.maxPositionPercent}
+            inputMode="decimal"
+            onCommit={(value) => void saveSettings({ maxPositionPercent: value || 0 })}
+          />
+          <NumberField
+            label="利確倍率(リスクの何倍)"
+            help="risk-reward"
+            hint="2なら、損切り幅の2倍の値幅を利確目標にします。"
+            value={settings.rewardRatio}
+            inputMode="decimal"
+            onCommit={(value) => void saveSettings({ rewardRatio: value || 0 })}
+          />
+          <NumberField
+            label="損切り幅(ATRの何倍)"
+            help="atr"
+            hint="値動きの荒い銘柄ほど損切りが自動で広がります。"
+            value={settings.atrMultiple}
+            inputMode="decimal"
+            onCommit={(value) => void saveSettings({ atrMultiple: value || 0 })}
+          />
+          <NumberField
+            label="既定の売買単位"
+            help="unit-share"
+            hint="単元株は100株、S株(単元未満株)なら1。"
+            value={settings.defaultLot}
+            inputMode="numeric"
+            onCommit={(value) => void saveSettings({ defaultLot: value || 1 })}
+          />
         </div>
       </Card>
 
@@ -111,16 +110,17 @@ export function SettingsView() {
                 <span className="w-40 text-neutral-500 dark:text-neutral-400">
                   {Number.isFinite(tier.upTo) ? `${tier.upTo.toLocaleString('ja-JP')}円まで` : 'それ以上'}
                 </span>
-                <input
-                  className={`${inputClass} w-28`}
+                <NumberField
+                  label=""
+                  className="w-28"
                   value={tier.fee}
-                  onChange={(e) => {
+                  inputMode="numeric"
+                  onCommit={(value) => {
                     const tiers = settings.feeConfig.tiers.map((row, i) =>
-                      i === index ? { ...row, fee: Number(e.target.value) || 0 } : row,
+                      i === index ? { ...row, fee: value || 0 } : row,
                     )
                     void saveSettings({ feeConfig: { ...settings.feeConfig, tiers } })
                   }}
-                  inputMode="numeric"
                 />
                 <span className="text-neutral-500 dark:text-neutral-400">円(税込)</span>
               </li>
