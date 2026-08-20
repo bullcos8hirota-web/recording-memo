@@ -5,6 +5,7 @@ import { STANDARD_PLAN_TIERS } from '../../lib/money/fees'
 import { yen } from '../../lib/format'
 import { buttonClass, Card, inputClass, NumberField, subtleButtonClass } from '../ui/Primitives'
 import { usePwaInstall } from '../../lib/usePwaInstall'
+import { ReminderCard } from './ReminderCard'
 
 export function SettingsView() {
   const settings = useAppStore((s) => s.settings)
@@ -17,6 +18,8 @@ export function SettingsView() {
   return (
     <div className="space-y-4">
       <InstallCard />
+
+      <ReminderCard />
 
       <Card
         title="資金管理"
