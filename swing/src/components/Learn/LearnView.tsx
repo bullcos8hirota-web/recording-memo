@@ -6,6 +6,7 @@ import { CandleChart } from '../Symbol/CandleChart'
 import { useGlossary } from './glossaryContext'
 import { TermChip, TermLink } from './HelpButton'
 import { BuffettSection } from './BuffettSection'
+import { WeeklySection } from './WeeklySection'
 import { QuizSection } from './QuizSection'
 import { useAppStore } from '../../stores/appStore'
 import { yen } from '../../lib/format'
@@ -13,6 +14,7 @@ import { Card, inputClass } from '../ui/Primitives'
 
 const SECTIONS = [
   { id: 'flow', label: '流れ' },
+  { id: 'weekly', label: '週の進め方' },
   { id: 'chart', label: 'チャート' },
   { id: 'money', label: '資金管理' },
   { id: 'buffett', label: 'バフェット' },
@@ -45,6 +47,7 @@ export function LearnView({ onGoTab }: { onGoTab: (tab: 'screener' | 'import') =
       </div>
 
       {section === 'flow' && <FlowSection onGoTab={onGoTab} />}
+      {section === 'weekly' && <WeeklySection />}
       {section === 'chart' && <ChartSection />}
       {section === 'money' && <MoneySection />}
       {section === 'buffett' && <BuffettSection />}

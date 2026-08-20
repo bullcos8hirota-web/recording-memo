@@ -11,6 +11,8 @@ import { GlossaryProvider } from './components/Learn/GlossaryProvider'
 import { BottomTabBar, TopTabBar } from './components/Layout/TabBar'
 import { TABS, type TabId } from './components/Layout/tabs'
 import { isClosed } from './lib/money/trade'
+import { lastExpectedTradingDate, missingTradingDays } from './lib/market/freshness'
+import { shortDate } from './lib/format'
 import { yen } from './lib/format'
 
 export default function App() {
@@ -20,6 +22,7 @@ export default function App() {
   const settings = useAppStore((s) => s.settings)
   const trades = useAppStore((s) => s.trades)
   const series = useAppStore((s) => s.series)
+  const stocks = useAppStore((s) => s.stocks)
   const storageError = useAppStore((s) => s.storageError)
   const [tab, setTab] = useState<TabId>('screener')
 
@@ -51,6 +54,17 @@ export default function App() {
         return []
       })
   }, [trades, series])
+
+  /** 終値の入れ忘れ。祝日は判定できないので「まだ入っていません」と控えめに伝える。 */
+  const staleUpdate = useMemo(() => {
+    const dates = stocks
+      .map((stock) => series[stock.code]?.at(-1)?.date)
+      .filter((date): date is string => Boolean(date))
+    if (dates.length === 0) return null
+    const latest = dates.reduce((max, date) => (date > max ? date : max))
+    const missing = missingTradingDays(latest)
+    return missing === 0 ? null : { latest, missing, expected: lastExpectedTradingDate() }
+  }, [stocks, series])
 
   const openDetail = (code: string) => {
     select(code)
@@ -89,7 +103,24 @@ export default function App() {
             </div>
           )}
 
-          {alerts.length > 0 && (
+          {staleUpdate && (
+          <button
+            type="button"
+            onClick={() => setTab('import')}
+            className="mb-3 block w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-left text-sm dark:border-neutral-700 dark:bg-neutral-900"
+          >
+            <p className="font-medium">
+              {shortDate(staleUpdate.expected)}までの終値がまだ入っていません
+            </p>
+            <p className="mt-1 text-neutral-500 dark:text-neutral-400">
+              最新は{shortDate(staleUpdate.latest)}
+              {staleUpdate.missing > 1 && `(${staleUpdate.missing}営業日分)`}。
+              押すと取込タブを開きます。祝日ならそのままで構いません。
+            </p>
+          </button>
+        )}
+
+        {alerts.length > 0 && (
             <button
               type="button"
               onClick={() => setTab('positions')}
