@@ -4,7 +4,6 @@ import { ScreenerView } from './components/Screener/ScreenerView'
 import { SymbolDetail } from './components/Symbol/SymbolDetail'
 import { PositionsView } from './components/Positions/PositionsView'
 import { JournalView } from './components/Journal/JournalView'
-import { ImportView } from './components/Import/ImportView'
 import { SettingsView } from './components/Settings/SettingsView'
 import { LearnView } from './components/Learn/LearnView'
 import { GlossaryProvider } from './components/Learn/GlossaryProvider'
@@ -106,7 +105,7 @@ export default function App() {
           {staleUpdate && (
           <button
             type="button"
-            onClick={() => setTab('import')}
+            onClick={() => setTab('symbol')}
             className="mb-3 block w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-left text-sm dark:border-neutral-700 dark:bg-neutral-900"
           >
             <p className="font-medium">
@@ -115,7 +114,7 @@ export default function App() {
             <p className="mt-1 text-neutral-500 dark:text-neutral-400">
               最新は{shortDate(staleUpdate.latest)}
               {staleUpdate.missing > 1 && `(${staleUpdate.missing}営業日分)`}。
-              押すと取込タブを開きます。祝日ならそのままで構いません。
+              押すと銘柄タブを開きます。祝日ならそのままで構いません。
             </p>
           </button>
         )}
@@ -145,11 +144,10 @@ export default function App() {
               <ScreenerView onOpen={openDetail} onGoLearn={() => setTab('learn')} />
             )}
               {tab === 'symbol' && (
-                <SymbolDetail onGoImport={() => setTab('import')} />
+                <SymbolDetail />
               )}
               {tab === 'positions' && <PositionsView />}
               {tab === 'journal' && <JournalView />}
-              {tab === 'import' && <ImportView />}
               {tab === 'learn' && <LearnView onGoTab={setTab} />}
               {tab === 'settings' && <SettingsView />}
             </>

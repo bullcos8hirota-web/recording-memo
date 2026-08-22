@@ -5,7 +5,7 @@ import type { Stock } from '../../lib/market/types'
 import { buildExitPlan, calculatePosition, stopCandidates } from '../../lib/money/position'
 import { capitalGainTax, tradeFee } from '../../lib/money/fees'
 import { percent, price, ratio, today, yen } from '../../lib/format'
-import { Badge, buttonClass, Card, Field, inputClass, NumberField, Stat } from '../ui/Primitives'
+import { buttonClass, Card, Field, inputClass, NumberField, Stat } from '../ui/Primitives'
 import { HelpButton } from '../Learn/HelpButton'
 
 /**
@@ -28,7 +28,6 @@ export function TradePlan({
   const [entryInput, setEntryInput] = useState('')
   const [stopInput, setStopInput] = useState('')
   const [rewardRatio, setRewardRatio] = useState(settings.rewardRatio)
-  const [checked, setChecked] = useState<Record<number, boolean>>({})
   const [saved, setSaved] = useState<string | null>(null)
 
   const candidates = useMemo(
@@ -53,7 +52,6 @@ export function TradePlan({
       snapshot.atr14 !== null ? snapshot.close - snapshot.atr14 * settings.atrMultiple : null
     const fallback = snapshot.low5 !== null ? snapshot.low5 * 0.995 : snapshot.close * 0.95
     setStopInput(String(Math.round(atrStop ?? fallback)))
-    setChecked({})
     setSaved(null)
   }, [stock.code, snapshot, settings.atrMultiple])
 
@@ -85,7 +83,6 @@ export function TradePlan({
   const entryFee = tradeFee(plan.entry * sizing.shares, settings.feeConfig)
   const netProfit = grossProfit - entryFee - exitFee
   const afterTax = netProfit - capitalGainTax(netProfit)
-  const checklistDone = settings.checklist.every((_, index) => checked[index])
 
   const record = async () => {
     if (sizing.shares <= 0) return
@@ -194,35 +191,20 @@ export function TradePlan({
       )}
 
       <div className="mt-5 border-t border-neutral-200 pt-4 dark:border-neutral-800">
-        <h3 className="text-sm font-semibold">エントリー前チェック</h3>
-        <ul className="mt-2 space-y-1.5">
-          {settings.checklist.map((item, index) => (
-            <li key={item}>
-              <label className="flex items-start gap-2 text-sm">
-                <input
-                  type="checkbox"
-                  checked={Boolean(checked[index])}
-                  onChange={(e) => setChecked({ ...checked, [index]: e.target.checked })}
-                  className="mt-0.5 size-4 rounded border-neutral-300 dark:border-neutral-600"
-                />
-                <span className={checked[index] ? 'text-neutral-400 line-through' : ''}>{item}</span>
-              </label>
-            </li>
-          ))}
-        </ul>
-
-        <div className="mt-4 flex flex-wrap items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <button
             type="button"
             className={buttonClass}
-            disabled={sizing.shares <= 0 || !checklistDone}
+            disabled={sizing.shares <= 0}
             onClick={() => void record()}
           >
             この計画で建玉を記録
           </button>
-          {!checklistDone && <Badge tone="info">チェックが全部つくと押せます</Badge>}
           {saved && <span className="text-sm text-neutral-500 dark:text-neutral-400">{saved}</span>}
         </div>
+        <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
+          記録するのは、実際にSBI証券で買えたあとにしてください。
+        </p>
       </div>
     </Card>
   )

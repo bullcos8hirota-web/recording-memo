@@ -5,6 +5,7 @@ import { closes, sma } from '../../lib/market/indicators'
 import { CandleChart, type Level } from './CandleChart'
 import { TradePlan } from './TradePlan'
 import { CompanyCard } from './CompanyCard'
+import { PriceImportCard } from './PriceImportCard'
 import { count, percent, price, shortDate, toneClass } from '../../lib/format'
 import { Badge, Card, EmptyState, Stat, subtleButtonClass } from '../ui/Primitives'
 import { HelpButton } from '../Learn/HelpButton'
@@ -12,7 +13,7 @@ import { SIGNAL_TERMS } from '../../lib/learn/signalTerms'
 
 const MA_COLORS = { sma5: '#f59e0b', sma25: '#2563eb', sma75: '#a855f7' }
 
-export function SymbolDetail({ onGoImport }: { onGoImport: () => void }) {
+export function SymbolDetail() {
   const stocks = useAppStore((s) => s.stocks)
   const series = useAppStore((s) => s.series)
   const selectedCode = useAppStore((s) => s.selectedCode)
@@ -110,16 +111,7 @@ export function SymbolDetail({ onGoImport }: { onGoImport: () => void }) {
           <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">{stock.memo}</p>
         )}
 
-        {bars.length === 0 ? (
-          <div className="mt-4">
-            <EmptyState title="価格データがありません">
-              <p>「取込」タブで日足のCSVを読み込むか、当日の値を手入力してください。</p>
-              <button type="button" className={`${subtleButtonClass} mt-3`} onClick={onGoImport}>
-                取込タブへ
-              </button>
-            </EmptyState>
-          </div>
-        ) : (
+        {bars.length > 0 && (
           <div className="mt-4">
             <CandleChart bars={bars} overlays={overlays} levels={levels} />
             <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
@@ -129,6 +121,8 @@ export function SymbolDetail({ onGoImport }: { onGoImport: () => void }) {
           </div>
         )}
       </Card>
+
+      <PriceImportCard key={stock.code} stock={stock} barCount={bars.length} />
 
       {snapshot && analysis && (
         <>

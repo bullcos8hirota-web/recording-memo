@@ -32,7 +32,7 @@ export function JournalView() {
 
       {closed.length === 0 ? (
         <EmptyState title="まだ手仕舞い済みのトレードがありません">
-          建玉を手仕舞うか、「取込」タブでSBI証券の取引履歴CSVを読み込むと成績が出ます。
+          建玉を手仕舞うか、「設定」タブでSBI証券の取引履歴CSVを読み込むと成績が出ます。
         </EmptyState>
       ) : (
         <>

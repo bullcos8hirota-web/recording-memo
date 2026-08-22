@@ -24,7 +24,7 @@ const SECTIONS = [
 
 type SectionId = (typeof SECTIONS)[number]['id']
 
-export function LearnView({ onGoTab }: { onGoTab: (tab: 'screener' | 'import') => void }) {
+export function LearnView({ onGoTab }: { onGoTab: (tab: 'screener' | 'settings') => void }) {
   const [section, setSection] = useState<SectionId>('flow')
 
   return (
@@ -92,7 +92,7 @@ const STEPS: { title: string; body: string; terms: string[] }[] = [
   },
 ]
 
-function FlowSection({ onGoTab }: { onGoTab: (tab: 'screener' | 'import') => void }) {
+function FlowSection({ onGoTab }: { onGoTab: (tab: 'screener' | 'settings') => void }) {
   return (
     <div className="space-y-4">
       <Card title="スイングトレードとは" description="数日から数週間かけて売買するやり方です。">
@@ -125,13 +125,13 @@ function FlowSection({ onGoTab }: { onGoTab: (tab: 'screener' | 'import') => voi
       <Card title="まず何をすればいい?">
         <ol className="list-decimal space-y-2 pl-5 text-sm text-neutral-700 dark:text-neutral-300">
           <li>
-            「取込」タブでサンプルデータを読み込む(架空の銘柄なので、いくら操作しても損はしません)
+            「設定」タブでサンプルデータを読み込む(架空の銘柄なので、いくら操作しても損はしません)
             <button
               type="button"
-              onClick={() => onGoTab('import')}
+              onClick={() => onGoTab('settings')}
               className="ml-2 rounded-full bg-neutral-900 px-3 py-1 text-xs font-medium text-white dark:bg-neutral-100 dark:text-neutral-900"
             >
-              取込タブへ
+              設定タブへ
             </button>
           </li>
           <li>「監視」タブで5銘柄のスコアを見比べる。点数の違いがどこから来ているか、銘柄タブで確かめる</li>
