@@ -140,6 +140,33 @@ export function TradePlan({
       title="売買プラン"
       description="許容損失から株数を決めます。損切り価格を先に決めるのがスイングの肝です。"
     >
+      {analysis && !ready && (
+        <div className="mb-3 rounded-xl bg-amber-50 px-3 py-3 text-sm text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+          <p className="font-medium">
+            今は買う場面ではありません（{VERDICT_LABEL[analysis.verdict]} / スコア{analysis.score}）
+          </p>
+          <p className="mt-1 text-xs">
+            以下は「もし買うならこの株数・この損切り」を試すためのものです。
+            そのまま証券会社に入れる注文は、条件が揃ってから出します。
+          </p>
+          {!forceOrder && (
+            <button
+              type="button"
+              className={`${subtleButtonClass} mt-2`}
+              onClick={() => setForceOrder(true)}
+            >
+              それでも注文内容を見る
+            </button>
+          )}
+        </div>
+      )}
+
+      {analysis && ready && (
+        <p className="mb-3 rounded-xl bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-200">
+          買う条件が揃っています（スコア{analysis.score}）
+        </p>
+      )}
+
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
         <Field label="エントリー価格(円)" help="order-type">
           <input
@@ -247,26 +274,6 @@ export function TradePlan({
             <Row help="commission" label="手数料(往復概算)" value={yen(entryFee + exitFee)} />
           </dl>
         </>
-      )}
-
-      {sizing.shares > 0 && !ready && !forceOrder && (
-        <div className="mt-4 rounded-xl bg-amber-50 px-3 py-3 text-sm text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
-          <p className="font-medium">
-            この銘柄は今「{analysis ? VERDICT_LABEL[analysis.verdict] : '判定できません'}」です。
-            買う条件は揃っていません。
-          </p>
-          <p className="mt-1 text-xs">
-            上の数字は「もし買うならこの株数・この損切り」を試すためのものです。
-            注文の内容は、条件が揃ってから見るほうが安全です。
-          </p>
-          <button
-            type="button"
-            className={`${subtleButtonClass} mt-2`}
-            onClick={() => setForceOrder(true)}
-          >
-            それでも注文内容を見る
-          </button>
-        </div>
       )}
 
       {sizing.shares > 0 && (ready || forceOrder) && (
