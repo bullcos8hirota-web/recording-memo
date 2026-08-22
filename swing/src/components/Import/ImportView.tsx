@@ -1,57 +1,20 @@
 import { useState } from 'react'
 import { useAppStore } from '../../stores/appStore'
-import { parseQuoteLines, type QuoteLine } from '../../lib/market/quickUpdate'
+import { analyzePaste } from '../../lib/market/importPaste'
 import {
   matchExecutions,
-  parsePriceCsv,
   parseTradeHistoryCsv,
   readCsvFile,
   type MatchedTrade,
 } from '../../lib/market/csv'
-import { price, shortDate, today } from '../../lib/format'
 import { readClipboard } from '../../lib/clipboard'
-import {
-  buttonClass,
-  Card,
-  Field,
-  inputClass,
-  subtleButtonClass,
-} from '../ui/Primitives'
-
-/** クリップボードの中身を入力欄に流し込むボタン。 */
-function PasteButton({ onPaste }: { onPaste: (text: string) => void }) {
-  const [error, setError] = useState<string | null>(null)
-
-  return (
-    <>
-      <button
-        type="button"
-        className={subtleButtonClass}
-        onClick={async () => {
-          const result = await readClipboard()
-          if (result.ok) {
-            setError(null)
-            onPaste(result.text)
-          } else {
-            setError(result.reason)
-          }
-        }}
-      >
-        クリップボードから貼り付け
-      </button>
-      {error && (
-        <p className="mt-2 text-sm text-amber-700 dark:text-amber-300">{error}</p>
-      )}
-    </>
-  )
-}
+import { price, shortDate, today } from '../../lib/format'
+import { buttonClass, Card, Field, inputClass, subtleButtonClass } from '../ui/Primitives'
 
 export function ImportView() {
   return (
     <div className="space-y-4">
-      <QuickUpdate />
       <PriceImport />
-      <ManualBarForm />
       <HistoryImport />
       <SampleData />
     </div>
@@ -59,285 +22,198 @@ export function ImportView() {
 }
 
 /**
- * 毎日の更新をいちばん短くするための入口。銘柄ごとにフォームを開かなくても、
- * 画面からコピーした文字列を貼れば、複数銘柄の終値をまとめて更新できる。
+ * 株価の取り込み口。貼り付けた中身から、1銘柄の時系列か、その日の複数銘柄の値かを
+ * 判断する。入口を分けると使う側が迷うので、1つにまとめている。
  */
-function QuickUpdate() {
-  const stocks = useAppStore((s) => s.stocks)
-  const importBars = useAppStore((s) => s.importBars)
-  const [text, setText] = useState('')
-  const [date, setDate] = useState(today())
-  const [message, setMessage] = useState<string | null>(null)
-
-  const rows: QuoteLine[] = text.trim() ? parseQuoteLines(text, stocks, date) : []
-  const known = new Set(stocks.map((stock) => stock.code.toUpperCase()))
-  const ready = rows.filter((row) => row.bar !== null && row.code !== null)
-  const appliable = ready.filter((row) => known.has(row.code!))
-
-  const apply = async () => {
-    for (const row of appliable) {
-      await importBars(row.code!, [row.bar!])
-    }
-    setMessage(`${appliable.length}銘柄の${date}の値を更新しました。`)
-    setText('')
-  }
-
-  return (
-    <Card
-      title="まとめて終値を更新"
-      description="SBI証券のポートフォリオ画面などをコピーして貼るだけで、登録済みの銘柄をまとめて更新します。毎日の更新はこれがいちばん速いです。"
-    >
-      <div className="grid gap-3 sm:grid-cols-[10rem_1fr]">
-        <Field label="日付">
-          <input
-            type="date"
-            className={inputClass}
-            value={date}
-            onChange={(e) => setDate(e.target.value)}
-          />
-        </Field>
-      </div>
-      <div className="mb-2">
-        <PasteButton onPaste={setText} />
-      </div>
-      <Field label="貼り付け" hint="1行に1銘柄。コードか登録済みの銘柄名と、価格が入っていれば読み取ります。">
-        <textarea
-          className={`${inputClass} min-h-32 font-mono text-sm`}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder={'7203 2850\n9984 9,300\nトヨタ自動車 7203 2,850 +1.2%'}
-        />
-      </Field>
-
-      {rows.length > 0 && (
-        <div className="mt-3 overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-800">
-          <table className="w-full text-sm">
-            <thead className="bg-neutral-50 text-left text-xs text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">
-              <tr>
-                <th className="px-3 py-2">銘柄</th>
-                <th className="px-3 py-2 text-right">終値</th>
-                <th className="px-3 py-2 text-right">状態</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-neutral-200 dark:divide-neutral-800">
-              {rows.map((row, index) => {
-                const unknown = row.code !== null && !known.has(row.code)
-                return (
-                  <tr key={`${row.raw}-${index}`}>
-                    <td className="px-3 py-2">
-                      <span className="font-mono text-xs text-neutral-500">{row.code ?? '—'}</span>{' '}
-                      {row.name ?? ''}
-                      {row.error && (
-                        <span className="block text-xs text-neutral-400">{row.raw}</span>
-                      )}
-                    </td>
-                    <td className="px-3 py-2 text-right tabular-nums">
-                      {row.bar ? price(row.bar.close) : '—'}
-                    </td>
-                    <td className="px-3 py-2 text-right text-xs">
-                      {row.error ? (
-                        <span className="text-rose-600 dark:text-rose-400">{row.error}</span>
-                      ) : unknown ? (
-                        <span className="text-neutral-400">未登録なので飛ばします</span>
-                      ) : (
-                        <span className="text-neutral-500">更新できます</span>
-                      )}
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      <div className="mt-3 flex flex-wrap items-center gap-3">
-        <button
-          type="button"
-          className={buttonClass}
-          disabled={appliable.length === 0}
-          onClick={() => void apply()}
-        >
-          {appliable.length > 0 ? `${appliable.length}銘柄を更新` : 'まとめて更新'}
-        </button>
-        {message && <span className="text-sm text-neutral-600 dark:text-neutral-300">{message}</span>}
-      </div>
-    </Card>
-  )
-}
-
 function PriceImport() {
   const stocks = useAppStore((s) => s.stocks)
   const addStock = useAppStore((s) => s.addStock)
   const importBars = useAppStore((s) => s.importBars)
   const selectedCode = useAppStore((s) => s.selectedCode)
+
+  const [text, setText] = useState('')
   const [code, setCode] = useState(selectedCode ?? '')
   const [name, setName] = useState('')
-  const [text, setText] = useState('')
+  const [date, setDate] = useState(today())
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
-  const apply = async (csv: string) => {
-    setMessage(null)
+  const result = analyzePaste(text, stocks, date)
+  const known = new Set(stocks.map((stock) => stock.code.toUpperCase()))
+  const target = code.trim().toUpperCase()
+
+  const quotesReady =
+    result.kind === 'quotes'
+      ? result.rows.filter((row) => row.bar !== null && row.code !== null && known.has(row.code))
+      : []
+
+  const canImport =
+    (result.kind === 'series' && target !== '') || (result.kind === 'quotes' && quotesReady.length > 0)
+
+  const paste = async () => {
+    const clip = await readClipboard()
+    if (clip.ok) {
+      setText(clip.text)
+      setError(null)
+      setMessage(null)
+    } else {
+      setError(clip.reason)
+    }
+  }
+
+  const run = async () => {
     setError(null)
-    const target = code.trim().toUpperCase()
-    if (!target) {
-      setError('銘柄コードを入力してください。')
+    setMessage(null)
+
+    if (result.kind === 'series') {
+      if (!target) {
+        setError('どの銘柄のデータか、銘柄コードを入れてください。')
+        return
+      }
+      if (!known.has(target)) await addStock({ code: target, name: name || target })
+      const total = await importBars(target, result.bars)
+      const first = result.bars[0].date
+      const last = result.bars[result.bars.length - 1].date
+      setMessage(
+        `${target}に${result.bars.length}本を取り込みました(${shortDate(first)}〜${shortDate(last)})。保存済みは合計${total}本。`,
+      )
+      setText('')
       return
     }
-    const result = parsePriceCsv(csv)
-    if (result.error) {
-      setError(result.error)
-      return
+
+    if (result.kind === 'quotes') {
+      for (const row of quotesReady) {
+        await importBars(row.code!, [row.bar!])
+      }
+      setMessage(`${quotesReady.length}銘柄の${shortDate(date)}の値を更新しました。`)
+      setText('')
     }
-    if (!stocks.some((s) => s.code === target)) {
-      await addStock({ code: target, name: name || target })
-    }
-    const total = await importBars(target, result.rows)
-    setMessage(
-      `${result.rows.length}本を取り込みました(${shortDate(result.rows[0].date)}〜${shortDate(
-        result.rows[result.rows.length - 1].date,
-      )})。保存済みは合計${total}本。${result.skipped > 0 ? ` ${result.skipped}行は読めずに飛ばしました。` : ''}`,
-    )
-    setText('')
   }
 
   return (
     <Card
-      title="株価データを取り込む"
-      description="日足のデータを読み込みます。表をコピーして貼るだけでも、見出しが無くても、日付と価格が並んでいれば読み取ります。分割して貼っても構いません。"
+      title="株価を取り込む"
+      description="時系列の表でも、「コード 株価」の行でも、そのまま貼り付ければ読み分けます。分割して貼っても構いません。"
     >
-      <div className="grid gap-3 sm:grid-cols-3">
-        <Field label="銘柄コード">
-          <input
-            className={inputClass}
-            value={code}
-            onChange={(e) => setCode(e.target.value)}
-            placeholder="7203"
-            list="stock-codes"
-          />
-          <datalist id="stock-codes">
-            {stocks.map((stock) => (
-              <option key={stock.code} value={stock.code}>
-                {stock.name}
-              </option>
-            ))}
-          </datalist>
-        </Field>
-        <Field label="銘柄名(新規登録時のみ)">
-          <input className={inputClass} value={name} onChange={(e) => setName(e.target.value)} />
-        </Field>
-        <Field label="CSVファイル" hint="Shift_JISのファイルもそのまま読めます">
+      <div className="flex flex-wrap gap-2">
+        <button type="button" className={buttonClass} onClick={() => void paste()}>
+          クリップボードから貼り付け
+        </button>
+        <label className={`${subtleButtonClass} cursor-pointer`}>
+          CSVファイル
           <input
             type="file"
             accept=".csv,.txt,text/csv"
-            className="mt-1 w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-neutral-900 file:px-3 file:py-2 file:text-sm file:text-white dark:file:bg-neutral-100 dark:file:text-neutral-900"
+            className="hidden"
             onChange={async (event) => {
               const file = event.target.files?.[0]
               if (!file) return
-              await apply(await readCsvFile(file))
+              setText(await readCsvFile(file))
               event.target.value = ''
             }}
+          />
+        </label>
+      </div>
+
+      <div className="mt-3">
+        <Field label="貼り付け">
+          <textarea
+            className={`${inputClass} min-h-32 font-mono text-sm`}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder={'26/8/21\t1,410\t1,430\t1,405\t1,425\n\nまたは\n\n4828 1425\n9768 3740'}
           />
         </Field>
       </div>
 
-      <div className="mb-2">
-        <PasteButton onPaste={setText} />
-      </div>
-      <Field label="貼り付けでも取り込めます">
-        <textarea
-          className={`${inputClass} min-h-28 font-mono text-xs`}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder={'日付,始値,高値,安値,終値,出来高\n2026-08-17,1800,1830,1795,1825,1200000'}
-        />
-      </Field>
-      <div className="mt-2 flex flex-wrap items-center gap-3">
-        <button type="button" className={buttonClass} disabled={!text.trim()} onClick={() => void apply(text)}>
-          貼り付けた内容を取り込む
+      {result.kind === 'series' && (
+        <div className="mt-3 space-y-3">
+          <div className="rounded-xl bg-neutral-50 px-3 py-2 text-sm dark:bg-neutral-800/60">
+            <p className="font-medium">
+              日付入りのデータとして読みました（{result.bars.length}本 /{' '}
+              {shortDate(result.bars[0].date)}〜{shortDate(result.bars[result.bars.length - 1].date)}）
+            </p>
+            <p className="mt-1 text-neutral-500 dark:text-neutral-400">
+              終値 {price(result.bars[result.bars.length - 1].close)}円
+              {result.skipped > 0 && ` / 読めなかった行 ${result.skipped}`}
+            </p>
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="銘柄コード" hint="このデータを入れる銘柄">
+              <input
+                className={inputClass}
+                value={code}
+                onChange={(e) => setCode(e.target.value)}
+                placeholder="4828"
+                list="stock-codes"
+              />
+              <datalist id="stock-codes">
+                {stocks.map((stock) => (
+                  <option key={stock.code} value={stock.code}>
+                    {stock.name}
+                  </option>
+                ))}
+              </datalist>
+            </Field>
+            {!known.has(target) && target !== '' && (
+              <Field label="銘柄名" hint="新しい銘柄として登録します">
+                <input className={inputClass} value={name} onChange={(e) => setName(e.target.value)} />
+              </Field>
+            )}
+          </div>
+        </div>
+      )}
+
+      {result.kind === 'quotes' && (
+        <div className="mt-3 space-y-3">
+          <Field label="この日の値として取り込みます">
+            <input
+              type="date"
+              className={inputClass}
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+            />
+          </Field>
+          <div className="overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-800">
+            <table className="w-full text-sm">
+              <tbody className="divide-y divide-neutral-200 dark:divide-neutral-800">
+                {result.rows.map((row, index) => (
+                  <tr key={`${row.raw}-${index}`}>
+                    <td className="px-3 py-2">
+                      <span className="font-mono text-xs text-neutral-500">{row.code ?? '—'}</span>{' '}
+                      {row.name ?? ''}
+                    </td>
+                    <td className="px-3 py-2 text-right tabular-nums">
+                      {row.bar ? `${price(row.bar.close)}円` : '—'}
+                    </td>
+                    <td className="px-3 py-2 text-right text-xs text-neutral-500">
+                      {row.error
+                        ? row.error
+                        : row.code && !known.has(row.code)
+                          ? '未登録'
+                          : '更新できます'}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {result.kind === 'empty' && result.reason && (
+        <p className="mt-3 text-sm text-rose-600 dark:text-rose-400">{result.reason}</p>
+      )}
+
+      <div className="mt-3 flex flex-wrap items-center gap-3">
+        <button type="button" className={buttonClass} disabled={!canImport} onClick={() => void run()}>
+          {result.kind === 'quotes' && quotesReady.length > 0
+            ? `${quotesReady.length}銘柄を更新`
+            : '取り込む'}
         </button>
         {message && <span className="text-sm text-neutral-600 dark:text-neutral-300">{message}</span>}
         {error && <span className="text-sm text-rose-600 dark:text-rose-400">{error}</span>}
       </div>
-    </Card>
-  )
-}
-
-function ManualBarForm() {
-  const stocks = useAppStore((s) => s.stocks)
-  const importBars = useAppStore((s) => s.importBars)
-  const selectedCode = useAppStore((s) => s.selectedCode)
-  const [form, setForm] = useState({
-    code: selectedCode ?? '',
-    date: today(),
-    open: '',
-    high: '',
-    low: '',
-    close: '',
-    volume: '',
-  })
-  const [message, setMessage] = useState<string | null>(null)
-
-  const set = (key: keyof typeof form, value: string) => setForm({ ...form, [key]: value })
-
-  const submit = async (event: React.FormEvent) => {
-    event.preventDefault()
-    const close = Number(form.close)
-    if (!form.code || !close) return
-    const open = Number(form.open) || close
-    await importBars(form.code, [
-      {
-        date: form.date,
-        open,
-        high: Number(form.high) || Math.max(open, close),
-        low: Number(form.low) || Math.min(open, close),
-        close,
-        volume: Number(form.volume) || 0,
-      },
-    ])
-    setMessage(`${form.code} の ${form.date} を更新しました。`)
-    setForm({ ...form, open: '', high: '', low: '', close: '', volume: '' })
-  }
-
-  return (
-    <Card title="当日の値を手入力" description="引け後に1本だけ足すときに使います。同じ日付は上書きされます。">
-      <form onSubmit={submit} className="grid gap-3 sm:grid-cols-4">
-        <Field label="銘柄">
-          <select className={inputClass} value={form.code} onChange={(e) => set('code', e.target.value)}>
-            <option value="">選択</option>
-            {stocks.map((stock) => (
-              <option key={stock.code} value={stock.code}>
-                {stock.code} {stock.name}
-              </option>
-            ))}
-          </select>
-        </Field>
-        <Field label="日付">
-          <input type="date" className={inputClass} value={form.date} onChange={(e) => set('date', e.target.value)} />
-        </Field>
-        <Field label="始値">
-          <input className={inputClass} value={form.open} onChange={(e) => set('open', e.target.value)} inputMode="decimal" />
-        </Field>
-        <Field label="高値">
-          <input className={inputClass} value={form.high} onChange={(e) => set('high', e.target.value)} inputMode="decimal" />
-        </Field>
-        <Field label="安値">
-          <input className={inputClass} value={form.low} onChange={(e) => set('low', e.target.value)} inputMode="decimal" />
-        </Field>
-        <Field label="終値">
-          <input className={inputClass} value={form.close} onChange={(e) => set('close', e.target.value)} inputMode="decimal" />
-        </Field>
-        <Field label="出来高">
-          <input className={inputClass} value={form.volume} onChange={(e) => set('volume', e.target.value)} inputMode="numeric" />
-        </Field>
-        <div className="self-end">
-          <button type="submit" className={buttonClass}>
-            追加する
-          </button>
-        </div>
-      </form>
-      {message && <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-300">{message}</p>}
     </Card>
   )
 }
@@ -393,20 +269,23 @@ function HistoryImport() {
 
   return (
     <Card
-      title="SBI証券の取引履歴を取り込む"
-      description="SBI証券のサイトで「口座管理 > 取引履歴」を表示し、CSVでダウンロードしたファイルを読み込みます。買いと売りを古い順に突き合わせて1トレードにまとめます。"
+      title="売買の記録を取り込む"
+      description="SBI証券の「口座管理 > 取引履歴」からダウンロードしたCSVを読み込みます。買いと売りを古い順に突き合わせて1トレードにまとめます。"
     >
-      <input
-        type="file"
-        accept=".csv,.txt,text/csv"
-        className="w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-neutral-900 file:px-3 file:py-2 file:text-sm file:text-white dark:file:bg-neutral-100 dark:file:text-neutral-900"
-        onChange={async (event) => {
-          const file = event.target.files?.[0]
-          if (!file) return
-          load(await readCsvFile(file))
-          event.target.value = ''
-        }}
-      />
+      <label className={`${subtleButtonClass} inline-flex cursor-pointer`}>
+        取引履歴CSVを選ぶ
+        <input
+          type="file"
+          accept=".csv,.txt,text/csv"
+          className="hidden"
+          onChange={async (event) => {
+            const file = event.target.files?.[0]
+            if (!file) return
+            load(await readCsvFile(file))
+            event.target.value = ''
+          }}
+        />
+      </label>
       {error && <p className="mt-2 text-sm text-rose-600 dark:text-rose-400">{error}</p>}
       {message && <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-300">{message}</p>}
 
@@ -420,7 +299,6 @@ function HistoryImport() {
                   <th className="px-3 py-2">買い</th>
                   <th className="px-3 py-2">売り</th>
                   <th className="px-3 py-2 text-right">株数</th>
-                  <th className="px-3 py-2 text-right">状態</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-neutral-200 dark:divide-neutral-800">
@@ -435,9 +313,8 @@ function HistoryImport() {
                     <td className="px-3 py-2 tabular-nums">
                       {row.exitDate ? `${shortDate(row.exitDate)} ${price(row.exitPrice)}` : '保有中'}
                     </td>
-                    <td className="px-3 py-2 text-right tabular-nums">{row.shares.toLocaleString('ja-JP')}</td>
-                    <td className="px-3 py-2 text-right text-xs text-neutral-500">
-                      {isDuplicate(row) ? '登録済み' : '新規'}
+                    <td className="px-3 py-2 text-right tabular-nums">
+                      {row.shares.toLocaleString('ja-JP')}
                     </td>
                   </tr>
                 ))}
@@ -464,16 +341,18 @@ function SampleData() {
   const hasSample = useAppStore((s) => s.stocks.some((stock) => stock.demo))
 
   return (
-    <Card
-      title="サンプルデータ"
-      description="実在しない銘柄の架空の値動きです。操作を試すために使ってください。"
-    >
+    <Card title="サンプルデータ" description="実在しない銘柄の架空の値動きです。操作を試すために使います。">
       <div className="flex flex-wrap gap-2">
-        <button type="button" className={buttonClass} onClick={() => void loadSample()}>
-          サンプルを読み込む
+        <button type="button" className={subtleButtonClass} onClick={() => void loadSample()}>
+          読み込む
         </button>
-        <button type="button" className={subtleButtonClass} disabled={!hasSample} onClick={() => void clearSample()}>
-          サンプルを削除
+        <button
+          type="button"
+          className={subtleButtonClass}
+          disabled={!hasSample}
+          onClick={() => void clearSample()}
+        >
+          削除
         </button>
       </div>
     </Card>
