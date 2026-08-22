@@ -22,6 +22,11 @@ export type Settings = {
   maxPositionPercent: number
   /** 損切り幅に対する利確幅の倍率。 */
   rewardRatio: number
+  /**
+   * 出口の決め方。'target' は利確価格を置く。'trailing' は利確を置かず、
+   * 損切りを上げていって当たるまで持つ。
+   */
+  exitStyle: 'target' | 'trailing'
   /** 損切り位置をATRの何倍にするか。 */
   atrMultiple: number
   /** 新規登録時の売買単位。 */
@@ -36,6 +41,7 @@ export const DEFAULT_SETTINGS: Settings = {
   riskPercent: 2,
   maxPositionPercent: 30,
   rewardRatio: 2,
+  exitStyle: 'trailing',
   atrMultiple: 2,
   defaultLot: 100,
   feeConfig: DEFAULT_FEE_CONFIG,

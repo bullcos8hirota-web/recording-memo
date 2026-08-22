@@ -57,6 +57,32 @@ export function SettingsView() {
             inputMode="decimal"
             onCommit={(value) => void saveSettings({ rewardRatio: value || 0 })}
           />
+          <div className="col-span-full">
+            <p className="text-sm font-medium">出口の決め方</p>
+            <div className="mt-2 flex flex-wrap gap-2">
+              {(
+                [
+                  ['trailing', 'トレーリング', '利確を置かず、損切りを毎週上げていく。上限を作らない代わりに、天井からATR分は返す。'],
+                  ['target', '利確目標を置く', '上の利確倍率で決めた価格に届いたら売る。取れる額は決まるが、いつ終わるかが読める。'],
+                ] as const
+              ).map(([value, label, hint]) => (
+                <button
+                  key={value}
+                  type="button"
+                  className={settings.exitStyle === value ? buttonClass : subtleButtonClass}
+                  onClick={() => void saveSettings({ exitStyle: value })}
+                  title={hint}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
+              {settings.exitStyle === 'trailing'
+                ? '建玉を記録するとき、利確目標は入れません。毎週末、建玉タブのトレーリング目安まで損切りを上げていきます。'
+                : '建玉を記録するとき、利確倍率から計算した価格を利確目標として入れます。'}
+            </p>
+          </div>
           <NumberField
             label="損切り幅(ATRの何倍)"
             help="atr"
