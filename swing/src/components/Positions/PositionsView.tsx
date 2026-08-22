@@ -141,7 +141,12 @@ function PositionCard({ trade, bars }: { trade: Trade; bars: Bar[] }) {
       <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
         <Stat label="現在値" value={last ? `${price(last.close)}円` : '—'} hint={last ? `${shortDate(last.date)}時点` : undefined} />
         <Stat help="stop-loss" label="損切り" value={trade.stopPrice === null ? '未設定' : `${price(trade.stopPrice)}円`} />
-        <Stat help="take-profit" label="利確目標" value={trade.targetPrice === null ? '未設定' : `${price(trade.targetPrice)}円`} />
+        <Stat
+          help="take-profit"
+          label="利確目標"
+          value={trade.targetPrice === null ? 'なし' : `${price(trade.targetPrice)}円`}
+          hint={trade.targetPrice === null ? 'トレーリングで出口を決めます' : undefined}
+        />
         <Stat
           help="trailing-stop"
           label="トレーリング目安"
@@ -184,9 +189,29 @@ function PositionCard({ trade, bars }: { trade: Trade; bars: Bar[] }) {
             損切りを{price(trailing!)}円に上げる
           </button>
         )}
+        {trade.targetPrice !== null && (
+          <button
+            type="button"
+            className={subtleButtonClass}
+            onClick={() => void updateTrade(trade.id, { targetPrice: null })}
+          >
+            利確目標を消す
+          </button>
+        )}
         <div className="grow" />
+        <button
+          type="button"
+          className={subtleButtonClass}
+          onClick={() => {
+            if (confirm('この建玉の記録を削除しますか?買っていないのに記録した場合はこちらです。')) {
+              void removeTrade(trade.id)
+            }
+          }}
+        >
+          記録を削除
+        </button>
         <button type="button" className={buttonClass} onClick={() => setClosing((v) => !v)}>
-          {closing ? '閉じる' : '手仕舞いを記録'}
+          {closing ? '閉じる' : '売却を記録'}
         </button>
       </div>
 
@@ -222,15 +247,6 @@ function PositionCard({ trade, bars }: { trade: Trade; bars: Bar[] }) {
           <div className="mt-3 flex gap-2">
             <button type="button" className={buttonClass} onClick={() => void closeTrade()}>
               確定する
-            </button>
-            <button
-              type="button"
-              className={subtleButtonClass}
-              onClick={() => {
-                if (confirm('この建玉の記録を削除しますか?')) void removeTrade(trade.id)
-              }}
-            >
-              記録を削除
             </button>
           </div>
         </div>

@@ -93,7 +93,8 @@ export function TradePlan({
       entryPrice: plan.entry,
       shares: sizing.shares,
       stopPrice: plan.stop,
-      targetPrice: plan.target,
+      // トレーリングで運用するなら、上限になる利確価格は記録しない。
+      targetPrice: settings.exitStyle === 'trailing' ? null : plan.target,
       fees: entryFee,
       reason:
         analysis?.signals
@@ -204,6 +205,9 @@ export function TradePlan({
         </div>
         <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
           記録するのは、実際にSBI証券で買えたあとにしてください。
+          {settings.exitStyle === 'trailing'
+            ? '出口はトレーリング(設定タブ)なので、利確目標は記録しません。上の利確価格は「損切り幅の何倍か」を見るための目安です。'
+            : '出口は利確目標(設定タブ)なので、上の利確価格をそのまま記録します。'}
         </p>
       </div>
     </Card>
