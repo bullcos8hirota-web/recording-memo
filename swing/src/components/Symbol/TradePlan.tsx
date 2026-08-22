@@ -293,15 +293,17 @@ export function TradePlan({
                 <span className="font-medium">1. 買い注文（今すぐ）</span>
                 <br />
                 {stock.code} {stock.name} / 現物買い / {sizing.shares.toLocaleString('ja-JP')}株 /
-                執行条件 <span className="font-medium">逆指値</span> / トリガー価格{' '}
-                <span className="font-medium tabular-nums">{price(plan.entry)}円</span> / 成行
+                執行条件 <span className="font-medium">逆指値</span> /{' '}
+                <span className="font-medium tabular-nums">{price(plan.entry)}円</span>
+                <span className="font-medium">以上になったら</span> / 成行
               </li>
               <li>
                 <span className="font-medium">2. 売り注文（買えたあと）</span>
                 <br />
                 現物売 / {sizing.shares.toLocaleString('ja-JP')}株 / 執行条件{' '}
-                <span className="font-medium">逆指値</span> / トリガー価格{' '}
-                <span className="font-medium tabular-nums">{price(plan.stop)}円</span> / 成行
+                <span className="font-medium">逆指値</span> /{' '}
+                <span className="font-medium tabular-nums">{price(plan.stop)}円</span>
+                <span className="font-medium">以下になったら</span> / 成行
                 {settings.exitStyle === 'target' && (
                   <>
                     {' '}
@@ -312,7 +314,11 @@ export function TradePlan({
               </li>
             </ol>
             <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
-              アプリの数字は手元のメモです。実際に売り買いするのは証券会社に出した注文だけなので、
+              買いは「以上」、売りは「以下」です。逆にすると、下がったところで買う注文や、
+            上がったところで売る注文になります。
+          </p>
+          <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+            アプリの数字は手元のメモです。実際に売り買いするのは証券会社に出した注文だけなので、
               2つめを入れるまでが1セットです。
               {settings.exitStyle === 'trailing' &&
                 '利確の注文は出しません。毎週末、建玉タブのトレーリング目安まで売りの逆指値を引き上げていきます。'}
