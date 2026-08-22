@@ -113,3 +113,40 @@ describe('mergeBars', () => {
     expect(merged[1].close).toBe(999)
   })
 })
+
+describe('出来高が入っていない日の扱い', () => {
+  /** 終値だけを入れた日(出来高0)を最後に足した状態を作る。 */
+  const withoutVolumeToday = (): Bar[] => {
+    const bars = series(Array.from({ length: 120 }, (_, i) => 1000 * 1.002 ** i))
+    return bars.map((bar, i) =>
+      i === bars.length - 1 ? { ...bar, volume: 0 } : { ...bar, volume: 1_000_000 },
+    )
+  }
+
+  it('出来高0は「薄商い」ではなく不明として扱う', () => {
+    const analysis = analyze(withoutVolumeToday())
+    expect(analysis.snapshot.volumeRatio).toBeNull()
+    expect(analysis.signals.map((s) => s.id)).not.toContain('low-volume')
+  })
+
+  it('本当に出来高が細い日は減点する', () => {
+    const bars = series(Array.from({ length: 120 }, (_, i) => 1000 * 1.002 ** i)).map(
+      (bar, i, all) => ({
+        ...bar,
+        volume: i === all.length - 1 ? 300_000 : 1_000_000,
+      }),
+    )
+    expect(analyze(bars).signals.map((s) => s.id)).toContain('low-volume')
+  })
+
+  it('出来高が無いままブレイクした場合は裏付けが取れないと書く', () => {
+    const flat = Array.from({ length: 119 }, (_, i) => 1000 + (i % 2))
+    const bars = series([...flat, 1100]).map((bar, i, all) => ({
+      ...bar,
+      volume: i === all.length - 1 ? 0 : 1_000_000,
+    }))
+    const breakout = analyze(bars).signals.find((s) => s.id === 'breakout')
+    expect(breakout?.detail).toContain('確認できない')
+    expect(breakout?.score).toBe(10)
+  })
+})

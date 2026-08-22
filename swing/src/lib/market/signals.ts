@@ -119,7 +119,9 @@ export function buildSnapshot(bars: Bar[], index = bars.length - 1): Snapshot {
     low20: low20.length ? at(low20, low20.length - 1) : null,
     low5: at(low5, index),
     volumeAvg20: avgVolume,
-    volumeRatio: avgVolume ? bar.volume / avgVolume : null,
+    // 終値だけを入れた日は出来高が0になる。0を「薄商い」と読むと誤判定になるので、
+    // 平均は取れていても当日の出来高が無い場合は「不明」として扱う。
+    volumeRatio: avgVolume && bar.volume > 0 ? bar.volume / avgVolume : null,
   }
 }
 
@@ -227,12 +229,17 @@ export function analyze(bars: Bar[], index = bars.length - 1): Analysis {
 
   // ブレイクアウト: 直近20日高値(前日まで)を終値で更新。
   if (snapshot.high20 !== null && close > snapshot.high20) {
-    const withVolume = (snapshot.volumeRatio ?? 0) >= 1.5
+    const ratio = snapshot.volumeRatio
+    const withVolume = ratio !== null && ratio >= 1.5
     signals.push({
       id: 'breakout',
       label: '20日高値ブレイク',
       detail: `直近20日高値 ${Math.round(snapshot.high20).toLocaleString('ja-JP')}円を終値で更新。${
-        withVolume ? '出来高も平均の1.5倍以上。' : '出来高の伴いは弱い。'
+        ratio === null
+          ? '出来高が入っていないため、勢いの裏付けは確認できない。'
+          : withVolume
+            ? '出来高も平均の1.5倍以上。'
+            : '出来高の伴いは弱い。'
       }`,
       tone: 'bull',
       score: withVolume ? 18 : 10,
