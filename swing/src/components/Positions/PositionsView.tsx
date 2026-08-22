@@ -185,8 +185,19 @@ function PositionCard({ trade, bars }: { trade: Trade; bars: Bar[] }) {
           </button>
         )}
         <div className="grow" />
+        <button
+          type="button"
+          className={subtleButtonClass}
+          onClick={() => {
+            if (confirm('この建玉の記録を削除しますか?買っていないのに記録した場合はこちらです。')) {
+              void removeTrade(trade.id)
+            }
+          }}
+        >
+          記録を削除
+        </button>
         <button type="button" className={buttonClass} onClick={() => setClosing((v) => !v)}>
-          {closing ? '閉じる' : '手仕舞いを記録'}
+          {closing ? '閉じる' : '売却を記録'}
         </button>
       </div>
 
@@ -222,15 +233,6 @@ function PositionCard({ trade, bars }: { trade: Trade; bars: Bar[] }) {
           <div className="mt-3 flex gap-2">
             <button type="button" className={buttonClass} onClick={() => void closeTrade()}>
               確定する
-            </button>
-            <button
-              type="button"
-              className={subtleButtonClass}
-              onClick={() => {
-                if (confirm('この建玉の記録を削除しますか?')) void removeTrade(trade.id)
-              }}
-            >
-              記録を削除
             </button>
           </div>
         </div>

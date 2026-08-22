@@ -31,8 +31,8 @@ export function JournalView() {
       <ManualTradeForm />
 
       {closed.length === 0 ? (
-        <EmptyState title="まだ手仕舞い済みのトレードがありません">
-          建玉を手仕舞うか、「設定」タブでSBI証券の取引履歴CSVを読み込むと成績が出ます。
+        <EmptyState title="まだ売却まで終わったトレードがありません">
+          建玉タブで売却を記録するか、「設定」タブでSBI証券の取引履歴CSVを読み込むと成績が出ます。
         </EmptyState>
       ) : (
         <>
