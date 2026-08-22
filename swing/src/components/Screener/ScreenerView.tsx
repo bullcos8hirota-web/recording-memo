@@ -5,6 +5,7 @@ import { evaluateFundamentals } from '../../lib/learn/buffett'
 import type { Stock } from '../../lib/market/types'
 import { percent, price, shortDate, toneClass } from '../../lib/format'
 import { useIsPhone } from '../../lib/useMediaQuery'
+import { CopyStateButton } from './CopyStateButton'
 import {
   Badge,
   buttonClass,
@@ -113,6 +114,7 @@ export function ScreenerView({
         <Card
           title="ウォッチリスト"
           description="スイング目線のスコア順。スコアはチャートの状態を点数化したもので、売買の指示ではありません。"
+          actions={<CopyStateButton />}
         >
           <div className="-mx-1 mb-3 flex gap-2 overflow-x-auto px-1 pb-1">
             {FILTERS.map((item) => (
