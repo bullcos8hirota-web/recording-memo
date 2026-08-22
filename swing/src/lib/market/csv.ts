@@ -244,9 +244,25 @@ function findOhlcWindow(values: number[]): { index: number; ohlc: number[] } | n
   return null
 }
 
-/** 出来高らしい値かどうか。株価より桁がはるかに大きい整数を出来高とみなす。 */
-const looksLikeVolume = (value: number, price: number): boolean =>
-  Number.isInteger(value) && value >= price * 5
+/**
+ * 出来高らしい値かどうか。株数なので整数で、その日の高値より大きい。
+ * 「株価の何倍以上」という条件にすると、値がさりで薄い銘柄の出来高を取りこぼす。
+ * PERやPBRは小数なので整数の条件で外れ、調整後終値は高値を超えないので外れる。
+ */
+const looksLikeVolume = (value: number, high: number): boolean =>
+  Number.isInteger(value) && value > high
+
+/**
+ * 4本値の前後から出来高を探す。サイトによって並びが違うため。
+ *   Yahoo!ファイナンス: PER PBR [出来高] 始値 高値 安値 終値 調整後終値
+ *   株探:               始値 高値 安値 終値 前日比 前日比(%) [売買高]
+ */
+function findVolume(values: number[], start: number, high: number): number {
+  const before = start > 0 ? values[start - 1] : null
+  if (before !== null && looksLikeVolume(before, high)) return before
+  const after = values.slice(start + 4).find((value) => looksLikeVolume(value, high))
+  return after ?? 0
+}
 
 export function parseVerticalQuoteTable(text: string): ParseResult<Bar> {
   const lines = text
@@ -279,14 +295,13 @@ export function parseVerticalQuoteTable(text: string): ParseResult<Bar> {
     const window = findOhlcWindow(values)
     if (window) {
       const [open, high, low, close] = window.ohlc
-      const before = window.index > 0 ? values[window.index - 1] : null
       bars.push({
         date: record.date,
         open,
         high,
         low,
         close,
-        volume: before !== null && looksLikeVolume(before, high) ? before : 0,
+        volume: findVolume(values, window.index, high),
       })
       continue
     }
