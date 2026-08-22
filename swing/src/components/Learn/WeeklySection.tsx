@@ -39,36 +39,79 @@ const SCHEDULE: { when: string; what: string; detail: string; where: string }[] 
   },
 ]
 
-const ORDER_STEPS: { title: string; body: string; check?: string }[] = [
+/**
+ * SBI証券のスマホ用注文画面(s.sbisec.co.jp)の欄そのままの順に並べる。
+ * 手順を文章で書くより、画面と1対1で対応させたほうが迷わない。
+ */
+const BUY_FIELDS: { field: string; value: string; note?: string }[] = [
+  { field: '現物 / 信用', value: '現物' },
+  { field: '買 / 売', value: '買' },
+  { field: '市場', value: '東証', note: 'SORは逆指値では選べないため、自動で東証になります。' },
   {
-    title: '1. 銘柄と株数を用意する',
-    body: 'アプリの売買プランに出る「証券会社に入れる注文」を開きます。銘柄・株数・トリガー価格がそのまま書いてあるので、控えるのはその3つです。株数は許容損失から逆算された数字で、自分の希望額ではありません。',
+    field: '通常 / 逆指値',
+    value: '逆指値',
+    note: 'ここを切り替えないと「条件」の欄が出てきません。',
+  },
+  { field: '株数', value: 'アプリの株数', note: '売買プランの「証券会社に入れる注文」の数字。' },
+  { field: '条件', value: 'アプリのトリガー価格' },
+  {
+    field: '以上になったら / 以下になったら',
+    value: '以上になったら',
+    note: '上に抜けたときだけ買う注文なので「以上」。',
   },
   {
-    title: '2. 「通常」を「逆指値」に切り替える',
-    body: '注文入力の画面は、はじめ「通常」が選ばれています。株数を入れる欄の上、市場を選ぶ欄の右に「通常 / 逆指値」の切り替えがあるので、逆指値を押します。ここを切り替えないと、トリガー価格を入れる欄そのものが出てきません。',
-    check: '切り替えたあと、画面に「〜円以上になったら」という条件の欄があるか確認。',
+    field: '指値 / 成行',
+    value: '成行',
+    note: '抜けた瞬間に買うため。指値だと置いていかれます。',
   },
-  {
-    title: '3. トリガー価格を入れて、注文は成行にする',
-    body: 'アプリのトリガー価格をそのまま入れ、そのあとに出す注文は成行を選びます。上に抜けたときだけ買う形なので、指値だと抜けた瞬間に置いていかれます。',
-    check: '株数と預り区分(特定口座 / NISA)を確認。NISAは損失を他の利益と相殺できません。',
-  },
-  {
-    title: '4. 注文期間を「今週中」にする',
-    body: '初期値は「当日中」です。来週まで残らない期間にします。週明けに状況が変わっているのに、古い注文が生きているのは危険です。',
-  },
-  {
-    title: '5. 買えたら、その日のうちに売りの逆指値を出す',
-    body: 'アプリの損切り価格で「◯◯円以下になったら成行で売る」を入れます。買い注文と同じように、ここでも「逆指値」への切り替えが要ります。ここが週次運用の生命線です。',
-    check: '期間は選べる中で一番長く。期限切れで無防備になるのを防ぎます。',
-  },
-  {
-    title: '6. 毎週末、売りの逆指値を出し直す',
-    body: '建玉タブのトレーリング目安が今の損切りより上なら、その値まで引き上げます。アプリで更新しただけでは注文は変わらないので、証券会社の注文も訂正します。目安が下なら何もしません。',
-    check: '損切りは上げるだけ。下げると、建てたときに決めた損失より大きく負けます。',
-  },
+  { field: '無条件 / 寄成 / 引成 / IOC成行', value: '無条件' },
+  { field: '期間', value: '今週中', note: '初期値は「当日中」。来週に持ち越さないため。' },
+  { field: '預り区分', value: '特定預り', note: 'NISAは損失を他の利益と相殺できません。' },
+  { field: '取引パスワード', value: '入力して「確認」' },
 ]
+
+const SELL_FIELDS: { field: string; value: string; note?: string }[] = [
+  { field: '現物 / 信用', value: '現物' },
+  { field: '買 / 売', value: '売', note: '買い注文と違うのはここから。' },
+  { field: '通常 / 逆指値', value: '逆指値' },
+  { field: '株数', value: '買えた株数と同じ' },
+  { field: '条件', value: 'アプリの損切り価格' },
+  {
+    field: '以上になったら / 以下になったら',
+    value: '以下になったら',
+    note: '下がったら売る注文なので「以下」。買いと逆です。',
+  },
+  { field: '指値 / 成行', value: '成行' },
+  { field: '期間', value: '選べる中で一番長く', note: '期限切れで無防備になるのを防ぎます。' },
+  { field: '預り区分', value: '特定預り' },
+  { field: '取引パスワード', value: '入力して「確認」' },
+]
+
+function FieldTable({ rows }: { rows: { field: string; value: string; note?: string }[] }) {
+  return (
+    <div className="overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-800">
+      <table className="w-full text-sm">
+        <tbody className="divide-y divide-neutral-200 dark:divide-neutral-800">
+          {rows.map((row) => (
+            <tr key={row.field}>
+              <td className="w-2/5 px-3 py-2 align-top text-neutral-500 dark:text-neutral-400">
+                {row.field}
+              </td>
+              <td className="px-3 py-2 align-top">
+                <span className="font-medium">{row.value}</span>
+                {row.note && (
+                  <span className="mt-0.5 block text-xs text-neutral-500 dark:text-neutral-400">
+                    {row.note}
+                  </span>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
 
 export function WeeklySection() {
   return (
@@ -117,23 +160,27 @@ export function WeeklySection() {
 
       <Card
         title="SBI証券での注文手順"
-        description="日曜の夜にやることです。メニュー名や使える注文方法は口座やアプリの版で違うので、初回は画面で確認してください。"
+        description="スマホの注文画面に出てくる欄の順に並べています。上から埋めれば1件の注文になります。"
       >
-        <ol className="space-y-4">
-          {ORDER_STEPS.map((step) => (
-            <li key={step.title}>
-              <h3 className="font-semibold">{step.title}</h3>
-              <p className="mt-1 text-sm leading-relaxed text-neutral-700 dark:text-neutral-300">
-                {step.body}
-              </p>
-              {step.check && (
-                <p className="mt-1 rounded-lg bg-neutral-100 px-2 py-1 text-xs text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">
-                  確認: {step.check}
-                </p>
-              )}
-            </li>
-          ))}
-        </ol>
+        <h3 className="font-semibold">買い注文（週明けに出す）</h3>
+        <p className="mt-1 mb-2 text-sm text-neutral-600 dark:text-neutral-300">
+          出した時点では約定しません。株価が条件の値まで上がって初めて成立します。
+        </p>
+        <FieldTable rows={BUY_FIELDS} />
+
+        <h3 className="mt-5 font-semibold">売りの損切り注文（買えた日に出す）</h3>
+        <p className="mt-1 mb-2 text-sm text-neutral-600 dark:text-neutral-300">
+          買えたその日のうちに出します。ここまでやって1セットです。
+          利確の注文は出しません（毎週末、この注文を上に出し直していきます）。
+        </p>
+        <FieldTable rows={SELL_FIELDS} />
+
+        <p className="mt-4 text-sm text-neutral-600 dark:text-neutral-300">
+          毎週末、建玉タブのトレーリング目安が今の損切りより上なら、この売り注文を訂正して
+          その値に上げます。アプリで更新しただけでは注文は変わりません。目安が下なら何もしません。
+          損切りは上げるだけです。
+        </p>
+
         <div className="mt-4 flex flex-wrap gap-2">
           <TermChip id="stop-order" />
           <TermChip id="order-type" />
