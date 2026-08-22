@@ -18,6 +18,7 @@ export function SymbolDetail({ onGoImport }: { onGoImport: () => void }) {
   const selectedCode = useAppStore((s) => s.selectedCode)
   const select = useAppStore((s) => s.select)
   const removeStock = useAppStore((s) => s.removeStock)
+  const clearSeries = useAppStore((s) => s.clearSeries)
   const [plan, setPlan] = useState<{ entry: number; stop: number; target: number } | null>(null)
 
   const stock = stocks.find((s) => s.code === selectedCode) ?? stocks[0] ?? null
@@ -67,6 +68,24 @@ export function SymbolDetail({ onGoImport }: { onGoImport: () => void }) {
               ))}
             </select>
           </div>
+          {bars.length > 0 && (
+            <button
+              type="button"
+              aria-label="この銘柄の価格データを消す"
+              className={`${subtleButtonClass} shrink-0 px-3`}
+              onClick={() => {
+                if (
+                  confirm(
+                    `${stock.name} の価格データ${bars.length}本を消しますか?銘柄・メモ・企業カルテは残ります。`,
+                  )
+                ) {
+                  void clearSeries(stock.code)
+                }
+              }}
+            >
+              価格を消す
+            </button>
+          )}
           <button
             type="button"
             aria-label="この銘柄を削除"
