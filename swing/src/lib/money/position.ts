@@ -140,6 +140,42 @@ export function buildExitPlan(
 }
 
 /**
+ * エントリー価格の候補。証券会社に入れる注文の値段はここで決まる。
+ * 「上に抜けたら買う」置き方が基本なので、直近の高値より少し上を先頭に出す。
+ */
+export function entryCandidates(options: {
+  close: number
+  high: number
+  high20: number | null
+}): { id: string; label: string; price: number; note: string }[] {
+  const { close, high, high20 } = options
+  const candidates: { id: string; label: string; price: number; note: string }[] = []
+
+  candidates.push({
+    id: 'breakout',
+    label: '直近の高値の少し上',
+    price: roundToTick(high * 1.003, 'up'),
+    note: '上に抜けたときだけ買う置き方。逆指値で出す。',
+  })
+  if (high20 !== null && high20 > high) {
+    candidates.push({
+      id: 'high20',
+      label: '20日高値の少し上',
+      price: roundToTick(high20 * 1.003, 'up'),
+      note: '1か月の高値を更新したら買う置き方。より慎重だが、買値は高くなる。',
+    })
+  }
+  candidates.push({
+    id: 'close',
+    label: '前回の終値',
+    price: roundToTick(close, 'nearest'),
+    note: '寄り付きで成行、または終値あたりの指値で買う置き方。',
+  })
+
+  return candidates.filter((candidate) => candidate.price > 0)
+}
+
+/**
  * 損切り価格の候補。ATR基準は値動きの荒さに合わせて自動で広くなる。
  */
 export function stopCandidates(options: {

@@ -2,7 +2,12 @@ import { useEffect, useMemo, useState } from 'react'
 import { useAppStore } from '../../stores/appStore'
 import type { Analysis } from '../../lib/market/signals'
 import type { Stock } from '../../lib/market/types'
-import { buildExitPlan, calculatePosition, stopCandidates } from '../../lib/money/position'
+import {
+  buildExitPlan,
+  calculatePosition,
+  entryCandidates,
+  stopCandidates,
+} from '../../lib/money/position'
 import { capitalGainTax, tradeFee } from '../../lib/money/fees'
 import { percent, price, ratio, today, yen } from '../../lib/format'
 import { buttonClass, Card, Field, inputClass, NumberField, Stat } from '../ui/Primitives'
@@ -30,6 +35,14 @@ export function TradePlan({
   const [rewardRatio, setRewardRatio] = useState(settings.rewardRatio)
   const [saved, setSaved] = useState<string | null>(null)
 
+  const entries = useMemo(
+    () =>
+      snapshot
+        ? entryCandidates({ close: snapshot.close, high: snapshot.high, high20: snapshot.high20 })
+        : [],
+    [snapshot],
+  )
+
   const candidates = useMemo(
     () =>
       snapshot
@@ -44,13 +57,19 @@ export function TradePlan({
     [snapshot, entryInput, settings.atrMultiple],
   )
 
-  // 銘柄を切り替えたら、直近終値とATR基準の損切りで引き直す。
+  // 銘柄を切り替えたら、直近の高値の少し上とATR基準の損切りで引き直す。
+  // 損切りは終値ではなく、この既定のエントリー価格から引く(でないと最初から食い違う)。
   useEffect(() => {
     if (!snapshot) return
-    setEntryInput(String(snapshot.close))
-    const atrStop =
-      snapshot.atr14 !== null ? snapshot.close - snapshot.atr14 * settings.atrMultiple : null
-    const fallback = snapshot.low5 !== null ? snapshot.low5 * 0.995 : snapshot.close * 0.95
+    const suggested = entryCandidates({
+      close: snapshot.close,
+      high: snapshot.high,
+      high20: snapshot.high20,
+    })[0]
+    const entry = suggested?.price ?? snapshot.close
+    setEntryInput(String(entry))
+    const atrStop = snapshot.atr14 !== null ? entry - snapshot.atr14 * settings.atrMultiple : null
+    const fallback = snapshot.low5 !== null ? snapshot.low5 * 0.995 : entry * 0.95
     setStopInput(String(Math.round(atrStop ?? fallback)))
     setSaved(null)
   }, [stock.code, snapshot, settings.atrMultiple])
@@ -136,8 +155,36 @@ export function TradePlan({
         />
       </div>
 
+      {entries.length > 0 && (
+        <div className="mt-3">
+          <p className="text-xs text-neutral-500 dark:text-neutral-400">
+            エントリー価格の候補（押すと上の欄に入ります）
+          </p>
+          <div className="mt-1 flex flex-wrap gap-2">
+            {entries.map((candidate) => (
+              <button
+                key={candidate.id}
+                type="button"
+                title={candidate.note}
+                onClick={() => setEntryInput(String(candidate.price))}
+                className="rounded-full bg-neutral-100 px-3 py-1 text-xs font-medium text-neutral-700 transition hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
+              >
+                {candidate.label}: {price(candidate.price)}円
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {candidates.length > 0 && (
-        <div className="mt-3 flex flex-wrap gap-2">
+        <div className="mt-3">
+          <p className="text-xs text-neutral-500 dark:text-neutral-400">
+            損切り価格の候補（押すと上の欄に入ります）
+          </p>
+        </div>
+      )}
+      {candidates.length > 0 && (
+        <div className="mt-1 flex flex-wrap gap-2">
           {candidates.map((candidate) => (
             <button
               key={candidate.id}
@@ -189,6 +236,41 @@ export function TradePlan({
             <Row help="commission" label="手数料(往復概算)" value={yen(entryFee + exitFee)} />
           </dl>
         </>
+      )}
+
+      {sizing.shares > 0 && (
+        <div className="mt-4 rounded-xl border border-neutral-200 p-3 dark:border-neutral-800">
+          <h3 className="text-sm font-semibold">証券会社に入れる注文</h3>
+          <ol className="mt-2 space-y-2 text-sm text-neutral-700 dark:text-neutral-300">
+            <li>
+              <span className="font-medium">1. 買い注文（今すぐ）</span>
+              <br />
+              {stock.code} {stock.name} / 現物買い / {sizing.shares.toLocaleString('ja-JP')}株 /
+              執行条件 <span className="font-medium">逆指値</span> / トリガー価格{' '}
+              <span className="font-medium tabular-nums">{price(plan.entry)}円</span> / 成行
+            </li>
+            <li>
+              <span className="font-medium">2. 売り注文（買えたあと）</span>
+              <br />
+              現物売 / {sizing.shares.toLocaleString('ja-JP')}株 / 執行条件{' '}
+              <span className="font-medium">逆指値</span> / トリガー価格{' '}
+              <span className="font-medium tabular-nums">{price(plan.stop)}円</span> / 成行
+              {settings.exitStyle === 'target' && (
+                <>
+                  {' '}
+                  ＋ 利確の売り指値{' '}
+                  <span className="font-medium tabular-nums">{price(plan.target)}円</span>
+                </>
+              )}
+            </li>
+          </ol>
+          <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
+            アプリの数字は手元のメモです。実際に売り買いするのは証券会社に出した注文だけなので、
+            2つめを入れるまでが1セットです。
+            {settings.exitStyle === 'trailing' &&
+              '利確の注文は出しません。毎週末、建玉タブのトレーリング目安まで売りの逆指値を引き上げていきます。'}
+          </p>
+        </div>
       )}
 
       <div className="mt-5 border-t border-neutral-200 pt-4 dark:border-neutral-800">
