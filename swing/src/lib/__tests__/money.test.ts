@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { buildExitPlan, calculatePosition, stopCandidates } from '../money/position'
+import {
+  buildExitPlan,
+  calculatePosition,
+  entryCandidates,
+  stopCandidates,
+} from '../money/position'
 import { DEFAULT_FEE_CONFIG, STANDARD_PLAN_TIERS, capitalGainTax, tradeFee } from '../money/fees'
 import { roundToTick, tickSize } from '../money/tick'
 import { evaluateTrade } from '../money/trade'
@@ -217,5 +222,22 @@ describe('表示の整形', () => {
     expect(yen(-0.4)).toBe('0円')
     expect(signedYen(-0)).toBe('0円')
     expect(percent(-0)).toBe('0.0%')
+  })
+})
+
+describe('entryCandidates', () => {
+  it('直近の高値の少し上を先頭に出す', () => {
+    const list = entryCandidates({ close: 2916, high: 2930, high20: 2900 })
+    expect(list[0]).toMatchObject({ id: 'breakout' })
+    expect(list[0].price).toBeGreaterThan(2930)
+    // 20日高値が直近の高値より下なら候補に出さない
+    expect(list.some((item) => item.id === 'high20')).toBe(false)
+    expect(list.at(-1)).toMatchObject({ id: 'close', price: 2916 })
+  })
+
+  it('20日高値が上にあるときは、その少し上も候補にする', () => {
+    const list = entryCandidates({ close: 2916, high: 2930, high20: 3000 })
+    expect(list.map((item) => item.id)).toEqual(['breakout', 'high20', 'close'])
+    expect(list[1].price).toBeGreaterThan(3000)
   })
 })
