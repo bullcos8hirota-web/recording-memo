@@ -44,6 +44,8 @@ export function TradePlan({
   const [rewardRatio, setRewardRatio] = useState(settings.rewardRatio)
   const [saved, setSaved] = useState<string | null>(null)
   const [forceOrder, setForceOrder] = useState(false)
+  // 損切りを自分で決めたあとは、エントリー価格を変えても勝手に動かさない。
+  const [stopPinned, setStopPinned] = useState(false)
   // 条件が揃っていない銘柄では、数字ごと畳んでおく。
   // 目の前に注文の材料があると、判定を読み飛ばして手が動いてしまう。
   const showPlan = analysis === null || analysis.verdict === 'ready' || forceOrder
@@ -85,8 +87,18 @@ export function TradePlan({
     const fallback = snapshot.low5 !== null ? snapshot.low5 * 0.995 : entry * 0.95
     setStopInput(String(Math.round(atrStop ?? fallback)))
     setForceOrder(false)
+    setStopPinned(false)
     setSaved(null)
   }, [stock.code, snapshot, settings.atrMultiple])
+
+  // 約定価格を入れ直したら、損切りもその価格から引き直す。
+  // 買えたあとに手計算させないための追従(自分で損切りを決めたときは止まる)。
+  useEffect(() => {
+    if (stopPinned || !snapshot || snapshot.atr14 === null) return
+    const typed = Number(entryInput)
+    if (!typed) return
+    setStopInput(String(Math.round(typed - snapshot.atr14 * settings.atrMultiple)))
+  }, [entryInput, stopPinned, snapshot, settings.atrMultiple])
 
   const entry = Number(entryInput) || 0
   const stop = Number(stopInput) || 0
@@ -184,7 +196,10 @@ export function TradePlan({
             <input
               className={inputClass}
               value={stopInput}
-              onChange={(e) => setStopInput(e.target.value)}
+              onChange={(e) => {
+                setStopPinned(true)
+                setStopInput(e.target.value)
+              }}
               inputMode="decimal"
             />
           </Field>
@@ -232,7 +247,10 @@ export function TradePlan({
                 key={candidate.id}
                 type="button"
                 title={candidate.note}
-                onClick={() => setStopInput(String(candidate.price))}
+                onClick={() => {
+                  setStopPinned(true)
+                  setStopInput(String(candidate.price))
+                }}
                 className="rounded-full bg-neutral-100 px-3 py-1 text-xs font-medium text-neutral-700 transition hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
               >
                 {candidate.label}: {price(candidate.price)}円
@@ -314,6 +332,10 @@ export function TradePlan({
               </li>
             </ol>
             <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
+              買えたら、上の「エントリー価格」に実際の約定価格を入れ直してください。
+              2つめの売り注文の価格も、それに合わせて動きます（計算は要りません）。
+            </p>
+            <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
               買いは「以上」、売りは「以下」です。逆にすると、下がったところで買う注文や、
             上がったところで売る注文になります。
           </p>
