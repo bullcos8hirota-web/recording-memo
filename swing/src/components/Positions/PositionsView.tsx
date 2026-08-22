@@ -80,6 +80,10 @@ function PositionCard({ trade, bars }: { trade: Trade; bars: Bar[] }) {
     return chandelierStop(highs, atrValue, atrMultiple + 0.5)
   }, [bars, trade.entryDate, atrMultiple])
 
+  // 損切りは上げるだけ。下げると許容していたはずの損失が広がってしまう。
+  const canRaiseStop =
+    trailing !== null && (trade.stopPrice === null || trailing > trade.stopPrice)
+
   const status = (() => {
     if (!last) return { tone: 'neutral' as const, text: '価格データがありません' }
     if (trade.stopPrice !== null && last.close <= trade.stopPrice) {
@@ -142,7 +146,13 @@ function PositionCard({ trade, bars }: { trade: Trade; bars: Bar[] }) {
           help="trailing-stop"
           label="トレーリング目安"
           value={trailing === null ? '—' : `${price(trailing)}円`}
-          hint="高値からATR分下"
+          hint={
+            trailing === null
+              ? '高値からATR分下'
+              : canRaiseStop
+                ? '損切りをここまで上げられます'
+                : '今の損切りより下。今週は動かしません'
+          }
         />
       </div>
 
@@ -162,7 +172,7 @@ function PositionCard({ trade, bars }: { trade: Trade; bars: Bar[] }) {
         >
           更新
         </button>
-        {trailing !== null && (
+        {canRaiseStop && (
           <button
             type="button"
             className={subtleButtonClass}
@@ -171,7 +181,7 @@ function PositionCard({ trade, bars }: { trade: Trade; bars: Bar[] }) {
               void updateTrade(trade.id, { stopPrice: trailing })
             }}
           >
-            トレーリング値にする
+            損切りを{price(trailing!)}円に上げる
           </button>
         )}
         <div className="grow" />
