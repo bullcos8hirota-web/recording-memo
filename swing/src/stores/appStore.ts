@@ -4,10 +4,28 @@ import type { Bar, Stock } from '../lib/market/types'
 import type { Trade } from '../lib/money/trade'
 import { buildSampleData, SAMPLE_CODES } from '../lib/market/sampleData'
 
-/** 日付でマージして昇順に並べ替える。同じ日付は新しい方で上書きする。 */
+/**
+ * 同じ日付は新しい方で上書きする。ただし「日付と終値だけ」を貼り直したときに、
+ * 前に取り込んだ出来高や4本値まで消えてしまわないよう、欠けている項目は残す。
+ */
 export function mergeBars(current: Bar[], incoming: Bar[]): Bar[] {
   const map = new Map(current.map((bar) => [bar.date, bar]))
-  for (const bar of incoming) map.set(bar.date, bar)
+  for (const bar of incoming) {
+    const previous = map.get(bar.date)
+    if (!previous) {
+      map.set(bar.date, bar)
+      continue
+    }
+    const flat = bar.open === bar.close && bar.high === bar.close && bar.low === bar.close
+    const hadRange = previous.high > previous.low
+    map.set(bar.date, {
+      ...bar,
+      open: flat && hadRange ? previous.open : bar.open,
+      high: flat && hadRange ? previous.high : bar.high,
+      low: flat && hadRange ? previous.low : bar.low,
+      volume: bar.volume > 0 ? bar.volume : previous.volume,
+    })
+  }
   return [...map.values()].sort((a, b) => a.date.localeCompare(b.date))
 }
 

@@ -8,6 +8,7 @@ import {
   type MatchedTrade,
 } from '../../lib/market/csv'
 import { readClipboard } from '../../lib/clipboard'
+import type { Bar } from '../../lib/market/types'
 import { price, shortDate, today } from '../../lib/format'
 import { buttonClass, Card, Field, inputClass, subtleButtonClass } from '../ui/Primitives'
 
@@ -137,6 +138,7 @@ function PriceImport() {
               終値 {price(result.bars[result.bars.length - 1].close)}円
               {result.skipped > 0 && ` / 読めなかった行 ${result.skipped}`}
             </p>
+            <VolumeCheck bars={result.bars} />
           </div>
           <div className="grid grid-cols-2 gap-3">
             <Field label="銘柄コード" hint="このデータを入れる銘柄">
@@ -215,6 +217,26 @@ function PriceImport() {
         {error && <span className="text-sm text-rose-600 dark:text-rose-400">{error}</span>}
       </div>
     </Card>
+  )
+}
+
+/**
+ * 出来高が読めているかは、取り込んだ後だと分かりにくい。貼った時点で見えるようにする。
+ * 読めていれば、この銘柄の出来高判定(20日平均との比較)が効く。
+ */
+function VolumeCheck({ bars }: { bars: Bar[] }) {
+  const withVolume = bars.filter((bar) => bar.volume > 0).length
+  const last = bars[bars.length - 1]
+
+  return (
+    <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+      出来高が読めた行 {withVolume}/{bars.length}
+      {withVolume === 0 && '（出来高の列を含めて貼ると、出来高もあわせて見られます）'}
+      <br />
+      最新 {shortDate(last.date)}: 始値{price(last.open)} 高値{price(last.high)} 安値
+      {price(last.low)} 終値{price(last.close)} 出来高
+      {last.volume > 0 ? last.volume.toLocaleString('ja-JP') : '—'}
+    </p>
   )
 }
 

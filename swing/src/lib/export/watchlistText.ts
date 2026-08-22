@@ -3,6 +3,7 @@ import { evaluateFundamentals } from '../learn/buffett'
 import { evaluateTrade, isClosed, type Trade } from '../money/trade'
 import type { Bar, Stock } from '../market/types'
 import type { Settings } from '../db/schema'
+import { BUILD_ID } from '../version'
 
 const money = (value: number): string => `${Math.round(value).toLocaleString('ja-JP')}円`
 
@@ -38,7 +39,7 @@ export function buildWatchlistText(input: {
     `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`
 
   const lines: string[] = [
-    `スイングトレード支援 / ${stamp} 時点`,
+    `スイングトレード支援 / ${stamp} 時点 / 画面の版 ${BUILD_ID}`,
     `資金 ${money(settings.capital)} / 1トレードの許容損失 ${money(
       (settings.capital * settings.riskPercent) / 100,
     )}(${settings.riskPercent}%) / 1銘柄上限 ${settings.maxPositionPercent}%`,
@@ -84,6 +85,12 @@ export function buildWatchlistText(input: {
           snapshot.volumeRatio === null ? '—' : Math.round(snapshot.volumeRatio * 100)
         }%`,
     )
+
+    // 出来高が入っていないと判断材料がひとつ欠ける。何本欠けているかまで書いておく。
+    const withoutVolume = bars.filter((bar) => bar.volume <= 0).length
+    if (withoutVolume > 0) {
+      lines.push(`  ※出来高が未取込 ${withoutVolume}/${bars.length}本(直近 ${bars[bars.length - 1].volume})`)
+    }
 
     const good = analysis.signals.filter((signal) => signal.tone === 'bull')
     const bad = analysis.signals.filter((signal) => signal.tone !== 'bull')

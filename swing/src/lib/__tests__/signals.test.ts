@@ -112,6 +112,30 @@ describe('mergeBars', () => {
     expect(merged.map((b) => b.date)).toEqual(['2026-01-01', '2026-01-02', '2026-01-05'])
     expect(merged[1].close).toBe(999)
   })
+
+  it('終値だけを貼り直しても、前に入れた出来高と4本値は消さない', () => {
+    const current = [
+      { date: '2026-08-21', open: 3730, high: 3750, low: 3660, close: 3740, volume: 11_400 },
+    ]
+    const closeOnly = [
+      { date: '2026-08-21', open: 3745, high: 3745, low: 3745, close: 3745, volume: 0 },
+    ]
+    const merged = mergeBars(current, closeOnly)
+    expect(merged[0].close).toBe(3745)
+    expect(merged[0].volume).toBe(11_400)
+    expect(merged[0].high).toBe(3750)
+    expect(merged[0].low).toBe(3660)
+  })
+
+  it('4本値と出来高が揃った貼り直しは、そのまま上書きする', () => {
+    const current = [
+      { date: '2026-08-21', open: 3730, high: 3750, low: 3660, close: 3740, volume: 0 },
+    ]
+    const full = [
+      { date: '2026-08-21', open: 3735, high: 3760, low: 3665, close: 3750, volume: 11_400 },
+    ]
+    expect(mergeBars(current, full)[0]).toEqual(full[0])
+  })
 })
 
 describe('出来高が入っていない日の扱い', () => {
