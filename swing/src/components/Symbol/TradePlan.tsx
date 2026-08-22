@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useAppStore } from '../../stores/appStore'
-import type { Analysis } from '../../lib/market/signals'
+import { VERDICT_LABEL, type Analysis } from '../../lib/market/signals'
 import type { Stock } from '../../lib/market/types'
 import {
   buildExitPlan,
@@ -10,7 +10,15 @@ import {
 } from '../../lib/money/position'
 import { capitalGainTax, tradeFee } from '../../lib/money/fees'
 import { percent, price, ratio, today, yen } from '../../lib/format'
-import { buttonClass, Card, Field, inputClass, NumberField, Stat } from '../ui/Primitives'
+import {
+  buttonClass,
+  Card,
+  Field,
+  inputClass,
+  NumberField,
+  Stat,
+  subtleButtonClass,
+} from '../ui/Primitives'
 import { HelpButton } from '../Learn/HelpButton'
 
 /**
@@ -29,11 +37,13 @@ export function TradePlan({
   const settings = useAppStore((s) => s.settings)
   const addTrade = useAppStore((s) => s.addTrade)
   const snapshot = analysis?.snapshot ?? null
+  const ready = analysis?.verdict === 'ready'
 
   const [entryInput, setEntryInput] = useState('')
   const [stopInput, setStopInput] = useState('')
   const [rewardRatio, setRewardRatio] = useState(settings.rewardRatio)
   const [saved, setSaved] = useState<string | null>(null)
+  const [forceOrder, setForceOrder] = useState(false)
 
   const entries = useMemo(
     () =>
@@ -71,6 +81,7 @@ export function TradePlan({
     const atrStop = snapshot.atr14 !== null ? entry - snapshot.atr14 * settings.atrMultiple : null
     const fallback = snapshot.low5 !== null ? snapshot.low5 * 0.995 : entry * 0.95
     setStopInput(String(Math.round(atrStop ?? fallback)))
+    setForceOrder(false)
     setSaved(null)
   }, [stock.code, snapshot, settings.atrMultiple])
 
@@ -238,9 +249,34 @@ export function TradePlan({
         </>
       )}
 
-      {sizing.shares > 0 && (
+      {sizing.shares > 0 && !ready && !forceOrder && (
+        <div className="mt-4 rounded-xl bg-amber-50 px-3 py-3 text-sm text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+          <p className="font-medium">
+            この銘柄は今「{analysis ? VERDICT_LABEL[analysis.verdict] : '判定できません'}」です。
+            買う条件は揃っていません。
+          </p>
+          <p className="mt-1 text-xs">
+            上の数字は「もし買うならこの株数・この損切り」を試すためのものです。
+            注文の内容は、条件が揃ってから見るほうが安全です。
+          </p>
+          <button
+            type="button"
+            className={`${subtleButtonClass} mt-2`}
+            onClick={() => setForceOrder(true)}
+          >
+            それでも注文内容を見る
+          </button>
+        </div>
+      )}
+
+      {sizing.shares > 0 && (ready || forceOrder) && (
         <div className="mt-4 rounded-xl border border-neutral-200 p-3 dark:border-neutral-800">
           <h3 className="text-sm font-semibold">証券会社に入れる注文</h3>
+          {!ready && (
+            <p className="mt-1 text-xs text-amber-700 dark:text-amber-300">
+              判定は「{analysis ? VERDICT_LABEL[analysis.verdict] : '—'}」です。条件は揃っていません。
+            </p>
+          )}
           <ol className="mt-2 space-y-2 text-sm text-neutral-700 dark:text-neutral-300">
             <li>
               <span className="font-medium">1. 買い注文（今すぐ）</span>
