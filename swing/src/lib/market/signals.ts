@@ -18,6 +18,9 @@ import type { Bar } from './types'
 export type Snapshot = {
   date: string
   close: number
+  /** その日の高値・安値。逆指値の位置を決めるときに使う。 */
+  high: number
+  low: number
   prevClose: number | null
   changeRate: number | null
   volume: number
@@ -100,6 +103,8 @@ export function buildSnapshot(bars: Bar[], index = bars.length - 1): Snapshot {
   return {
     date: bar.date,
     close: bar.close,
+    high: bar.high,
+    low: bar.low,
     prevClose,
     changeRate: prevClose ? ((bar.close - prevClose) / prevClose) * 100 : null,
     volume: bar.volume,

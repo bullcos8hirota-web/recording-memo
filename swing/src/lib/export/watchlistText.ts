@@ -74,6 +74,7 @@ export function buildWatchlistText(input: {
     lines.push(
       `  スコア${analysis.score} ${VERDICT_LABEL[analysis.verdict]}` +
         ` | 終値${money(snapshot.close)}(${signed(snapshot.changeRate)})` +
+        ` 高値${money(snapshot.high)} 安値${money(snapshot.low)}` +
         ` | ${bars.length}本 ${lastDate}まで`,
     )
     lines.push(
