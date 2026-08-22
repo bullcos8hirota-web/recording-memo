@@ -168,6 +168,12 @@ export function WeeklySection() {
         </p>
         <FieldTable rows={BUY_FIELDS} />
 
+        <p className="mt-2 rounded-lg bg-neutral-100 px-3 py-2 text-xs text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">
+          損切りの注文は、株を持っていないと出せません。買い注文と同時には出せない、ということです。
+          約定した日に出したいので、SBI証券側で約定通知(メール・アプリ通知)を受け取る設定にしておいてください。
+          週末まで気づかないと、その間は損切りが無いまま持っていることになります。
+        </p>
+
         <h3 className="mt-5 font-semibold">売りの損切り注文（買えた日に出す）</h3>
         <p className="mt-1 mb-2 text-sm text-neutral-600 dark:text-neutral-300">
           買えたその日のうちに出します。ここまでやって1セットです。
