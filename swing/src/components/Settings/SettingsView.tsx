@@ -1,18 +1,17 @@
-import { useState } from 'react'
 import { useAppStore } from '../../stores/appStore'
-import { db, DEFAULT_CHECKLIST } from '../../lib/db'
+import { db } from '../../lib/db'
 import { STANDARD_PLAN_TIERS } from '../../lib/money/fees'
 import { yen } from '../../lib/format'
-import { buttonClass, Card, inputClass, NumberField, subtleButtonClass } from '../ui/Primitives'
+import { buttonClass, Card, NumberField, subtleButtonClass } from '../ui/Primitives'
 import { usePwaInstall } from '../../lib/usePwaInstall'
 import { ReminderCard } from './ReminderCard'
+import { HistoryImportCard, SampleDataCard } from './DataCards'
 import { BUILD_ID } from '../../lib/version'
 
 export function SettingsView() {
   const settings = useAppStore((s) => s.settings)
   const saveSettings = useAppStore((s) => s.saveSettings)
   const load = useAppStore((s) => s.load)
-  const [checklistText, setChecklistText] = useState(settings.checklist.join('\n'))
 
   const riskAmount = Math.floor((settings.capital * settings.riskPercent) / 100)
 
@@ -136,39 +135,9 @@ export function SettingsView() {
         </p>
       </Card>
 
-      <Card title="エントリー前チェックリスト" description="1行に1項目。売買プラン画面に表示されます。">
-        <textarea
-          className={`${inputClass} min-h-40`}
-          value={checklistText}
-          onChange={(e) => setChecklistText(e.target.value)}
-        />
-        <div className="mt-2 flex flex-wrap gap-2">
-          <button
-            type="button"
-            className={buttonClass}
-            onClick={() =>
-              void saveSettings({
-                checklist: checklistText
-                  .split('\n')
-                  .map((line) => line.trim())
-                  .filter(Boolean),
-              })
-            }
-          >
-            保存
-          </button>
-          <button
-            type="button"
-            className={subtleButtonClass}
-            onClick={() => {
-              setChecklistText(DEFAULT_CHECKLIST.join('\n'))
-              void saveSettings({ checklist: DEFAULT_CHECKLIST })
-            }}
-          >
-            初期値に戻す
-          </button>
-        </div>
-      </Card>
+      <HistoryImportCard />
+
+      <SampleDataCard />
 
       <Card title="データ" description="すべてこの端末のブラウザ内(IndexedDB)に保存されます。サーバーには送信しません。">
         <button

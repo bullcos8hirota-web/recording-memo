@@ -97,7 +97,7 @@ export function ScreenerView({
 
       {stocks.length === 0 ? (
         <EmptyState title="まだ銘柄が登録されていません">
-          <p>上のフォームで銘柄を追加し、「取込」タブで株価CSVを読み込んでください。</p>
+          <p>上のフォームで銘柄を追加すると、「銘柄」タブでその銘柄の株価を貼り付けられます。</p>
           <p className="mt-2">
             株の用語や進め方が分からない場合は、「学ぶ」タブから始めるのがおすすめです。
           </p>
@@ -291,7 +291,7 @@ function AddStockForm() {
   return (
     <Card
       title="銘柄を追加"
-      description="証券コードと銘柄名を登録します。価格データは「取込」タブで入れます。"
+      description="証券コードと銘柄名を登録します。株価は登録後、銘柄タブで貼り付けます。"
       actions={
         <button type="button" className={subtleButtonClass} onClick={() => setOpen(false)}>
           閉じる

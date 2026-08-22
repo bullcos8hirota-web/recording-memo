@@ -5,7 +5,6 @@ export type TabId =
   | 'symbol'
   | 'positions'
   | 'journal'
-  | 'import'
   | 'learn'
   | 'settings'
 
@@ -67,17 +66,6 @@ export const TABS: { id: TabId; label: string; icon: ReactNode }[] = [
       <>
         <path d="M5 4h11a2 2 0 0 1 2 2v14H7a2 2 0 0 1-2-2z" />
         <path d="M5 16h13M9 8h5" />
-      </>,
-    ),
-  },
-  {
-    id: 'import',
-    label: '取込',
-    icon: icon(
-      <>
-        <path d="M12 4v11" />
-        <path d="M8 11l4 4 4-4" />
-        <path d="M4 19h16" />
       </>,
     ),
   },

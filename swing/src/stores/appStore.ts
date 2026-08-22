@@ -47,6 +47,7 @@ type AppState = {
   addStock: (input: { code: string; name: string; lot?: number; memo?: string }) => Promise<void>
   updateStock: (code: string, patch: Partial<Stock>) => Promise<void>
   removeStock: (code: string) => Promise<void>
+  clearSeries: (code: string) => Promise<void>
   importBars: (code: string, bars: Bar[]) => Promise<number>
   addTrade: (input: Partial<Trade> & { code: string; entryDate: string; entryPrice: number; shares: number }) => Promise<Trade>
   updateTrade: (id: string, patch: Partial<Trade>) => Promise<void>
@@ -158,6 +159,17 @@ export const useAppStore = create<AppState>((set, get) => ({
     const next = { ...stock, ...patch, code }
     await persist(() => db.stocks.put(next), () => set({ storageError: true }))
     set({ stocks: get().stocks.map((s) => (s.code === code ? next : s)) })
+  },
+
+  /** 別の銘柄のデータを間違えて入れたときのために、価格だけ捨てられるようにする。 */
+  async clearSeries(code) {
+    await persist(
+      () => db.series.delete(code),
+      () => set({ storageError: true }),
+    )
+    const series = { ...get().series }
+    delete series[code]
+    set({ series })
   },
 
   async removeStock(code) {
