@@ -332,3 +332,38 @@ describe('見出しの無い、途中からの貼り付け', () => {
     expect(result.error).not.toBeNull()
   })
 })
+
+describe('出来高の見つけ方', () => {
+  it('値がさりで出来高が少ない銘柄でも取りこぼさない', () => {
+    // 株価3,740円に対して出来高8,200株。株価の5倍(18,700)には届かない
+    const pasted = ['26/8/21', '18.4', '2.1', '8,200', '3,720', '3,755', '3,700', '3,740'].join('\n')
+    const result = parsePriceCsv(pasted)
+    expect(result.rows[0]).toEqual({
+      date: '2026-08-21',
+      open: 3720,
+      high: 3755,
+      low: 3700,
+      close: 3740,
+      volume: 8_200,
+    })
+  })
+
+  it('出来高が4本値の後ろにある並び(株探)でも拾う', () => {
+    // 日付, 始値, 高値, 安値, 終値, 前日比, 前日比(%), 売買高
+    const pasted = ['26/8/21', '1,440', '1,448', '1,415', '1,425', '34', '2.47', '69,400'].join('\n')
+    const result = parsePriceCsv(pasted)
+    expect(result.rows[0]).toMatchObject({ close: 1425, volume: 69_400 })
+  })
+
+  it('調整後終値を出来高と間違えない', () => {
+    const pasted = ['26/8/21', '1,440', '1,448', '1,415', '1,425', '1,425'].join('\n')
+    const result = parsePriceCsv(pasted)
+    expect(result.rows[0].volume).toBe(0)
+  })
+
+  it('PERやPBRを出来高と間違えない', () => {
+    const pasted = ['26/8/21', '18.41', '5.07', '3,720', '3,755', '3,700', '3,740'].join('\n')
+    const result = parsePriceCsv(pasted)
+    expect(result.rows[0].volume).toBe(0)
+  })
+})
