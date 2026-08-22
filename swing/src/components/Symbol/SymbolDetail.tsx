@@ -136,6 +136,8 @@ export function SymbolDetail() {
               <Stat label="MACD" help="macd" value={snapshot.macd === null ? '—' : snapshot.macd.toFixed(1)} hint={`シグナル ${snapshot.macdSignal?.toFixed(1) ?? '—'}`} />
               <Stat label="ATR(14)" help="atr" value={`${price(snapshot.atr14)}円`} hint={`終値の${snapshot.atrRate?.toFixed(1) ?? '—'}%`} />
               <Stat label="出来高" help="volume" value={count(snapshot.volume)} hint={`20日平均の${snapshot.volumeRatio ? (snapshot.volumeRatio * 100).toFixed(0) : '—'}%`} />
+              <Stat label="この日の高値" help="ohlc" value={`${price(snapshot.high)}円`} hint="逆指値の目安" />
+              <Stat label="この日の安値" help="ohlc" value={`${price(snapshot.low)}円`} />
               <Stat label="20日高値" help="high-low" value={price(snapshot.high20)} hint="前日までの高値" />
               <Stat label="20日安値" help="high-low" value={price(snapshot.low20)} hint="前日までの安値" />
               <Stat label="直近5日安値" help="stop-loss" value={price(snapshot.low5)} hint="損切り位置の候補" />
