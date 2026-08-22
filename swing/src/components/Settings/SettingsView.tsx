@@ -6,6 +6,7 @@ import { yen } from '../../lib/format'
 import { buttonClass, Card, inputClass, NumberField, subtleButtonClass } from '../ui/Primitives'
 import { usePwaInstall } from '../../lib/usePwaInstall'
 import { ReminderCard } from './ReminderCard'
+import { BUILD_ID } from '../../lib/version'
 
 export function SettingsView() {
   const settings = useAppStore((s) => s.settings)
@@ -189,6 +190,10 @@ export function SettingsView() {
           チャートの状態を点数化したり、許容損失から株数を計算したりして、スイングトレードの判断材料を整理するためのツールです。
           将来の値動きを予測するものではなく、特定の銘柄の売買を推奨するものでもありません。投資判断はご自身の責任で行ってください。
           SBI証券とは無関係の個人ツールで、発注機能はありません。
+        </p>
+        <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
+          画面の版 {BUILD_ID}
+          （うまく動かないときは、この版が最新か確認してから、ブラウザを一度閉じて開き直してください）
         </p>
       </Card>
     </div>
