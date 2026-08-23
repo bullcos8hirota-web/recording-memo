@@ -9,7 +9,7 @@ import {
   stopCandidates,
 } from '../../lib/money/position'
 import { capitalGainTax, tradeFee } from '../../lib/money/fees'
-import { percent, price, ratio, today, yen } from '../../lib/format'
+import { percent, price, ratio, shortDate, today, yen } from '../../lib/format'
 import {
   buttonClass,
   Card,
@@ -20,6 +20,7 @@ import {
   subtleButtonClass,
 } from '../ui/Primitives'
 import { HelpButton } from '../Learn/HelpButton'
+import { earningsAlert } from '../../lib/market/earnings'
 
 /**
  * 「いくらで、何株、どこで損切りするか」を先に決めるための画面。
@@ -38,6 +39,7 @@ export function TradePlan({
   const addTrade = useAppStore((s) => s.addTrade)
   const snapshot = analysis?.snapshot ?? null
   const ready = analysis?.verdict === 'ready'
+  const earnings = earningsAlert(stock.earningsDate)
 
   const [entryInput, setEntryInput] = useState('')
   const [stopInput, setStopInput] = useState('')
@@ -297,6 +299,18 @@ export function TradePlan({
             </dl>
           </>
         )}
+
+          {earnings?.soon && (
+            <div className="mt-4 rounded-xl bg-amber-50 px-3 py-3 text-sm text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+              <p className="font-medium">
+                決算発表が{shortDate(stock.earningsDate!)}（あと{earnings.days}日）です
+              </p>
+              <p className="mt-1 text-xs">
+                決算の翌朝は、損切り価格を飛び越えて下で始まることがあります。
+                チャートからは読めない唯一のリスクなので、発表後まで待つのが無難です。
+              </p>
+            </div>
+          )}
 
           {sizing.shares > 0 && (
           <div className="mt-4 rounded-xl border border-neutral-200 p-3 dark:border-neutral-800">

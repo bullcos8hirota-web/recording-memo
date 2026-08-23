@@ -6,6 +6,7 @@ import { CandleChart, type Level } from './CandleChart'
 import { TradePlan } from './TradePlan'
 import { CompanyCard } from './CompanyCard'
 import { PriceImportCard } from './PriceImportCard'
+import { EarningsCard } from './EarningsCard'
 import { count, percent, price, shortDate, toneClass } from '../../lib/format'
 import { Badge, Card, EmptyState, Stat, subtleButtonClass } from '../ui/Primitives'
 import { HelpButton } from '../Learn/HelpButton'
@@ -185,6 +186,8 @@ export function SymbolDetail() {
       )}
 
       <TradePlan stock={stock} analysis={analysis} onPlanChange={setPlan} />
+
+      <EarningsCard stock={stock} />
 
       <CompanyCard stock={stock} />
     </div>

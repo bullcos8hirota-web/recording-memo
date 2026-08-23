@@ -4,6 +4,7 @@ import { atr as atrSeries } from '../../lib/market/indicators'
 import { chandelierStop } from '../../lib/money/position'
 import { evaluateTrade, isClosed, type Trade } from '../../lib/money/trade'
 import { openExposure } from '../../lib/money/stats'
+import { earningsAlert } from '../../lib/market/earnings'
 import { capitalGainTax, tradeFee } from '../../lib/money/fees'
 import { percent, price, ratio, shortDate, today, toneClass, yen } from '../../lib/format'
 import {
@@ -58,6 +59,8 @@ export function PositionsView() {
 }
 
 function PositionCard({ trade, bars }: { trade: Trade; bars: Bar[] }) {
+  const stock = useAppStore((s) => s.stocks.find((item) => item.code === trade.code))
+  const earnings = earningsAlert(stock?.earningsDate)
   const updateTrade = useAppStore((s) => s.updateTrade)
   const removeTrade = useAppStore((s) => s.removeTrade)
   const feeConfig = useAppStore((s) => s.settings.feeConfig)
@@ -160,6 +163,13 @@ function PositionCard({ trade, bars }: { trade: Trade; bars: Bar[] }) {
           }
         />
       </div>
+
+      {earnings?.soon && (
+        <p className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+          決算発表が{shortDate(stock!.earningsDate!)}（あと{earnings.days}日）です。
+          翌朝は損切り価格を飛び越えて始まることがあります。持ち越すか、発表前に手仕舞うかを決めてください。
+        </p>
+      )}
 
       <div className="mt-3 flex flex-wrap items-end gap-2">
         <Field label="損切りを更新(円)" help="stop-order">

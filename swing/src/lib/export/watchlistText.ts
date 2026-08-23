@@ -1,5 +1,6 @@
 import { analyze, VERDICT_LABEL } from '../market/signals'
 import { evaluateFundamentals } from '../learn/buffett'
+import { earningsAlert } from '../market/earnings'
 import { evaluateTrade, isClosed, type Trade } from '../money/trade'
 import type { Bar, Stock } from '../market/types'
 import type { Settings } from '../db/schema'
@@ -101,6 +102,10 @@ export function buildWatchlistText(input: {
     if (stock.fundamentals) {
       const score = evaluateFundamentals(stock.fundamentals).score
       if (score !== null) lines.push(`  財務 ${score}点`)
+    }
+    const earnings = earningsAlert(stock.earningsDate, now)
+    if (earnings && !earnings.past) {
+      lines.push(`  決算発表 ${short(stock.earningsDate!)}(あと${earnings.days}日)`)
     }
     if (stock.memo) lines.push(`  メモ: ${stock.memo}`)
   }
