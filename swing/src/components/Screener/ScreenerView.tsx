@@ -6,6 +6,8 @@ import type { Stock } from '../../lib/market/types'
 import { percent, price, shortDate, toneClass } from '../../lib/format'
 import { useIsPhone } from '../../lib/useMediaQuery'
 import { CopyStateButton } from './CopyStateButton'
+import { useSwipeStep } from '../../lib/useSwipeStep'
+import { useActiveChipScroll } from '../../lib/useActiveChipScroll'
 import {
   Badge,
   buttonClass,
@@ -91,8 +93,16 @@ export function ScreenerView({
         ? '会社の中身が良く、かつチャートも入りやすい形になっている銘柄です。'
         : null
 
+  // 横フリックで隣のフィルターへ。端では止める。
+  const swipe = useSwipeStep((direction) => {
+    const index = FILTERS.findIndex((item) => item.id === filter)
+    const next = FILTERS[index + direction]
+    if (next) setFilter(next.id)
+  })
+  const chips = useActiveChipScroll(filter)
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" onTouchStart={swipe.onTouchStart} onTouchEnd={swipe.onTouchEnd}>
       <AddStockForm />
 
       {stocks.length === 0 ? (
@@ -116,11 +126,12 @@ export function ScreenerView({
           description="スコア順。チャートの状態を点数にしたもので、売買の指示ではありません。"
           actions={<CopyStateButton />}
         >
-          <div className="-mx-1 mb-3 flex gap-2 overflow-x-auto px-1 pb-1" data-no-swipe>
+          <div className="-mx-1 mb-3 flex gap-2 overflow-x-auto px-1 pb-1" data-no-swipe ref={chips}>
             {FILTERS.map((item) => (
               <button
                 key={item.id}
                 type="button"
+                data-chip={item.id}
                 onClick={() => setFilter(item.id)}
                 className={`shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition ${
                   filter === item.id

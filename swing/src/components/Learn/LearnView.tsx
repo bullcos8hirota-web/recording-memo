@@ -11,6 +11,8 @@ import { QuizSection } from './QuizSection'
 import { useAppStore } from '../../stores/appStore'
 import { yen } from '../../lib/format'
 import { Card, inputClass } from '../ui/Primitives'
+import { useSwipeStep } from '../../lib/useSwipeStep'
+import { useActiveChipScroll } from '../../lib/useActiveChipScroll'
 
 const SECTIONS = [
   { id: 'flow', label: '流れ' },
@@ -27,13 +29,22 @@ type SectionId = (typeof SECTIONS)[number]['id']
 export function LearnView({ onGoTab }: { onGoTab: (tab: 'screener' | 'settings') => void }) {
   const [section, setSection] = useState<SectionId>('flow')
 
+  // 横フリックで隣の章へ。端では止める。
+  const swipe = useSwipeStep((direction) => {
+    const index = SECTIONS.findIndex((item) => item.id === section)
+    const next = SECTIONS[index + direction]
+    if (next) setSection(next.id)
+  })
+  const chips = useActiveChipScroll(section)
+
   return (
-    <div className="space-y-4">
-      <div className="-mx-1 flex gap-2 overflow-x-auto px-1" data-no-swipe>
+    <div className="space-y-4" onTouchStart={swipe.onTouchStart} onTouchEnd={swipe.onTouchEnd}>
+      <div className="-mx-1 flex gap-2 overflow-x-auto px-1" data-no-swipe ref={chips}>
         {SECTIONS.map((item) => (
           <button
             key={item.id}
             type="button"
+            data-chip={item.id}
             onClick={() => setSection(item.id)}
             className={`shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition ${
               section === item.id

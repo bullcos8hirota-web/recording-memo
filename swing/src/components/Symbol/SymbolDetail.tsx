@@ -55,12 +55,21 @@ export function SymbolDetail() {
   return (
     <div className="space-y-4">
       <Card>
+        {/* どの銘柄を見ているのかを取り違えると、発注そのものを間違える。大きく出す。 */}
+        <div className="mb-2 flex items-baseline gap-2">
+          <span className="font-mono text-base text-neutral-500 dark:text-neutral-400">
+            {stock.code}
+          </span>
+          <span className="truncate text-2xl font-bold">{stock.name}</span>
+        </div>
+
         <div className="flex items-center gap-2">
           <div className="flex min-w-0 flex-1 items-center gap-2">
             <select
               value={stock.code}
               onChange={(e) => select(e.target.value)}
               className="min-h-11 w-full min-w-0 rounded-lg border border-neutral-300 bg-white px-3 py-2 text-base dark:border-neutral-700 dark:bg-neutral-950 sm:w-auto sm:text-sm"
+              aria-label="銘柄を切り替える"
             >
               {stocks.map((item) => (
                 <option key={item.code} value={item.code}>
