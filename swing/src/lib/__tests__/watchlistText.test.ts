@@ -52,7 +52,7 @@ describe('buildWatchlistText', () => {
     expect(text).toMatch(/スコア\d+ 条件が揃っている/)
     expect(text).toContain('乖離')
     expect(text).toContain('RSI')
-    expect(text).toContain('財務')
+    expect(text).toContain('ATR')
   })
 
   it('良い材料と警戒材料を分けて書く', () => {

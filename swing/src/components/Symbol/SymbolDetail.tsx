@@ -4,7 +4,6 @@ import { analyze, MIN_BARS, VERDICT_LABEL } from '../../lib/market/signals'
 import { closes, sma } from '../../lib/market/indicators'
 import { CandleChart, type Level } from './CandleChart'
 import { TradePlan } from './TradePlan'
-import { CompanyCard } from './CompanyCard'
 import { PriceImportCard } from './PriceImportCard'
 import { EarningsCard } from './EarningsCard'
 import { count, percent, price, shortDate, toneClass } from '../../lib/format'
@@ -87,7 +86,7 @@ export function SymbolDetail() {
               onClick={() => {
                 if (
                   confirm(
-                    `${stock.name} の価格データ${bars.length}本を消しますか?銘柄・メモ・企業カルテは残ります。`,
+                    `${stock.name} の価格データ${bars.length}本を消しますか?銘柄・メモ・日付は残ります。`,
                   )
                 ) {
                   void clearSeries(stock.code)
@@ -145,6 +144,16 @@ export function SymbolDetail() {
               <Stat label="RSI(14)" help="rsi" value={snapshot.rsi14 === null ? '—' : snapshot.rsi14.toFixed(1)} hint="30以下で売られすぎ / 70以上で買われすぎ" />
               <Stat label="MACD" help="macd" value={snapshot.macd === null ? '—' : snapshot.macd.toFixed(1)} hint={`シグナル ${snapshot.macdSignal?.toFixed(1) ?? '—'}`} />
               <Stat label="ATR(14)" help="atr" value={`${price(snapshot.atr14)}円`} hint={`終値の${snapshot.atrRate?.toFixed(1) ?? '—'}%`} />
+              <Stat
+                label="20日平均売買代金"
+                help="volume"
+                value={
+                  snapshot.turnoverAvg20 === null
+                    ? '—'
+                    : `${Math.round(snapshot.turnoverAvg20 / 1_000_000).toLocaleString('ja-JP')}百万円`
+                }
+                hint="出入りのしやすさ"
+              />
               <Stat label="出来高" help="volume" value={count(snapshot.volume)} hint={`20日平均の${snapshot.volumeRatio ? (snapshot.volumeRatio * 100).toFixed(0) : '—'}%`} />
               <Stat label="この日の高値" help="ohlc" value={`${price(snapshot.high)}円`} hint="逆指値の目安" />
               <Stat label="この日の安値" help="ohlc" value={`${price(snapshot.low)}円`} />
@@ -189,7 +198,6 @@ export function SymbolDetail() {
 
       <EarningsCard stock={stock} />
 
-      <CompanyCard stock={stock} />
     </div>
   )
 }

@@ -40,6 +40,7 @@ export function TradePlan({
   const snapshot = analysis?.snapshot ?? null
   const ready = analysis?.verdict === 'ready'
   const earnings = earningsAlert(stock.earningsDate)
+  const exRights = earningsAlert(stock.exRightsDate)
 
   const [entryInput, setEntryInput] = useState('')
   const [stopInput, setStopInput] = useState('')
@@ -310,6 +311,13 @@ export function TradePlan({
                 チャートからは読めない唯一のリスクなので、発表後まで待つのが無難です。
               </p>
             </div>
+          )}
+
+          {exRights?.soon && (
+            <p className="mt-4 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+              権利確定日が{shortDate(stock.exRightsDate!)}（あと{exRights.days}日）です。
+              その翌営業日は配当の分だけ機械的に下がります。
+            </p>
           )}
 
           {sizing.shares > 0 && (

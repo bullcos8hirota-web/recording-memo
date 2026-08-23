@@ -45,6 +45,8 @@ export type Snapshot = {
   /** 直近5日安値。損切り位置の候補。 */
   low5: number | null
   volumeAvg20: number | null
+  /** 20日平均の売買代金(円)。出入りのしやすさの目安。 */
+  turnoverAvg20: number | null
   /** 出来高が20日平均の何倍か。 */
   volumeRatio: number | null
 }
@@ -124,6 +126,7 @@ export function buildSnapshot(bars: Bar[], index = bars.length - 1): Snapshot {
     low20: low20.length ? at(low20, low20.length - 1) : null,
     low5: at(low5, index),
     volumeAvg20: avgVolume,
+    turnoverAvg20: avgVolume === null ? null : avgVolume * bar.close,
     // 終値だけを入れた日は出来高が0になる。0を「薄商い」と読むと誤判定になるので、
     // 平均は取れていても当日の出来高が無い場合は「不明」として扱う。
     volumeRatio: avgVolume && bar.volume > 0 ? bar.volume / avgVolume : null,

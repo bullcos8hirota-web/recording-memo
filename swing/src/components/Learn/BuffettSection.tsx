@@ -1,13 +1,5 @@
-import { useMemo, useState } from 'react'
-import {
-  EMPTY_FUNDAMENTALS,
-  evaluateFundamentals,
-  type Fundamentals,
-} from '../../lib/learn/buffett'
-import { Card, subtleButtonClass } from '../ui/Primitives'
+import { Card } from '../ui/Primitives'
 import { TermChip, TermLink } from './HelpButton'
-import { FundamentalsForm } from './FundamentalsForm'
-import { FundamentalsChecks, FundamentalsSummary } from './FundamentalsResult'
 
 const PRINCIPLES: { title: string; body: string; terms: string[] }[] = [
   {
@@ -37,22 +29,7 @@ const PRINCIPLES: { title: string; body: string; terms: string[] }[] = [
   },
 ]
 
-const SAMPLE: Fundamentals = {
-  roe: 18,
-  operatingMargin: 22,
-  equityRatio: 62,
-  epsGrowth: 11,
-  debtToProfit: 1.2,
-  per: 16,
-  pbr: 2.6,
-  fcfPositive: true,
-}
-
 export function BuffettSection() {
-  const [fundamentals, setFundamentals] = useState<Fundamentals>(EMPTY_FUNDAMENTALS)
-  const result = useMemo(() => evaluateFundamentals(fundamentals), [fundamentals])
-  const loadSample = () => setFundamentals(SAMPLE)
-
   return (
     <div className="space-y-4">
       <Card
@@ -126,31 +103,6 @@ export function BuffettSection() {
               </div>
             </div>
           ))}
-        </div>
-      </Card>
-
-      <Card
-        title="企業チェッカー"
-        description="気になる会社の数字を入れると、バフェットが見る観点でどうなのかを判定します。合否を決める道具ではなく、見る場所を覚えるための練習です。"
-        actions={
-          <button type="button" className={subtleButtonClass} onClick={loadSample}>
-            例を入れる
-          </button>
-        }
-      >
-        <FundamentalsForm value={fundamentals} onChange={setFundamentals} />
-
-        <p className="mt-3 text-xs leading-relaxed text-neutral-500 dark:text-neutral-400">
-          数字の出どころ: SBI証券アプリの銘柄情報(業績・財務)、会社四季報、企業のIRページの決算短信。
-          ROEやPER、PBRは銘柄情報にそのまま載っています。
-        </p>
-
-        <div className="mt-4">
-          <FundamentalsSummary result={result} />
-        </div>
-
-        <div className="mt-3">
-          <FundamentalsChecks result={result} />
         </div>
       </Card>
 
