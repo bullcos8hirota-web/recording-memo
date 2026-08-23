@@ -4,6 +4,7 @@ import { analyze, MIN_BARS, VERDICT_LABEL, type Analysis } from '../../lib/marke
 import { evaluateFundamentals } from '../../lib/learn/buffett'
 import type { Stock } from '../../lib/market/types'
 import { percent, price, shortDate, toneClass } from '../../lib/format'
+import { earningsAlert } from '../../lib/market/earnings'
 import { useIsPhone } from '../../lib/useMediaQuery'
 import { CopyStateButton } from './CopyStateButton'
 import { useRegisterSwipeStep } from '../../lib/swipeStepContext'
@@ -183,6 +184,7 @@ function ScreenerRow({
 }) {
   const isPhone = useIsPhone()
   const { stock, analysis } = row
+  const earnings = earningsAlert(stock.earningsDate)
   const snapshot = analysis?.snapshot
   // 画面が狭いときはバッジを減らして、1行に収まるようにする。
   const positives = analysis?.signals.filter((s) => s.tone === 'bull').slice(0, isPhone ? 1 : 2) ?? []
@@ -203,6 +205,7 @@ function ScreenerRow({
               </span>
               <span className="truncate font-medium">{stock.name}</span>
               {holding && <Badge tone="info">建玉あり</Badge>}
+              {earnings?.soon && <Badge tone="bear">決算 {shortDate(stock.earningsDate!)}</Badge>}
               {stock.demo && (
                 <span className="hidden sm:inline-flex">
                   <Badge>サンプル</Badge>

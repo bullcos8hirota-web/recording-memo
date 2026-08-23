@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest'
 import {
   EMPTY_FUNDAMENTALS,
+  EMPTY_STATEMENTS,
   evaluateFundamentals,
+  fromStatements,
   grahamVerdict,
   type Fundamentals,
 } from '../learn/buffett'
@@ -105,5 +107,40 @@ describe('サンプル銘柄の企業カルテ', () => {
     const result = evaluateFundamentals(expensive)
     expect(result.score).toBeGreaterThanOrEqual(70)
     expect(result.checks.find((c) => c.id === 'per')?.verdict).toBe('weak')
+  })
+})
+
+describe('fromStatements', () => {
+  it('決算の金額から比率を出す', () => {
+    expect(
+      fromStatements({
+        revenue: 45_000,
+        operatingProfit: 5_400,
+        netProfit: 4_000,
+        equity: 32_000,
+        assets: 58_000,
+        debt: 10_800,
+      }),
+    ).toEqual({
+      roe: 12.5, // 4,000 / 32,000
+      operatingMargin: 12, // 5,400 / 45,000
+      equityRatio: 55.2, // 32,000 / 58,000
+      debtToProfit: 2, // 10,800 / 5,400
+    })
+  })
+
+  it('足りない項目はnullのままにする', () => {
+    expect(fromStatements({ ...EMPTY_STATEMENTS, revenue: 100 })).toEqual({
+      roe: null,
+      operatingMargin: null,
+      equityRatio: null,
+      debtToProfit: null,
+    })
+  })
+
+  it('0で割らない', () => {
+    expect(
+      fromStatements({ ...EMPTY_STATEMENTS, debt: 500, operatingProfit: 0 }).debtToProfit,
+    ).toBeNull()
   })
 })
