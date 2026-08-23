@@ -72,7 +72,7 @@ export function BuffettSection() {
             狙っているものも、売る理由も違います。片方の物差しでもう片方を測ると失敗します。
           </p>
         </div>
-        <div className="mt-3 overflow-x-auto">
+        <div className="mt-3 overflow-x-auto" data-no-swipe>
           <table className="w-full text-sm">
             <thead className="text-left text-xs text-neutral-500 dark:text-neutral-400">
               <tr>

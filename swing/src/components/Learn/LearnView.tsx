@@ -29,7 +29,7 @@ export function LearnView({ onGoTab }: { onGoTab: (tab: 'screener' | 'settings')
 
   return (
     <div className="space-y-4">
-      <div className="-mx-1 flex gap-2 overflow-x-auto px-1">
+      <div className="-mx-1 flex gap-2 overflow-x-auto px-1" data-no-swipe>
         {SECTIONS.map((item) => (
           <button
             key={item.id}
@@ -353,7 +353,7 @@ function MoneySection() {
           1回の負けを1、勝ちの大きさをその何倍にできるかで、必要な勝率が変わります。
           損切り幅の2倍を利確目標にすれば、3回に1回強しか当たらなくても資金は減りません。
         </p>
-        <div className="mt-3 overflow-x-auto">
+        <div className="mt-3 overflow-x-auto" data-no-swipe>
           <table className="w-full text-sm">
             <thead className="text-left text-xs text-neutral-500 dark:text-neutral-400">
               <tr>

@@ -113,10 +113,10 @@ export function ScreenerView({
       ) : (
         <Card
           title="ウォッチリスト"
-          description="スイング目線のスコア順。スコアはチャートの状態を点数化したもので、売買の指示ではありません。"
+          description="スコア順。チャートの状態を点数にしたもので、売買の指示ではありません。"
           actions={<CopyStateButton />}
         >
-          <div className="-mx-1 mb-3 flex gap-2 overflow-x-auto px-1 pb-1">
+          <div className="-mx-1 mb-3 flex gap-2 overflow-x-auto px-1 pb-1" data-no-swipe>
             {FILTERS.map((item) => (
               <button
                 key={item.id}
