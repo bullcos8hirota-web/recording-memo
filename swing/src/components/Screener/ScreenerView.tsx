@@ -1,7 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useAppStore } from '../../stores/appStore'
 import { analyze, MIN_BARS, VERDICT_LABEL, type Analysis } from '../../lib/market/signals'
-import { evaluateFundamentals } from '../../lib/learn/buffett'
 import type { Stock } from '../../lib/market/types'
 import { percent, price, shortDate, toneClass } from '../../lib/format'
 import { earningsAlert } from '../../lib/market/earnings'
@@ -23,19 +22,12 @@ export type Row = {
   analysis: Analysis | null
   bars: number
   lastDate: string | null
-  /** 企業カルテを入力していれば0〜100、なければnull。 */
-  quality: number | null
 }
-
-/** 「中身が良い」と扱う財務スコアの下限。 */
-export const QUALITY_THRESHOLD = 70
 
 const FILTERS = [
   { id: 'all', label: 'すべて' },
   { id: 'ready', label: '条件が揃っている' },
   { id: 'watch', label: '監視したい以上' },
-  { id: 'quality', label: '中身が良い' },
-  { id: 'both', label: '中身◎ × チャート◎' },
   { id: 'holding', label: '建玉あり' },
 ] as const
 
@@ -68,7 +60,6 @@ export function ScreenerView({
           analysis: bars.length >= 30 ? analyze(bars) : null,
           bars: bars.length,
           lastDate: bars.length ? bars[bars.length - 1].date : null,
-          quality: stock.fundamentals ? evaluateFundamentals(stock.fundamentals).score : null,
         }
       })
       .sort((a, b) => (b.analysis?.score ?? -1) - (a.analysis?.score ?? -1))
@@ -76,23 +67,13 @@ export function ScreenerView({
 
   const isChartReady = (row: Row): boolean =>
     row.analysis?.verdict === 'ready' || row.analysis?.verdict === 'watch'
-  const isQuality = (row: Row): boolean => (row.quality ?? -1) >= QUALITY_THRESHOLD
 
   const visible = rows.filter((row) => {
     if (filter === 'ready') return row.analysis?.verdict === 'ready'
     if (filter === 'watch') return isChartReady(row)
-    if (filter === 'quality') return isQuality(row)
-    if (filter === 'both') return isQuality(row) && isChartReady(row)
     if (filter === 'holding') return holdingCodes.has(row.stock.code)
     return true
   })
-
-  const hint =
-    filter === 'quality'
-      ? '財務スコアが70点以上の銘柄です。買う場所はチャートで測ってください。'
-      : filter === 'both'
-        ? '会社の中身が良く、かつチャートも入りやすい形になっている銘柄です。'
-        : null
 
   // 横フリックで隣のフィルターへ。端では止める。
   useRegisterSwipeStep((direction) => {
@@ -144,12 +125,6 @@ export function ScreenerView({
               </button>
             ))}
           </div>
-
-          {hint && (
-            <p className="mb-3 rounded-xl bg-neutral-100 px-3 py-2 text-xs text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">
-              {hint}
-            </p>
-          )}
 
           {visible.length === 0 ? (
             <p className="py-6 text-center text-sm text-neutral-500 dark:text-neutral-400">
@@ -232,11 +207,6 @@ function ScreenerRow({
                   {signal.label}
                 </Badge>
               ))}
-              {row.quality !== null && (
-                <Badge tone={row.quality >= QUALITY_THRESHOLD ? 'bull' : 'neutral'}>
-                  財務 {row.quality}
-                </Badge>
-              )}
               {row.bars > 0 && row.bars < MIN_BARS && <Badge>データ不足</Badge>}
               {row.bars === 0 && <Badge>価格データなし</Badge>}
             </div>

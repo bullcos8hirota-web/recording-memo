@@ -8,14 +8,6 @@ export type Bar = {
   volume: number
 }
 
-import type { Fundamentals } from '../learn/buffett'
-
-/** 銘柄ごとに保存する財務データ(企業カルテ)。 */
-export type StockFundamentals = Fundamentals & {
-  /** 決算期などのメモ。 */
-  note?: string
-  updatedAt: number
-}
 
 /** ウォッチリストに登録した銘柄。 */
 export type Stock = {
@@ -28,8 +20,8 @@ export type Stock = {
   memo?: string
   /** 次回の決算発表日(YYYY-MM-DD)。持ち越しの可否を判断するために使う。 */
   earningsDate?: string | null
-  /** 財務データ。入力していない銘柄では未設定。 */
-  fundamentals?: StockFundamentals
+  /** 次回の権利確定日(YYYY-MM-DD)。翌営業日に配当の分だけ機械的に下がる。 */
+  exRightsDate?: string | null
   /** サンプルデータとして投入した銘柄かどうか。 */
   demo?: boolean
   createdAt: number
