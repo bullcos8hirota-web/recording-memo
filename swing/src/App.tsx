@@ -12,7 +12,6 @@ import { TABS, type TabId } from './components/Layout/tabs'
 import { isClosed } from './lib/money/trade'
 import { lastExpectedTradingDate, missingTradingDays } from './lib/market/freshness'
 import { shortDate } from './lib/format'
-import { useTabSwipe } from './lib/useTabSwipe'
 import { yen } from './lib/format'
 
 export default function App() {
@@ -66,13 +65,6 @@ export default function App() {
     return missing === 0 ? null : { latest, missing, expected: lastExpectedTradingDate() }
   }, [stocks, series])
 
-  // 横フリックで隣のタブへ。端では止める(輪にすると今どこにいるか分からなくなる)。
-  const swipe = useTabSwipe((direction) => {
-    const index = TABS.findIndex((item) => item.id === tab)
-    const next = TABS[index + direction]
-    if (next) setTab(next.id)
-  })
-
   const openDetail = (code: string) => {
     select(code)
     setTab('symbol')
@@ -102,11 +94,7 @@ export default function App() {
           </div>
         </header>
 
-        <main
-          className="mx-auto max-w-4xl px-3 py-3 pb-[calc(5rem+env(safe-area-inset-bottom))] sm:px-6 sm:py-6 sm:pb-16"
-          onTouchStart={swipe.onTouchStart}
-          onTouchEnd={swipe.onTouchEnd}
-        >
+        <main className="mx-auto max-w-4xl px-3 py-3 pb-[calc(5rem+env(safe-area-inset-bottom))] sm:px-6 sm:py-6 sm:pb-16">
           {storageError && (
             <div className="mb-3 rounded-2xl border border-rose-300 bg-rose-50 px-4 py-3 text-sm text-rose-900 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-200">
               保存領域を使えないため、入力した内容はこのタブを閉じると消えます。

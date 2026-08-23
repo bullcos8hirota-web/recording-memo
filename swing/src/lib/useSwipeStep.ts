@@ -6,11 +6,11 @@ const DISTANCE = 70
 const RATIO = 1.8
 
 /**
- * 画面を横にフリックしてタブを切り替える。
+ * 画面を横にフリックして、その画面の中の切り替え(フィルターや章)を隣に動かす。
  * 表やチャートなど横スクロールする中身の上では効かないようにしている
  * (data-no-swipe を付けた要素の中では無視する)。
  */
-export function useTabSwipe(onSwipe: (direction: 1 | -1) => void) {
+export function useSwipeStep(onSwipe: (direction: 1 | -1) => void) {
   const start = useRef<{ x: number; y: number } | null>(null)
 
   const onTouchStart = (event: TouchEvent) => {
