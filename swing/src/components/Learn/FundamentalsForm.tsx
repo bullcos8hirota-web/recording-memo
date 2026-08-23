@@ -5,6 +5,8 @@ import {
   type Fundamentals,
   type Statements,
 } from '../../lib/learn/buffett'
+import { parseFundamentalsText } from '../../lib/learn/parseFundamentals'
+import { readClipboard } from '../../lib/clipboard'
 import { Field, inputClass, subtleButtonClass } from '../ui/Primitives'
 import { HelpButton } from './HelpButton'
 
@@ -66,6 +68,16 @@ const NUMBER_FIELDS: {
     source: '有利子負債 ÷ 営業利益（下で計算できます）',
   },
 ]
+
+const LABEL_OF: Partial<Record<keyof Fundamentals, string>> = {
+  roe: 'ROE',
+  operatingMargin: '営業利益率',
+  equityRatio: '自己資本比率',
+  epsGrowth: 'EPS成長率',
+  debtToProfit: '有利子負債÷営業利益',
+  per: 'PER',
+  pbr: 'PBR',
+}
 
 const STATEMENT_FIELDS: { key: keyof Statements; label: string }[] = [
   { key: 'revenue', label: '売上高' },
@@ -188,9 +200,103 @@ export function FundamentalsForm({
         </div>
       </div>
 
+      <PasteFundamentals value={value} onChange={onChange} />
+
       <StatementCalculator
         onFill={(patch) => onChange({ ...value, ...patch })}
       />
+    </div>
+  )
+}
+
+/**
+ * 企業情報のページをそのまま貼って、拾える数字だけ入れる。
+ * どの数字がどの欄なのかを覚えるより、貼って確認するほうが早い。
+ */
+function PasteFundamentals({
+  value,
+  onChange,
+}: {
+  value: Fundamentals
+  onChange: (next: Fundamentals) => void
+}) {
+  const [text, setText] = useState('')
+  const [message, setMessage] = useState<string | null>(null)
+
+  const parsed = text.trim() === '' ? null : parseFundamentalsText(text)
+  const derived = fromStatements({
+    ...EMPTY_STATEMENTS,
+    ...(parsed?.statements ?? {}),
+  })
+  // 直接書いてある比率を優先し、決算の金額からの計算は足りないところだけ埋める。
+  const filled: Partial<Fundamentals> = {
+    ...derived,
+    ...(parsed?.ratios ?? {}),
+  }
+  const found = Object.entries(filled).filter(
+    ([, item]) => item !== null && item !== undefined,
+  )
+
+  const apply = () => {
+    onChange({ ...value, ...Object.fromEntries(found) })
+    setText('')
+    setMessage(`${found.length}項目を入れました。`)
+  }
+
+  return (
+    <div className="mt-3 rounded-xl border border-neutral-200 p-3 dark:border-neutral-800">
+      <p className="text-sm font-medium">企業情報を貼り付ける</p>
+      <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+        SBI証券の四季報や企業情報の画面を、範囲を気にせずまるごと貼ってください。
+        見出しを手がかりに、使える数字だけ拾います。
+      </p>
+      <button
+        type="button"
+        className={`${subtleButtonClass} mt-2`}
+        onClick={async () => {
+          const clip = await readClipboard()
+          setMessage(clip.ok ? null : clip.reason)
+          if (clip.ok) setText(clip.text)
+        }}
+      >
+        クリップボードから貼り付け
+      </button>
+      <textarea
+        className={`${inputClass} mt-2 min-h-24 font-mono text-xs`}
+        value={text}
+        onChange={(e) => {
+          setText(e.target.value)
+          setMessage(null)
+        }}
+        placeholder={'ROE(実績)\n9.82%\n自己資本比率\n55.2%'}
+      />
+      {parsed && (
+        <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
+          {found.length === 0
+            ? '使える数字が見つかりませんでした。別の画面を貼るか、下の欄に手で入れてください。'
+            : found
+                .map(
+                  ([key, item]) =>
+                    `${LABEL_OF[key as keyof Fundamentals] ?? key} ${item}`,
+                )
+                .join(' / ')}
+        </p>
+      )}
+      <div className="mt-2 flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          className={subtleButtonClass}
+          disabled={found.length === 0}
+          onClick={apply}
+        >
+          上の欄に入れる
+        </button>
+        {message && (
+          <span className="text-xs text-neutral-500 dark:text-neutral-400">
+            {message}
+          </span>
+        )}
+      </div>
     </div>
   )
 }
