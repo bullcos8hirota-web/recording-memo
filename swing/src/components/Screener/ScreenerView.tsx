@@ -6,7 +6,7 @@ import type { Stock } from '../../lib/market/types'
 import { percent, price, shortDate, toneClass } from '../../lib/format'
 import { useIsPhone } from '../../lib/useMediaQuery'
 import { CopyStateButton } from './CopyStateButton'
-import { useSwipeStep } from '../../lib/useSwipeStep'
+import { useRegisterSwipeStep } from '../../lib/swipeStepContext'
 import { useActiveChipScroll } from '../../lib/useActiveChipScroll'
 import {
   Badge,
@@ -94,7 +94,7 @@ export function ScreenerView({
         : null
 
   // 横フリックで隣のフィルターへ。端では止める。
-  const swipe = useSwipeStep((direction) => {
+  useRegisterSwipeStep((direction) => {
     const index = FILTERS.findIndex((item) => item.id === filter)
     const next = FILTERS[index + direction]
     if (next) setFilter(next.id)
@@ -102,7 +102,7 @@ export function ScreenerView({
   const chips = useActiveChipScroll(filter)
 
   return (
-    <div className="space-y-4" onTouchStart={swipe.onTouchStart} onTouchEnd={swipe.onTouchEnd}>
+    <div className="space-y-4">
       <AddStockForm />
 
       {stocks.length === 0 ? (
