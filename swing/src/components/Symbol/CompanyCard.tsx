@@ -69,7 +69,9 @@ export function CompanyCard({ stock }: { stock: Stock }) {
             />
           </label>
           <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
-            数字の出どころ: SBI証券アプリの銘柄情報(業績・財務)、会社四季報、企業のIRページ。
+            数字の出どころ: PER・PBRは株価ページの参考指標。売上高・営業利益・純利益・自己資本・総資産・
+            有利子負債は、SBI証券アプリの銘柄情報(業績・財務)、会社四季報、企業のIRページ(決算短信の1ページ目)。
+            金額さえ分かれば、下のボタンで比率に直せます。
           </p>
           <div className="mt-3">
             <FundamentalsSummary result={result} />

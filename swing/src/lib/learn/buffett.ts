@@ -22,6 +22,56 @@ export type Fundamentals = {
   fcfPositive: boolean | null
 }
 
+/**
+ * 決算に載っている金額から、比率を計算する。
+ * ROEや自己資本比率は「載っていないサイトが多いが、金額からは出せる」ため。
+ * 単位は揃っていれば何でもよい(百万円でも億円でも比率は変わらない)。
+ */
+export type Statements = {
+  /** 売上高。 */
+  revenue: number | null
+  /** 営業利益。 */
+  operatingProfit: number | null
+  /** 純利益(親会社株主に帰属する当期純利益)。 */
+  netProfit: number | null
+  /** 自己資本(純資産)。 */
+  equity: number | null
+  /** 総資産。 */
+  assets: number | null
+  /** 有利子負債(借入金と社債の合計)。 */
+  debt: number | null
+}
+
+export const EMPTY_STATEMENTS: Statements = {
+  revenue: null,
+  operatingProfit: null,
+  netProfit: null,
+  equity: null,
+  assets: null,
+  debt: null,
+}
+
+const divide = (top: number | null, bottom: number | null): number | null =>
+  top === null || bottom === null || bottom === 0 ? null : top / bottom
+
+const asPercent = (top: number | null, bottom: number | null): number | null => {
+  const value = divide(top, bottom)
+  return value === null ? null : Math.round(value * 1000) / 10
+}
+
+export function fromStatements(
+  statements: Statements,
+): Pick<Fundamentals, 'roe' | 'operatingMargin' | 'equityRatio' | 'debtToProfit'> {
+  const { revenue, operatingProfit, netProfit, equity, assets, debt } = statements
+  const years = divide(debt, operatingProfit)
+  return {
+    roe: asPercent(netProfit, equity),
+    operatingMargin: asPercent(operatingProfit, revenue),
+    equityRatio: asPercent(equity, assets),
+    debtToProfit: years === null ? null : Math.round(years * 10) / 10,
+  }
+}
+
 export const EMPTY_FUNDAMENTALS: Fundamentals = {
   roe: null,
   operatingMargin: null,
