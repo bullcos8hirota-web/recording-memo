@@ -1,9 +1,9 @@
 import { useRef, type TouchEvent } from 'react'
 
 /** 横に振り切ったと見なす距離(px)。短いと普通のタップで誤爆する。 */
-const DISTANCE = 70
+const DISTANCE = 60
 /** 縦に動いた量に対して、横がこの倍以上なら「横フリック」と見なす。 */
-const RATIO = 1.8
+const RATIO = 1.5
 
 /**
  * 画面を横にフリックして、その画面の中の切り替え(フィルターや章)を隣に動かす。
