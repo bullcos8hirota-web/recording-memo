@@ -16,7 +16,7 @@ export function Card({
     <section className="rounded-2xl border border-neutral-200 bg-white p-3.5 shadow-sm dark:border-neutral-800 dark:bg-neutral-900 sm:p-5">
       {(title || actions) && (
         <header className="mb-3 flex items-start justify-between gap-3">
-          <div>
+          <div className="min-w-0">
             {title && <h2 className="text-base font-semibold">{title}</h2>}
             {description && (
               <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
@@ -24,7 +24,7 @@ export function Card({
               </p>
             )}
           </div>
-          {actions}
+          {actions && <div className="shrink-0">{actions}</div>}
         </header>
       )}
       {children}

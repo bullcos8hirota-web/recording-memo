@@ -107,7 +107,7 @@ export function CandleChart({
   const { slice, x, y, volumeY, candleWidth, overlayPaths, gridValues, dateLabels } = view
 
   return (
-    <div className="overflow-x-auto" ref={scrollRef}>
+    <div className="overflow-x-auto" ref={scrollRef} data-no-swipe>
       <svg
         viewBox={`0 0 ${WIDTH} ${TOTAL_HEIGHT}`}
         className="h-auto w-full sm:min-w-[520px]"
