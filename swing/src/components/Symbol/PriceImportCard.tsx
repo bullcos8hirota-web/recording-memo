@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useAppStore } from '../../stores/appStore'
 import { parsePriceCsv, readCsvFile } from '../../lib/market/csv'
+import { suspiciousJumps } from '../../lib/market/importCheck'
 import { readClipboard } from '../../lib/clipboard'
 import { price, shortDate } from '../../lib/format'
 import { buttonClass, Card, inputClass, subtleButtonClass } from '../ui/Primitives'
@@ -12,6 +13,7 @@ import type { Stock } from '../../lib/market/types'
  */
 export function PriceImportCard({ stock, barCount }: { stock: Stock; barCount: number }) {
   const importBars = useAppStore((s) => s.importBars)
+  const stored = useAppStore((s) => s.series[stock.code] ?? [])
   const [open, setOpen] = useState(barCount === 0)
   const [text, setText] = useState('')
   const [message, setMessage] = useState<string | null>(null)
@@ -20,6 +22,7 @@ export function PriceImportCard({ stock, barCount }: { stock: Stock; barCount: n
   const parsed = text.trim() === '' ? null : parsePriceCsv(text)
   const bars = parsed?.rows ?? []
   const last = bars[bars.length - 1] ?? null
+  const jumps = bars.length > 0 ? suspiciousJumps(stored, bars) : []
 
   const paste = async () => {
     const clip = await readClipboard()
@@ -102,6 +105,23 @@ export function PriceImportCard({ stock, barCount }: { stock: Stock; barCount: n
           </p>
           <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
             この終値が{stock.name}のものか、元の画面と見比べてください。
+          </p>
+        </div>
+      )}
+
+      {jumps.length > 0 && (
+        <div className="mt-3 rounded-xl bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
+          <p className="font-medium">
+            値動きが大きすぎる日があります（
+            {jumps
+              .slice(0, 3)
+              .map((jump) => `${shortDate(jump.date)} ${jump.changeRate > 0 ? '+' : ''}${jump.changeRate.toFixed(1)}%`)
+              .join(' / ')}
+            ）
+          </p>
+          <p className="mt-1 text-xs">
+            {stock.name}のデータで合っていますか。別の銘柄の時系列を貼ると、価格帯が近い銘柄どうしでは
+            見た目で気づけません。決算などで実際に動いた日なら、そのまま取り込んで構いません。
           </p>
         </div>
       )}
