@@ -9,7 +9,7 @@ import {
   stopCandidates,
 } from '../../lib/money/position'
 import { capitalGainTax, tradeFee } from '../../lib/money/fees'
-import { percent, price, ratio, shortDate, today, yen } from '../../lib/format'
+import { comingFriday, percent, price, ratio, shortDate, today, yen } from '../../lib/format'
 import {
   buttonClass,
   Card,
@@ -20,6 +20,7 @@ import {
   subtleButtonClass,
 } from '../ui/Primitives'
 import { HelpButton } from '../Learn/HelpButton'
+import { PendingOrderCard } from './PendingOrderCard'
 import { earningsAlert } from '../../lib/market/earnings'
 
 /**
@@ -37,6 +38,8 @@ export function TradePlan({
 }) {
   const settings = useAppStore((s) => s.settings)
   const addTrade = useAppStore((s) => s.addTrade)
+  const updateStock = useAppStore((s) => s.updateStock)
+  const pending = stock.pendingOrder ?? null
   const snapshot = analysis?.snapshot ?? null
   const ready = analysis?.verdict === 'ready'
   const earnings = earningsAlert(stock.earningsDate)
@@ -150,6 +153,7 @@ export function TradePlan({
           .map((s) => s.label)
           .join('、') ?? '',
     })
+    if (pending) await updateStock(stock.code, { pendingOrder: null })
     setSaved(`${stock.name} ${sizing.shares}株の建玉を記録しました。`)
   }
 
@@ -158,6 +162,18 @@ export function TradePlan({
       title="売買プラン"
       description="許容損失から株数を決めます。損切り価格を先に決めるのがスイングの肝です。"
     >
+      {pending && (
+        <PendingOrderCard
+          stock={stock}
+          onFilled={() => {
+            setEntryInput(String(pending.trigger))
+            setStopPinned(true)
+            setStopInput(String(pending.stopPrice))
+            setForceOrder(true)
+          }}
+        />
+      )}
+
       {analysis && !ready && (
         <div className="mb-3 rounded-xl bg-amber-50 px-3 py-3 text-sm text-amber-900 dark:bg-amber-950/40 dark:text-amber-200">
           <p className="font-medium">
@@ -320,7 +336,7 @@ export function TradePlan({
             </p>
           )}
 
-          {sizing.shares > 0 && (
+          {sizing.shares > 0 && !pending && (
           <div className="mt-4 rounded-xl border border-neutral-200 p-3 dark:border-neutral-800">
             <h3 className="text-sm font-semibold">証券会社に入れる注文</h3>
             {!ready && (
@@ -353,6 +369,23 @@ export function TradePlan({
                 )}
               </li>
             </ol>
+            <button
+              type="button"
+              className={`${subtleButtonClass} mt-3`}
+              onClick={() =>
+                void updateStock(stock.code, {
+                  pendingOrder: {
+                    trigger: plan.entry,
+                    shares: sizing.shares,
+                    stopPrice: plan.stop,
+                    expiresOn: comingFriday(),
+                    placedOn: today(),
+                  },
+                })
+              }
+            >
+              この内容で注文を出した
+            </button>
             <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
               買えたら、上の「エントリー価格」に実際の約定価格を入れ直してください。
               2つめの売り注文の価格も、それに合わせて動きます（計算は要りません）。
