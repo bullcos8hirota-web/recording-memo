@@ -98,6 +98,14 @@ export function buildWatchlistText(input: {
     if (good.length > 0) lines.push(`  ○ ${good.map((signal) => signal.label).join(', ')}`)
     if (bad.length > 0) lines.push(`  × ${bad.map((signal) => signal.label).join(', ')}`)
 
+    if (stock.pendingOrder) {
+      const order = stock.pendingOrder
+      lines.push(
+        `  注文中 逆指値${money(order.trigger)}以上 ${order.shares}株 / 損切り${money(
+          order.stopPrice,
+        )} / ${short(order.expiresOn)}まで`,
+      )
+    }
     const earnings = earningsAlert(stock.earningsDate, now)
     if (earnings && !earnings.past) {
       lines.push(`  決算発表 ${short(stock.earningsDate!)}(あと${earnings.days}日)`)

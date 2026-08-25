@@ -56,3 +56,17 @@ export function toneClass(value: number | null | undefined): string {
     ? 'text-rose-600 dark:text-rose-400'
     : 'text-sky-600 dark:text-sky-400'
 }
+
+/**
+ * その週の金曜日(YYYY-MM-DD)。注文の期限の既定値に使う。
+ * 土日なら翌週の金曜。来週まで残る注文を作らないため。
+ */
+export function comingFriday(now: Date = new Date()): string {
+  const date = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+  const day = date.getDay()
+  const ahead = day === 6 ? 6 : day === 0 ? 5 : 5 - day
+  date.setDate(date.getDate() + ahead)
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(
+    date.getDate(),
+  ).padStart(2, '0')}`
+}

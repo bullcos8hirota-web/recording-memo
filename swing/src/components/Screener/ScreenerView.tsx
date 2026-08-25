@@ -181,6 +181,7 @@ function ScreenerRow({
               <span className="truncate font-medium">{stock.name}</span>
               {holding && <Badge tone="info">建玉あり</Badge>}
               {earnings?.soon && <Badge tone="bear">決算 {shortDate(stock.earningsDate!)}</Badge>}
+              {stock.pendingOrder && <Badge tone="info">注文中</Badge>}
               {stock.demo && (
                 <span className="hidden sm:inline-flex">
                   <Badge>サンプル</Badge>
