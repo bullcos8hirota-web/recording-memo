@@ -14,6 +14,9 @@ import type { Stock } from '../../lib/market/types'
 export function PriceImportCard({ stock, barCount }: { stock: Stock; barCount: number }) {
   const importBars = useAppStore((s) => s.importBars)
   const stored = useAppStore((s) => s.series[stock.code] ?? [])
+  const stocks = useAppStore((s) => s.stocks)
+  const series = useAppStore((s) => s.series)
+  const select = useAppStore((s) => s.select)
   const [open, setOpen] = useState(barCount === 0)
   const [text, setText] = useState('')
   const [message, setMessage] = useState<string | null>(null)
@@ -41,6 +44,15 @@ export function PriceImportCard({ stock, barCount }: { stock: Stock; barCount: n
     setText('')
     setError(null)
   }
+
+  // 銘柄が増えると、次にどれを貼るかを探すこと自体が手間になる。
+  // まだ今週分が入っていない銘柄へ、そのまま送る。
+  const latestDate = (code: string): string => series[code]?.at(-1)?.date ?? ''
+  const freshest = stocks.reduce((max, item) => {
+    const date = latestDate(item.code)
+    return date > max ? date : max
+  }, '')
+  const next = stocks.find((item) => item.code !== stock.code && latestDate(item.code) < freshest)
 
   if (!open) {
     return (
@@ -142,6 +154,11 @@ export function PriceImportCard({ stock, barCount }: { stock: Stock; barCount: n
         {barCount > 0 && (
           <button type="button" className={subtleButtonClass} onClick={() => setOpen(false)}>
             閉じる
+          </button>
+        )}
+        {message && next && (
+          <button type="button" className={subtleButtonClass} onClick={() => select(next.code)}>
+            次の銘柄へ（{next.name}）
           </button>
         )}
         {message && <span className="text-sm text-neutral-600 dark:text-neutral-300">{message}</span>}
