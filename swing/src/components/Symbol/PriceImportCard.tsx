@@ -5,7 +5,13 @@ import { suspiciousJumps } from '../../lib/market/importCheck'
 import { readClipboard } from '../../lib/clipboard'
 import { price, shortDate } from '../../lib/format'
 import { buttonClass, Card, inputClass, subtleButtonClass } from '../ui/Primitives'
-import type { Stock } from '../../lib/market/types'
+import type { Bar, Stock } from '../../lib/market/types'
+
+/**
+ * 未取り込みの銘柄で使う空配列。毎回新しい配列を返すと、
+ * ストアの購読が「値が変わった」と見なして再描画が止まらなくなる。
+ */
+const NO_BARS: Bar[] = []
 
 /**
  * 銘柄画面の中に置く取り込み口。どの銘柄に入るのかが目の前にあるので、
@@ -13,7 +19,7 @@ import type { Stock } from '../../lib/market/types'
  */
 export function PriceImportCard({ stock, barCount }: { stock: Stock; barCount: number }) {
   const importBars = useAppStore((s) => s.importBars)
-  const stored = useAppStore((s) => s.series[stock.code] ?? [])
+  const stored = useAppStore((s) => s.series[stock.code] ?? NO_BARS)
   const stocks = useAppStore((s) => s.stocks)
   const series = useAppStore((s) => s.series)
   const select = useAppStore((s) => s.select)

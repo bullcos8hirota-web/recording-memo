@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App'
+import { ErrorBoundary } from './components/Layout/ErrorBoundary'
 import { registerPwa } from './registerPwa'
 
 // 保存領域が使えない端末ではDexieが内部でPromiseを拒否する。画面側で案内している
@@ -14,7 +15,9 @@ window.addEventListener('unhandledrejection', (event) => {
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <ErrorBoundary>
+      <App />
+    </ErrorBoundary>
   </StrictMode>,
 )
 
