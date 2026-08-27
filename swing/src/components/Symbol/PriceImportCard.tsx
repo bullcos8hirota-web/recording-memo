@@ -25,18 +25,27 @@ export function PriceImportCard({ stock, barCount }: { stock: Stock; barCount: n
   const select = useAppStore((s) => s.select)
   const [open, setOpen] = useState(barCount === 0)
   const [text, setText] = useState('')
+  // 分割の前後で株価が桁違いになるので、そこより前を捨てて取り込めるようにする。
+  const [trimFrom, setTrimFrom] = useState<string | null>(null)
   const [message, setMessage] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
   const parsed = text.trim() === '' ? null : parsePriceCsv(text)
-  const bars = parsed?.rows ?? []
+  const all = parsed?.rows ?? []
+  const bars = trimFrom ? all.filter((bar) => bar.date >= trimFrom) : all
   const last = bars[bars.length - 1] ?? null
   const jumps = bars.length > 0 ? suspiciousJumps(stored, bars) : []
+  // 分割はいちばん大きな段差として出る。捨てる境目はそこに合わせる。
+  const biggest = jumps.reduce<(typeof jumps)[number] | null>(
+    (max, jump) => (max === null || Math.abs(jump.changeRate) > Math.abs(max.changeRate) ? jump : max),
+    null,
+  )
 
   const paste = async () => {
     const clip = await readClipboard()
     setError(clip.ok ? null : clip.reason)
     setMessage(null)
+    setTrimFrom(null)
     if (clip.ok) setText(clip.text)
   }
 
@@ -48,6 +57,7 @@ export function PriceImportCard({ stock, barCount }: { stock: Stock; barCount: n
       )})。保存済みは合計${total}本。`,
     )
     setText('')
+    setTrimFrom(null)
     setError(null)
   }
 
@@ -104,7 +114,10 @@ export function PriceImportCard({ stock, barCount }: { stock: Stock; barCount: n
       <textarea
         className={`${inputClass} mt-3 min-h-32 font-mono text-sm`}
         value={text}
-        onChange={(e) => setText(e.target.value)}
+        onChange={(e) => {
+          setText(e.target.value)
+          setTrimFrom(null)
+        }}
         placeholder={'26/8/21\t1,410\t1,430\t1,405\t1,425'}
       />
 
@@ -138,10 +151,32 @@ export function PriceImportCard({ stock, barCount }: { stock: Stock; barCount: n
             ）
           </p>
           <p className="mt-1 text-xs">
-            {stock.name}のデータで合っていますか。別の銘柄の時系列を貼ると、価格帯が近い銘柄どうしでは
-            見た目で気づけません。決算などで実際に動いた日なら、そのまま取り込んで構いません。
+            {stock.name}のデータで合っていますか。よくある原因は2つです。
+            別の銘柄の時系列を貼った（価格帯が近いと見た目では気づけません）か、
+            株式分割です（分割の前後で株価が桁違いになります）。
+            決算などで実際に動いた日なら、そのまま取り込んで構いません。
           </p>
+          <button
+            type="button"
+            className={`${subtleButtonClass} mt-2`}
+            onClick={() => biggest && setTrimFrom(biggest.date)}
+          >
+            {biggest && shortDate(biggest.date)}より前を捨てる
+          </button>
         </div>
+      )}
+
+      {trimFrom && (
+        <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
+          {shortDate(trimFrom)}より前の{all.length - bars.length}本を除いています。
+          <button
+            type="button"
+            className="ml-2 underline"
+            onClick={() => setTrimFrom(null)}
+          >
+            元に戻す
+          </button>
+        </p>
       )}
 
       {parsed && bars.length === 0 && parsed.error && (

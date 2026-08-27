@@ -367,3 +367,16 @@ describe('出来高の見つけ方', () => {
     expect(result.rows[0].volume).toBe(0)
   })
 })
+
+describe('区切り文字の判定', () => {
+  it('タブと桁区切りのカンマが同数でも、タブ区切りとして読む', () => {
+    const result = parsePriceCsv('26/3/26\t5,252\t5,270\t5,240\t5,252')
+    expect(result.rows).toHaveLength(1)
+    expect(result.rows[0]).toMatchObject({ open: 5_252, high: 5_270, low: 5_240, close: 5_252 })
+  })
+
+  it('タブが無ければカンマ区切りとして読む', () => {
+    const result = parsePriceCsv('2026/03/26,5252,5270,5240,5252')
+    expect(result.rows[0]).toMatchObject({ open: 5_252, close: 5_252 })
+  })
+})
