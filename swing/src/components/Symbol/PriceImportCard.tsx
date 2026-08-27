@@ -5,7 +5,13 @@ import { suspiciousJumps } from '../../lib/market/importCheck'
 import { readClipboard } from '../../lib/clipboard'
 import { price, shortDate } from '../../lib/format'
 import { buttonClass, Card, inputClass, subtleButtonClass } from '../ui/Primitives'
-import type { Stock } from '../../lib/market/types'
+import type { Bar, Stock } from '../../lib/market/types'
+
+/**
+ * 未取り込みの銘柄で使う空配列。毎回新しい配列を返すと、
+ * ストアの購読が「値が変わった」と見なして再描画が止まらなくなる。
+ */
+const NO_BARS: Bar[] = []
 
 /**
  * 銘柄画面の中に置く取り込み口。どの銘柄に入るのかが目の前にあるので、
@@ -13,7 +19,10 @@ import type { Stock } from '../../lib/market/types'
  */
 export function PriceImportCard({ stock, barCount }: { stock: Stock; barCount: number }) {
   const importBars = useAppStore((s) => s.importBars)
-  const stored = useAppStore((s) => s.series[stock.code] ?? [])
+  const stored = useAppStore((s) => s.series[stock.code] ?? NO_BARS)
+  const stocks = useAppStore((s) => s.stocks)
+  const series = useAppStore((s) => s.series)
+  const select = useAppStore((s) => s.select)
   const [open, setOpen] = useState(barCount === 0)
   const [text, setText] = useState('')
   const [message, setMessage] = useState<string | null>(null)
@@ -41,6 +50,15 @@ export function PriceImportCard({ stock, barCount }: { stock: Stock; barCount: n
     setText('')
     setError(null)
   }
+
+  // 銘柄が増えると、次にどれを貼るかを探すこと自体が手間になる。
+  // まだ今週分が入っていない銘柄へ、そのまま送る。
+  const latestDate = (code: string): string => series[code]?.at(-1)?.date ?? ''
+  const freshest = stocks.reduce((max, item) => {
+    const date = latestDate(item.code)
+    return date > max ? date : max
+  }, '')
+  const next = stocks.find((item) => item.code !== stock.code && latestDate(item.code) < freshest)
 
   if (!open) {
     return (
@@ -142,6 +160,11 @@ export function PriceImportCard({ stock, barCount }: { stock: Stock; barCount: n
         {barCount > 0 && (
           <button type="button" className={subtleButtonClass} onClick={() => setOpen(false)}>
             閉じる
+          </button>
+        )}
+        {message && next && (
+          <button type="button" className={subtleButtonClass} onClick={() => select(next.code)}>
+            次の銘柄へ（{next.name}）
           </button>
         )}
         {message && <span className="text-sm text-neutral-600 dark:text-neutral-300">{message}</span>}
