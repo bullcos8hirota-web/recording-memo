@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  affordability,
   buildExitPlan,
   calculatePosition,
   entryCandidates,
@@ -239,5 +240,29 @@ describe('entryCandidates', () => {
     const list = entryCandidates({ close: 2916, high: 2930, high20: 3000 })
     expect(list.map((item) => item.id)).toEqual(['breakout', 'high20', 'close'])
     expect(list[1].price).toBeGreaterThan(3000)
+  })
+})
+
+describe('affordability', () => {
+  const base = { lot: 100, capital: 2_000_000, riskPercent: 1, maxPositionPercent: 30, atrMultiple: 2 }
+
+  it('値動きが穏やかな中価格帯なら買える', () => {
+    expect(affordability({ ...base, close: 1_415, atr: 45 })).toEqual({ ok: true })
+  })
+
+  it('損切り幅が許容損失を超えるなら買えない', () => {
+    // 3,932円 / ATR159 は1単元で31,800円のリスクになる(許容は20,000円)
+    expect(affordability({ ...base, close: 3_932, atr: 159 })).toEqual({ ok: false, reason: 'risk' })
+  })
+
+  it('1単元の代金が1銘柄上限を超えるなら買えない', () => {
+    expect(affordability({ ...base, close: 8_599, atr: 10 })).toEqual({
+      ok: false,
+      reason: 'position',
+    })
+  })
+
+  it('ATRが出ていなければ判定しない', () => {
+    expect(affordability({ ...base, close: 1_415, atr: null })).toEqual({ ok: true })
   })
 })
