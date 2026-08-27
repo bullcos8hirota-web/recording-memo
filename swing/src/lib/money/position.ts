@@ -140,6 +140,29 @@ export function buildExitPlan(
 }
 
 /**
+ * その資金で、その銘柄を1単元でも買えるか。
+ * 値動きの荒い高価格帯の銘柄は、損切り幅が許容損失を超えて手が出せない。
+ * 監視リストに入れる前に分かると、追いかける時間を無駄にしない。
+ */
+export function affordability(input: {
+  close: number
+  atr: number | null
+  lot: number
+  capital: number
+  riskPercent: number
+  maxPositionPercent: number
+  atrMultiple: number
+}): { ok: true } | { ok: false; reason: 'risk' | 'position' } {
+  const { close, atr, lot, capital, riskPercent, maxPositionPercent, atrMultiple } = input
+  if (close <= 0 || lot <= 0) return { ok: true }
+
+  if (close * lot > (capital * maxPositionPercent) / 100) return { ok: false, reason: 'position' }
+  if (atr === null || atr <= 0) return { ok: true }
+  if (atr * atrMultiple * lot > (capital * riskPercent) / 100) return { ok: false, reason: 'risk' }
+  return { ok: true }
+}
+
+/**
  * エントリー価格の候補。証券会社に入れる注文の値段はここで決まる。
  * 「上に抜けたら買う」置き方が基本なので、直近の高値より少し上を先頭に出す。
  */

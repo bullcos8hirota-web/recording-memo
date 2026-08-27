@@ -4,6 +4,7 @@ import { analyze, MIN_BARS, VERDICT_LABEL, type Analysis } from '../../lib/marke
 import type { Stock } from '../../lib/market/types'
 import { percent, price, shortDate, toneClass } from '../../lib/format'
 import { earningsAlert } from '../../lib/market/earnings'
+import { affordability } from '../../lib/money/position'
 import { useIsPhone } from '../../lib/useMediaQuery'
 import { CopyStateButton } from './CopyStateButton'
 import { useRegisterSwipeStep } from '../../lib/swipeStepContext'
@@ -158,8 +159,21 @@ function ScreenerRow({
   onOpen: (code: string) => void
 }) {
   const isPhone = useIsPhone()
+  const settings = useAppStore((s) => s.settings)
   const { stock, analysis } = row
   const earnings = earningsAlert(stock.earningsDate)
+  const snapshotForFit = analysis?.snapshot
+  const fit = snapshotForFit
+    ? affordability({
+        close: snapshotForFit.close,
+        atr: snapshotForFit.atr14,
+        lot: stock.lot,
+        capital: settings.capital,
+        riskPercent: settings.riskPercent,
+        maxPositionPercent: settings.maxPositionPercent,
+        atrMultiple: settings.atrMultiple,
+      })
+    : { ok: true as const }
   const snapshot = analysis?.snapshot
   // 画面が狭いときはバッジを減らして、1行に収まるようにする。
   const positives = analysis?.signals.filter((s) => s.tone === 'bull').slice(0, isPhone ? 1 : 2) ?? []
@@ -182,6 +196,11 @@ function ScreenerRow({
               {holding && <Badge tone="info">建玉あり</Badge>}
               {earnings?.soon && <Badge tone="bear">決算 {shortDate(stock.earningsDate!)}</Badge>}
               {stock.pendingOrder && <Badge tone="info">注文中</Badge>}
+              {!fit.ok && (
+                <Badge tone="bear">
+                  {fit.reason === 'risk' ? '値動きが大きすぎる' : '1単元が高すぎる'}
+                </Badge>
+              )}
               {stock.demo && (
                 <span className="hidden sm:inline-flex">
                   <Badge>サンプル</Badge>

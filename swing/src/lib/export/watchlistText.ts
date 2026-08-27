@@ -1,5 +1,6 @@
 import { analyze, VERDICT_LABEL } from '../market/signals'
 import { earningsAlert } from '../market/earnings'
+import { affordability } from '../money/position'
 import { evaluateTrade, isClosed, type Trade } from '../money/trade'
 import type { Bar, Stock } from '../market/types'
 import type { Settings } from '../db/schema'
@@ -98,6 +99,22 @@ export function buildWatchlistText(input: {
     if (good.length > 0) lines.push(`  ○ ${good.map((signal) => signal.label).join(', ')}`)
     if (bad.length > 0) lines.push(`  × ${bad.map((signal) => signal.label).join(', ')}`)
 
+    const fit = affordability({
+      close: snapshot.close,
+      atr: snapshot.atr14,
+      lot: stock.lot,
+      capital: settings.capital,
+      riskPercent: settings.riskPercent,
+      maxPositionPercent: settings.maxPositionPercent,
+      atrMultiple: settings.atrMultiple,
+    })
+    if (!fit.ok) {
+      lines.push(
+        fit.reason === 'risk'
+          ? '  ※この資金では買えない(値動きが大きく、1単元の損切り幅が許容損失を超える)'
+          : '  ※この資金では買えない(1単元の代金が1銘柄上限を超える)',
+      )
+    }
     if (stock.pendingOrder) {
       const order = stock.pendingOrder
       lines.push(
