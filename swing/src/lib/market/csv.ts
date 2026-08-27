@@ -7,9 +7,9 @@ import type { Bar } from './types'
  */
 function detectDelimiter(source: string): ',' | '\t' {
   const firstLine = source.split(/\r?\n/).find((line) => line.trim() !== '') ?? ''
-  const tabs = (firstLine.match(/\t/g) ?? []).length
-  const commas = (firstLine.match(/,/g) ?? []).length
-  return tabs > commas ? '\t' : ','
+  // タブが1つでもあれば、表からのコピー。中のカンマは桁区切りなので区切りにしない。
+  // (「1,410\t1,430」のようにタブと桁区切りが同数になる行があり、多数決では割れる)
+  return firstLine.includes('\t') ? '\t' : ','
 }
 
 /** RFC4180風のCSVパーサ。引用符とCRLF、BOMを扱う。 */
