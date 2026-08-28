@@ -72,6 +72,9 @@ function PositionCard({ trade, bars }: { trade: Trade; bars: Bar[] }) {
   const [exitDate, setExitDate] = useState(today())
   const [exitPrice, setExitPrice] = useState(String(last?.close ?? trade.entryPrice))
   const [stopInput, setStopInput] = useState(trade.stopPrice === null ? '' : String(trade.stopPrice))
+  const [editingEntry, setEditingEntry] = useState(false)
+  const [entryDateInput, setEntryDateInput] = useState(trade.entryDate)
+  const [entryPriceInput, setEntryPriceInput] = useState(String(trade.entryPrice))
   const [closing, setClosing] = useState(false)
 
   const trailing = useMemo(() => {
@@ -177,6 +180,57 @@ function PositionCard({ trade, bars }: { trade: Trade; bars: Bar[] }) {
           権利確定日が{shortDate(stock!.exRightsDate!)}（あと{exRights.days}日）です。
           翌営業日は配当の分だけ下がります。値動きではないので、その週は損切りを引き上げないでください。
         </p>
+      )}
+
+      {/* 約定日と約定価格は、記録したあとに気づいて直したくなる(日付をまたいで記録した、
+          成行で数円ずれた、など)。記録し直さずに直せるようにしておく。 */}
+      {editingEntry ? (
+        <div className="mt-3 flex flex-wrap items-end gap-2 rounded-xl bg-neutral-50 p-3 dark:bg-neutral-800/60">
+          <Field label="約定日">
+            <input
+              type="date"
+              className={`${inputClass} w-40`}
+              value={entryDateInput}
+              onChange={(e) => setEntryDateInput(e.target.value)}
+            />
+          </Field>
+          <Field label="約定価格(円)">
+            <input
+              className={`${inputClass} w-32`}
+              value={entryPriceInput}
+              onChange={(e) => setEntryPriceInput(e.target.value)}
+              inputMode="decimal"
+            />
+          </Field>
+          <button
+            type="button"
+            className={buttonClass}
+            onClick={() => {
+              void updateTrade(trade.id, {
+                entryDate: entryDateInput || trade.entryDate,
+                entryPrice: Number(entryPriceInput) || trade.entryPrice,
+              })
+              setEditingEntry(false)
+            }}
+          >
+            保存
+          </button>
+          <button type="button" className={subtleButtonClass} onClick={() => setEditingEntry(false)}>
+            やめる
+          </button>
+        </div>
+      ) : (
+        <button
+          type="button"
+          className={`${subtleButtonClass} mt-3`}
+          onClick={() => {
+            setEntryDateInput(trade.entryDate)
+            setEntryPriceInput(String(trade.entryPrice))
+            setEditingEntry(true)
+          }}
+        >
+          約定日・約定価格を直す
+        </button>
       )}
 
       <div className="mt-3 flex flex-wrap items-end gap-2">
