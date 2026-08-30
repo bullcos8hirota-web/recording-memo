@@ -20,8 +20,8 @@ const http = require('http');
 const os = require('os');
 
 const PORT = parseInt(process.env.PORT || '8080', 10);
-// 動画の長さ（秒）。全タブレット共通。小数もOK（例: 604.5）。
-const DURATION = parseFloat(process.env.DURATION || '604');
+// 動画の長さ（秒）。全タブレット共通。小数もOK（例: 1800 = 30分）。
+const DURATION = parseFloat(process.env.DURATION || '1800');
 
 function setCommonHeaders(res) {
   // file:// のタブレットからも読めるように全許可

@@ -11,7 +11,7 @@ rem  ・このファイルと sync-server.js を同じフォルダに置いて�
 rem  ・下の DURATION に動画の長さ（秒）を入れてください。例: 604
 rem =====================================================================
 
-set DURATION=604
+set DURATION=1800
 
 node sync-server.js
 

@@ -47,10 +47,10 @@
 
    ```
    # Mac / Linux
-   DURATION=604 node sync-server.js
+   DURATION=1800 node sync-server.js
 
    # Windows (PowerShell)
-   $env:DURATION=604; node sync-server.js
+   $env:DURATION=1800; node sync-server.js
    ```
 
 4. 起動すると **タブレットに入力するアドレス** が表示されます（例 `http://192.168.1.50:8080`）。
