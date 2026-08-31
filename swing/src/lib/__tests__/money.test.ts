@@ -82,6 +82,13 @@ describe('calculatePosition', () => {
     expect(result.limitedBy).toBe('risk')
   })
 
+  it('損切りが空欄なら株数を出さない', () => {
+    // 0円のまま株数が出ると、逆指値0円の売り注文を案内してしまう。
+    const result = calculatePosition({ ...base, entryPrice: 1000, stopPrice: 0 })
+    expect(result.shares).toBe(0)
+    expect(result.error).toBe('損切り価格を入力してください。')
+  })
+
   it('1銘柄あたりの上限で頭打ちになる', () => {
     const result = calculatePosition({
       ...base,
