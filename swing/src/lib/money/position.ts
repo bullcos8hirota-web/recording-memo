@@ -56,6 +56,8 @@ export function calculatePosition(input: SizingInput): SizingResult {
 
   if (capital <= 0) return { ...empty, error: '運用資金を設定してください。' }
   if (entryPrice <= 0) return { ...empty, error: 'エントリー価格を入力してください。' }
+  // 損切りが空欄のまま株数を出すと、逆指値0円の売り注文を案内してしまう。
+  if (stopPrice <= 0) return { ...empty, error: '損切り価格を入力してください。' }
   if (riskPerShare <= 0) {
     return { ...empty, error: '損切り価格はエントリー価格より下に置いてください。' }
   }
