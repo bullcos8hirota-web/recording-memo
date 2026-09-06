@@ -8,6 +8,7 @@ import { affordability } from '../../lib/money/position'
 import { useIsPhone } from '../../lib/useMediaQuery'
 import { CopyStateButton } from './CopyStateButton'
 import { UpdateAllButton } from './UpdateAllButton'
+import { WeeklyPlanCard } from './WeeklyPlanCard'
 import { useRegisterSwipeStep } from '../../lib/swipeStepContext'
 import { useActiveChipScroll } from '../../lib/useActiveChipScroll'
 import {
@@ -105,6 +106,9 @@ export function ScreenerView({
           </div>
         </EmptyState>
       ) : (
+        <>
+        <WeeklyPlanCard onOpen={onOpen} />
+
         <Card
           title="ウォッチリスト"
           description="スコア順。チャートの状態を点数にしたもので、売買の指示ではありません。"
@@ -150,6 +154,7 @@ export function ScreenerView({
             </ul>
           )}
         </Card>
+        </>
       )}
     </div>
   )
