@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { db, DEFAULT_SETTINGS, type PriceSeries, type Settings } from '../lib/db'
+import type { Backup } from '../lib/db/backup'
 import type { Bar, Stock } from '../lib/market/types'
 import type { Trade } from '../lib/money/trade'
 import { buildSampleData, SAMPLE_CODES } from '../lib/market/sampleData'
@@ -53,6 +54,7 @@ type AppState = {
   addTrade: (input: Partial<Trade> & { code: string; entryDate: string; entryPrice: number; shares: number }) => Promise<Trade>
   updateTrade: (id: string, patch: Partial<Trade>) => Promise<void>
   removeTrade: (id: string) => Promise<void>
+  restoreBackup: (backup: Backup) => Promise<void>
   loadSample: () => Promise<void>
   clearSample: () => Promise<void>
 }
@@ -256,6 +258,25 @@ export const useAppStore = create<AppState>((set, get) => ({
   async removeTrade(id) {
     await persist(() => db.trades.delete(id), () => set({ storageError: true }))
     set({ trades: get().trades.filter((t) => t.id !== id) })
+  },
+
+  /**
+   * 書き出したファイルで中身を入れ替える。
+   * 部分的に混ざると分からなくなるので、消してから入れる。
+   */
+  async restoreBackup(backup) {
+    await persist(
+      () =>
+        db.transaction('rw', db.stocks, db.series, db.trades, db.settings, async () => {
+          await Promise.all([db.stocks.clear(), db.series.clear(), db.trades.clear()])
+          await db.settings.put({ ...backup.settings, id: 'app', updatedAt: Date.now() })
+          if (backup.stocks.length) await db.stocks.bulkPut(backup.stocks)
+          if (backup.series.length) await db.series.bulkPut(backup.series)
+          if (backup.trades.length) await db.trades.bulkPut(backup.trades)
+        }),
+      () => set({ storageError: true }),
+    )
+    await get().load()
   },
 
   async loadSample() {

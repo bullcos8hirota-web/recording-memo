@@ -7,6 +7,7 @@ import { usePwaInstall } from '../../lib/usePwaInstall'
 import { ReminderCard } from './ReminderCard'
 import { HistoryImportCard, SampleDataCard } from './DataCards'
 import { JQuantsCard } from './JQuantsCard'
+import { BackupCard } from './BackupCard'
 import { BUILD_ID } from '../../lib/version'
 
 export function SettingsView() {
@@ -167,6 +168,8 @@ export function SettingsView() {
       <HistoryImportCard />
 
       <SampleDataCard />
+
+      <BackupCard />
 
       <Card title="データ" description="すべてこの端末のブラウザ内(IndexedDB)に保存されます。サーバーには送信しません。">
         <button
