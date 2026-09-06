@@ -50,8 +50,8 @@ export function LearnView({ onGoTab }: { onGoTab: (tab: 'screener' | 'settings')
             onClick={() => setSection(item.id)}
             className={`shrink-0 whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition ${
               section === item.id
-                ? 'bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900'
-                : 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300'
+                ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900'
+                : 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200'
             }`}
           >
             {item.label}
@@ -110,12 +110,12 @@ function FlowSection({ onGoTab }: { onGoTab: (tab: 'screener' | 'settings') => v
   return (
     <div className="space-y-4">
       <Card title="スイングトレードとは" description="数日から数週間かけて売買するやり方です。">
-        <p className="text-sm leading-relaxed text-neutral-700 dark:text-neutral-300">
+        <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-200">
           1日中チャートを見ていられなくても、取引時間が終わったあとに翌日の作戦を立てておけば実行できます。
           その代わり、翌朝に前日と離れた価格で始まる<TermLink term="gap">窓</TermLink>のリスクを毎晩持ち越します。
           だから「いくらまで下がったら諦めるか」を買う前に決めるのが、この手法の生命線です。
         </p>
-        <p className="mt-3 text-sm leading-relaxed text-neutral-700 dark:text-neutral-300">
+        <p className="mt-3 text-sm leading-relaxed text-slate-700 dark:text-slate-200">
           このアプリは、下の6ステップを毎回同じ順番でやらせるための道具です。
           用語に下線が引いてあるところと「?」ボタンは、押すと意味が出ます。
           チャートではなく企業の中身から選ぶ考え方(バフェット流)は、上の「バフェット」タブにまとめています。
@@ -125,7 +125,7 @@ function FlowSection({ onGoTab }: { onGoTab: (tab: 'screener' | 'settings') => v
       {STEPS.map((step) => (
         <Card key={step.title}>
           <h3 className="font-semibold">{step.title}</h3>
-          <p className="mt-2 text-sm leading-relaxed text-neutral-700 dark:text-neutral-300">
+          <p className="mt-2 text-sm leading-relaxed text-slate-700 dark:text-slate-200">
             {step.body}
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
@@ -137,13 +137,13 @@ function FlowSection({ onGoTab }: { onGoTab: (tab: 'screener' | 'settings') => v
       ))}
 
       <Card title="まず何をすればいい?">
-        <ol className="list-decimal space-y-2 pl-5 text-sm text-neutral-700 dark:text-neutral-300">
+        <ol className="list-decimal space-y-2 pl-5 text-sm text-slate-700 dark:text-slate-200">
           <li>
             「設定」タブでサンプルデータを読み込む(架空の銘柄なので、いくら操作しても損はしません)
             <button
               type="button"
               onClick={() => onGoTab('settings')}
-              className="ml-2 rounded-full bg-neutral-900 px-3 py-1 text-xs font-medium text-white dark:bg-neutral-100 dark:text-neutral-900"
+              className="ml-2 rounded-full bg-slate-900 px-3 py-1 text-xs font-medium text-white dark:bg-slate-100 dark:text-slate-900"
             >
               設定タブへ
             </button>
@@ -226,7 +226,7 @@ function ChartSection() {
   return (
     <div className="space-y-4">
       <Card title="チャートの4つの型" description="サンプルデータで、実際の形を見ながら覚えます。実在の銘柄ではありません。">
-        <p className="text-sm leading-relaxed text-neutral-700 dark:text-neutral-300">
+        <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-200">
           オレンジが5日線、青が25日線、紫が75日線です。ローソク足は赤が上げた日、青が下げた日。
           下の棒グラフが<TermLink term="volume">出来高</TermLink>です。
         </p>
@@ -238,7 +238,7 @@ function ChartSection() {
           <Card key={pattern.code}>
             <div className="flex items-start justify-between gap-2">
               <h3 className="font-semibold">{pattern.title}</h3>
-              <span className="shrink-0 rounded-full bg-neutral-100 px-2 py-0.5 text-[11px] font-medium text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">
+              <span className="shrink-0 rounded-full bg-slate-100 px-2 py-0.5 text-[11px] font-medium text-slate-700 dark:bg-slate-700 dark:text-slate-200">
                 {pattern.verdict}
               </span>
             </div>
@@ -253,13 +253,13 @@ function ChartSection() {
                 ]}
               />
             </div>
-            <p className="mt-3 text-sm leading-relaxed text-neutral-700 dark:text-neutral-300">
+            <p className="mt-3 text-sm leading-relaxed text-slate-700 dark:text-slate-200">
               {pattern.body}
             </p>
             <ul className="mt-3 space-y-1.5">
               {pattern.points.map((point) => (
-                <li key={point} className="flex gap-2 text-sm text-neutral-700 dark:text-neutral-300">
-                  <span className="text-neutral-400">・</span>
+                <li key={point} className="flex gap-2 text-sm text-slate-700 dark:text-slate-200">
+                  <span className="text-slate-500">・</span>
                   <span>{point}</span>
                 </li>
               ))}
@@ -294,17 +294,17 @@ function MoneySection() {
         title="なぜ「1回で失ってよい額」から決めるのか"
         description="連敗しても再挑戦できる資金を残すためです。"
       >
-        <p className="text-sm leading-relaxed text-neutral-700 dark:text-neutral-300">
+        <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-200">
           株で退場する人の多くは、当て続けられなかったからではなく、1回の失敗が大きすぎて次が打てなくなったからです。
           減った資金を元に戻すのは、減らすときよりずっと大変になります。50%失ったら、元に戻すには残った資金を100%増やさなければいけません。
         </p>
-        <p className="mt-3 text-sm leading-relaxed text-neutral-700 dark:text-neutral-300">
+        <p className="mt-3 text-sm leading-relaxed text-slate-700 dark:text-slate-200">
           下のスライダーで、連敗したときに何が起きるかを確かめてください。
         </p>
 
         <div className="mt-4 space-y-4">
           <label className="block text-sm">
-            <span className="text-neutral-600 dark:text-neutral-300">
+            <span className="text-slate-700 dark:text-slate-200">
               1回で失う割合: <strong className="tabular-nums">{risk.toFixed(1)}%</strong>(
               {yen((capital * risk) / 100)})
             </span>
@@ -315,11 +315,11 @@ function MoneySection() {
               step={0.5}
               value={risk}
               onChange={(e) => setRisk(Number(e.target.value))}
-              className="mt-2 w-full accent-neutral-900 dark:accent-neutral-100"
+              className="mt-2 w-full accent-slate-900 dark:accent-slate-100"
             />
           </label>
           <label className="block text-sm">
-            <span className="text-neutral-600 dark:text-neutral-300">
+            <span className="text-slate-700 dark:text-slate-200">
               連敗の回数: <strong className="tabular-nums">{losses}回</strong>
             </span>
             <input
@@ -329,29 +329,29 @@ function MoneySection() {
               step={1}
               value={losses}
               onChange={(e) => setLosses(Number(e.target.value))}
-              className="mt-2 w-full accent-neutral-900 dark:accent-neutral-100"
+              className="mt-2 w-full accent-slate-900 dark:accent-slate-100"
             />
           </label>
         </div>
 
         <div className="mt-4 grid grid-cols-2 gap-2">
-          <div className="rounded-xl bg-neutral-50 px-3 py-2 dark:bg-neutral-800/60">
-            <div className="text-xs text-neutral-500 dark:text-neutral-400">残る資金</div>
+          <div className="rounded-xl bg-slate-50 px-3 py-2 dark:bg-slate-700/40">
+            <div className="text-xs text-slate-600 dark:text-slate-300">残る資金</div>
             <div className="mt-0.5 text-lg font-semibold tabular-nums">{yen(remaining)}</div>
-            <div className="text-[11px] text-neutral-500 dark:text-neutral-400">
+            <div className="text-[11px] text-slate-600 dark:text-slate-300">
               最初の{((remaining / capital) * 100).toFixed(0)}%
             </div>
           </div>
-          <div className="rounded-xl bg-neutral-50 px-3 py-2 dark:bg-neutral-800/60">
-            <div className="text-xs text-neutral-500 dark:text-neutral-400">元に戻すには</div>
+          <div className="rounded-xl bg-slate-50 px-3 py-2 dark:bg-slate-700/40">
+            <div className="text-xs text-slate-600 dark:text-slate-300">元に戻すには</div>
             <div className="mt-0.5 text-lg font-semibold tabular-nums">+{recovery.toFixed(0)}%</div>
-            <div className="text-[11px] text-neutral-500 dark:text-neutral-400">
+            <div className="text-[11px] text-slate-600 dark:text-slate-300">
               {yen(lost)}の負けを取り返す
             </div>
           </div>
         </div>
 
-        <p className="mt-3 text-sm text-neutral-600 dark:text-neutral-400">
+        <p className="mt-3 text-sm text-slate-700 dark:text-slate-300">
           1回2%なら10連敗しても8割が残り、+22%で戻せます。1回10%なら10連敗で3分の1になり、
           元に戻すには+187%が必要です。同じ「10連敗」でも、決め方でこれだけ変わります。
         </p>
@@ -363,20 +363,20 @@ function MoneySection() {
       </Card>
 
       <Card title="勝率とリスクリワードの関係" description="勝率が低くても勝てる理由です。">
-        <p className="text-sm leading-relaxed text-neutral-700 dark:text-neutral-300">
+        <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-200">
           1回の負けを1、勝ちの大きさをその何倍にできるかで、必要な勝率が変わります。
           損切り幅の2倍を利確目標にすれば、3回に1回強しか当たらなくても資金は減りません。
         </p>
         <div className="mt-3 overflow-x-auto" data-no-swipe>
           <table className="w-full text-sm">
-            <thead className="text-left text-xs text-neutral-500 dark:text-neutral-400">
+            <thead className="text-left text-xs text-slate-600 dark:text-slate-300">
               <tr>
                 <th className="py-2 pr-3 font-medium">リスクリワード</th>
                 <th className="py-2 pr-3 font-medium">損益ゼロに必要な勝率</th>
                 <th className="py-2 font-medium">勝率50%なら</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-neutral-200 tabular-nums dark:divide-neutral-800">
+            <tbody className="divide-y divide-slate-200 tabular-nums dark:divide-slate-700">
               {[1, 1.5, 2, 3].map((rr) => (
                 <tr key={rr}>
                   <td className="py-2 pr-3">1 : {rr.toFixed(1)}</td>
@@ -431,7 +431,7 @@ function GlossarySection() {
 
       {grouped.length === 0 && (
         <Card>
-          <p className="text-sm text-neutral-500 dark:text-neutral-400">
+          <p className="text-sm text-slate-600 dark:text-slate-300">
             見つかりませんでした。別の言葉で探してみてください。
           </p>
         </Card>
@@ -439,23 +439,23 @@ function GlossarySection() {
 
       {grouped.map(([category, terms]) => (
         <Card key={category} title={CATEGORY_LABEL[category]}>
-          <ul className="divide-y divide-neutral-200 dark:divide-neutral-800">
+          <ul className="divide-y divide-slate-200 dark:divide-slate-700">
             {terms.map((term) => (
               <li key={term.id}>
                 <button
                   type="button"
                   onClick={() => openTerm(term.id)}
-                  className="w-full py-3 text-left transition active:bg-neutral-100 dark:active:bg-neutral-800"
+                  className="w-full py-3 text-left transition active:bg-slate-100 dark:active:bg-slate-700"
                 >
                   <div className="flex items-baseline gap-2">
                     <span className="font-medium">{term.term}</span>
                     {term.reading && (
-                      <span className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                      <span className="text-[11px] text-slate-600 dark:text-slate-300">
                         {term.reading}
                       </span>
                     )}
                   </div>
-                  <p className="mt-0.5 text-sm text-neutral-600 dark:text-neutral-400">{term.short}</p>
+                  <p className="mt-0.5 text-sm text-slate-700 dark:text-slate-300">{term.short}</p>
                 </button>
               </li>
             ))}

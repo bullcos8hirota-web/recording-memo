@@ -98,7 +98,7 @@ export function CandleChart({
 
   if (!view) {
     return (
-      <div className="rounded-xl border border-dashed border-neutral-300 px-4 py-10 text-center text-sm text-neutral-500 dark:border-neutral-700 dark:text-neutral-400">
+      <div className="rounded-xl border border-dashed border-slate-300 px-4 py-10 text-center text-sm text-slate-600 dark:border-slate-600 dark:text-slate-300">
         価格データがありません。
       </div>
     )
@@ -121,13 +121,13 @@ export function CandleChart({
               x2={WIDTH - PADDING_RIGHT}
               y1={y(value)}
               y2={y(value)}
-              className="stroke-neutral-200 dark:stroke-neutral-800"
+              className="stroke-slate-200 dark:stroke-slate-700"
               strokeWidth={1}
             />
             <text
               x={WIDTH - PADDING_RIGHT + 6}
               y={y(value) + 4}
-              className="fill-neutral-400 text-[11px] tabular-nums dark:fill-neutral-500"
+              className="fill-slate-500 text-[11px] tabular-nums dark:fill-slate-400"
             >
               {Math.round(value).toLocaleString('ja-JP')}
             </text>
@@ -206,13 +206,13 @@ export function CandleChart({
             x={x(i)}
             y={TOTAL_HEIGHT - 4}
             textAnchor="middle"
-            className="fill-neutral-400 text-[11px] dark:fill-neutral-500"
+            className="fill-slate-500 text-[11px] dark:fill-slate-400"
           >
             {shortDate(bar.date)}
           </text>
         ))}
       </svg>
-      <div className="mt-1 flex flex-wrap gap-3 text-[11px] text-neutral-500 dark:text-neutral-400">
+      <div className="mt-1 flex flex-wrap gap-3 text-[11px] text-slate-600 dark:text-slate-300">
         {overlayPaths.map((overlay) => (
           <span key={`legend-${overlay.label}`} className="inline-flex items-center gap-1">
             <span

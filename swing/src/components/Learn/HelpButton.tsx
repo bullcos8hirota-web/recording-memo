@@ -18,7 +18,7 @@ export function HelpButton({ term, label }: { term: string; label?: string }) {
         openTerm(term)
       }}
       aria-label={`${label ?? entry.term}の意味を見る`}
-      className="inline-flex size-5 shrink-0 items-center justify-center rounded-full border border-neutral-300 text-[11px] font-semibold leading-none text-neutral-500 transition hover:bg-neutral-100 active:opacity-70 dark:border-neutral-600 dark:text-neutral-400 dark:hover:bg-neutral-800"
+      className="inline-flex size-5 shrink-0 items-center justify-center rounded-full border border-slate-300 text-[11px] font-semibold leading-none text-slate-600 transition hover:bg-slate-100 active:opacity-70 dark:border-slate-500 dark:text-slate-300 dark:hover:bg-slate-700"
     >
       ?
     </button>
@@ -35,7 +35,7 @@ export function TermLink({ term, children }: { term: string; children?: React.Re
     <button
       type="button"
       onClick={() => openTerm(term)}
-      className="underline decoration-dotted underline-offset-2 transition hover:text-neutral-900 dark:hover:text-neutral-100"
+      className="underline decoration-dotted underline-offset-2 transition hover:text-slate-900 dark:hover:text-slate-100"
     >
       {children ?? entry.term}
     </button>
@@ -52,7 +52,7 @@ export function TermChip({ id, label }: { id: string; label?: string }) {
     <button
       type="button"
       onClick={() => openTerm(id)}
-      className="rounded-full bg-neutral-100 px-3 py-1.5 text-xs font-medium text-neutral-700 transition hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
+      className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium text-slate-700 transition hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-700"
     >
       {label ?? entry.term}
     </button>

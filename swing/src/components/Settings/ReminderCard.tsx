@@ -43,11 +43,11 @@ export function ReminderCard() {
         </button>
       </div>
       {saved && (
-        <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-300">
+        <p className="mt-2 text-sm text-slate-700 dark:text-slate-200">
           ダウンロードしたファイルを開くと、カレンダーアプリに取り込めます。
         </p>
       )}
-      <p className="mt-3 text-xs leading-relaxed text-neutral-500 dark:text-neutral-400">
+      <p className="mt-3 text-xs leading-relaxed text-slate-600 dark:text-slate-300">
         このアプリから直接スマホに通知を出すことはできません。通知の配信にはサーバーが必要で、
         データを端末内だけに置く方針と両立しないためです。カレンダーの通知で代用してください。
       </p>

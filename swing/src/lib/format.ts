@@ -51,7 +51,7 @@ export function today(): string {
 }
 
 export function toneClass(value: number | null | undefined): string {
-  if (value === null || value === undefined || value === 0) return 'text-neutral-500 dark:text-neutral-400'
+  if (value === null || value === undefined || value === 0) return 'text-slate-600 dark:text-slate-300'
   return value > 0
     ? 'text-rose-600 dark:text-rose-400'
     : 'text-sky-600 dark:text-sky-400'

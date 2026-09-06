@@ -81,13 +81,13 @@ export function HistoryImportCard() {
         />
       </label>
       {error && <p className="mt-2 text-sm text-rose-600 dark:text-rose-400">{error}</p>}
-      {message && <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-300">{message}</p>}
+      {message && <p className="mt-2 text-sm text-slate-700 dark:text-slate-200">{message}</p>}
 
       {preview.length > 0 && (
         <div className="mt-3">
-          <div className="max-h-72 overflow-y-auto rounded-xl border border-neutral-200 dark:border-neutral-800">
+          <div className="max-h-72 overflow-y-auto rounded-xl border border-slate-200 dark:border-slate-700">
             <table className="w-full text-sm">
-              <thead className="sticky top-0 bg-neutral-50 text-left text-xs text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">
+              <thead className="sticky top-0 bg-slate-50 text-left text-xs text-slate-600 dark:bg-slate-700 dark:text-slate-300">
                 <tr>
                   <th className="px-3 py-2">銘柄</th>
                   <th className="px-3 py-2">買い</th>
@@ -95,11 +95,11 @@ export function HistoryImportCard() {
                   <th className="px-3 py-2 text-right">株数</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-neutral-200 dark:divide-neutral-800">
+              <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
                 {preview.map((row, index) => (
                   <tr key={`${row.code}-${row.entryDate}-${index}`}>
                     <td className="px-3 py-2">
-                      <span className="font-mono text-xs text-neutral-500">{row.code}</span> {row.name}
+                      <span className="font-mono text-xs text-slate-600">{row.code}</span> {row.name}
                     </td>
                     <td className="px-3 py-2 tabular-nums">
                       {shortDate(row.entryDate)} {price(row.entryPrice)}

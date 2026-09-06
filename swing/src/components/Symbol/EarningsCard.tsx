@@ -38,11 +38,11 @@ export function EarningsCard({ stock }: { stock: Stock }) {
       </div>
 
       {alert === null ? (
-        <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
+        <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
           未登録です。決算をまたぐと、損切り価格を飛び越えて下で始まることがあります。
         </p>
       ) : alert.past ? (
-        <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
+        <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
           {shortDate(stock.earningsDate!)}は過ぎています。次回の日付に更新してください。
         </p>
       ) : alert.soon ? (
@@ -51,7 +51,7 @@ export function EarningsCard({ stock }: { stock: Stock }) {
           新規に買うなら発表後まで待つか、株数を減らしてください。
         </p>
       ) : (
-        <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
+        <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
           {shortDate(stock.earningsDate!)}まであと{alert.days}日。
           {EARNINGS_WARN_DAYS}日を切ると警告を出します。
         </p>
@@ -76,11 +76,11 @@ export function EarningsCard({ stock }: { stock: Stock }) {
         )}
       </div>
       {exRights === null ? (
-        <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
+        <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
           未登録です。翌営業日に配当の分だけ機械的に下がるので、損切りに当たることがあります。
         </p>
       ) : exRights.past ? (
-        <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
+        <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
           {shortDate(stock.exRightsDate!)}は過ぎています。次回の日付に更新してください。
         </p>
       ) : exRights.soon ? (
@@ -89,7 +89,7 @@ export function EarningsCard({ stock }: { stock: Stock }) {
           その翌営業日は配当の分だけ下がります。値動きではないので、その週は損切りを引き上げないでください。
         </p>
       ) : (
-        <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">
+        <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">
           {shortDate(stock.exRightsDate!)}まであと{exRights.days}日。
         </p>
       )}

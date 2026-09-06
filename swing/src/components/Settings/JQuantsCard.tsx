@@ -113,7 +113,7 @@ export function JQuantsCard() {
         </p>
       )}
 
-      <p className="mt-3 text-xs text-neutral-500 dark:text-neutral-400">
+      <p className="mt-3 text-xs text-slate-600 dark:text-slate-300">
         キーはこの端末の中(IndexedDB)にだけ保存します。「状態をコピー」の文章には入りません。
         取得する株価は分割・併合の調整済みなので、分割があっても過去の値が飛びません。
       </p>

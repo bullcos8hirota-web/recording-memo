@@ -23,7 +23,7 @@ export function PickingSection() {
         title="あなたの設定で買える範囲"
         description={`資金${yen(settings.capital)} / 1トレード${settings.riskPercent}% / 1銘柄上限${settings.maxPositionPercent}% / ${lot}株単位から計算しています。`}
       >
-        <dl className="divide-y divide-neutral-200 text-sm dark:divide-neutral-800">
+        <dl className="divide-y divide-slate-200 text-sm dark:divide-slate-700">
           <Row
             label="株価の上限"
             value={money(universe.priceCap)}
@@ -56,7 +56,7 @@ export function PickingSection() {
       </Card>
 
       <Card title="そのうえで、形を見る" description="範囲に入っていることは前提で、買う場所はチャートで決めます。">
-        <ul className="space-y-2 text-sm leading-relaxed text-neutral-700 dark:text-neutral-300">
+        <ul className="space-y-2 text-sm leading-relaxed text-slate-700 dark:text-slate-200">
           <li>・終値が25日線より上。25日線自体が上を向いている</li>
           <li>・25日線が75日線より上（中期も上向き）</li>
           <li>・押し目（25日線まで下げて止まった）か、ブレイク（20日高値を超えた）のどちらか</li>
@@ -73,16 +73,16 @@ export function PickingSection() {
       </Card>
 
       <Card title="何銘柄を見るか" description="監視リストの数が、そのまま機会の数になります。">
-        <p className="text-sm leading-relaxed text-neutral-700 dark:text-neutral-300">
+        <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-200">
           押し目やブレイクは、1銘柄あたり月に1〜2回しか来ません。
           5銘柄では月に数回、条件まで揃うのは1回あるかどうかです。
           「何もしない週」が続くのは、手法ではなく銘柄数の問題であることが多いです。
         </p>
-        <p className="mt-3 text-sm leading-relaxed text-neutral-700 dark:text-neutral-300">
+        <p className="mt-3 text-sm leading-relaxed text-slate-700 dark:text-slate-200">
           15〜20銘柄あれば、毎週1〜2件は条件を満たします。
           取り込みの手間は増えますが、判断の材料が無いまま待つよりは健全です。
         </p>
-        <p className="mt-3 rounded-xl bg-neutral-100 px-3 py-2 text-xs text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">
+        <p className="mt-3 rounded-xl bg-slate-100 px-3 py-2 text-xs text-slate-700 dark:bg-slate-700 dark:text-slate-200">
           退屈だから買う、は最も損をする行動です。条件を満たさない週に何もしないのは、
           手法が働いている証拠であって、失敗ではありません。
         </p>
@@ -95,10 +95,10 @@ function Row({ label, value, note }: { label: string; value: string; note: strin
   return (
     <div className="py-2">
       <div className="flex items-baseline justify-between gap-3">
-        <dt className="text-neutral-500 dark:text-neutral-400">{label}</dt>
+        <dt className="text-slate-600 dark:text-slate-300">{label}</dt>
         <dd className="text-base font-semibold tabular-nums">{value}</dd>
       </div>
-      <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">{note}</p>
+      <p className="mt-0.5 text-xs text-slate-600 dark:text-slate-300">{note}</p>
     </div>
   )
 }

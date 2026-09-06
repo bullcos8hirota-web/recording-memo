@@ -48,8 +48,8 @@ export function CopyStateButton() {
 
       {/* クリップボードが使えないときだけ、下から本文を出して手でコピーしてもらう */}
       {text && (
-        <div className="fixed inset-x-3 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-20 rounded-2xl border border-neutral-200 bg-white p-3 shadow-lg dark:border-neutral-700 dark:bg-neutral-900">
-          <p className="text-sm text-neutral-600 dark:text-neutral-300">
+        <div className="fixed inset-x-3 bottom-[calc(5rem+env(safe-area-inset-bottom))] z-20 rounded-2xl border border-slate-200 bg-white p-3 shadow-lg dark:border-slate-600 dark:bg-slate-800">
+          <p className="text-sm text-slate-700 dark:text-slate-200">
             自動コピーができませんでした。下の文章を選んでコピーしてください。
           </p>
           <textarea
