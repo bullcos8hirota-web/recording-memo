@@ -82,15 +82,15 @@ export default function App() {
   return (
     <GlossaryProvider>
       <SwipeStepProvider>
-        <div className="min-h-[100dvh] bg-neutral-50 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100">
-          <header className="sticky top-0 z-10 border-b border-neutral-200 bg-white/95 pt-[env(safe-area-inset-top)] backdrop-blur dark:border-neutral-800 dark:bg-neutral-900/95">
+        <div className="min-h-[100dvh] bg-slate-50 text-slate-900 dark:bg-slate-900 dark:text-slate-100">
+          <header className="sticky top-0 z-10 border-b border-slate-200 bg-white/95 pt-[env(safe-area-inset-top)] backdrop-blur dark:border-slate-700 dark:bg-slate-800/95">
             <div className="mx-auto max-w-4xl px-4 py-2 sm:px-6 sm:pt-3">
               <div className="flex flex-wrap items-baseline justify-between gap-x-3">
                 <h1 className="text-base font-semibold sm:text-lg">
                   <span className="sm:hidden">{title}</span>
                   <span className="hidden sm:inline">スイングトレード支援</span>
                 </h1>
-                <p className="text-[11px] text-neutral-500 dark:text-neutral-400 sm:text-xs">
+                <p className="text-[11px] text-slate-600 dark:text-slate-300 sm:text-xs">
                   資金 {yen(settings.capital)} / 許容損失{' '}
                   {yen((settings.capital * settings.riskPercent) / 100)}(
                   {settings.riskPercent}%)
@@ -113,13 +113,13 @@ export default function App() {
               <button
                 type="button"
                 onClick={() => setTab('symbol')}
-                className="mb-3 block w-full rounded-2xl border border-neutral-300 bg-white px-4 py-3 text-left text-sm dark:border-neutral-700 dark:bg-neutral-900"
+                className="mb-3 block w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-left text-sm dark:border-slate-600 dark:bg-slate-800"
               >
                 <p className="font-medium">
                   {shortDate(staleUpdate.expected)}
                   までの終値がまだ入っていません
                 </p>
-                <p className="mt-1 text-neutral-500 dark:text-neutral-400">
+                <p className="mt-1 text-slate-600 dark:text-slate-300">
                   最新は{shortDate(staleUpdate.latest)}
                   {staleUpdate.missing > 1 &&
                     `(${staleUpdate.missing}営業日分)`}
@@ -144,7 +144,7 @@ export default function App() {
             )}
 
             {!ready ? (
-              <p className="py-16 text-center text-sm text-neutral-500 dark:text-neutral-400">
+              <p className="py-16 text-center text-sm text-slate-600 dark:text-slate-300">
                 読み込み中…
               </p>
             ) : (
@@ -163,7 +163,7 @@ export default function App() {
               </>
             )}
 
-            <p className="mt-6 text-center text-[11px] text-neutral-400 dark:text-neutral-600">
+            <p className="mt-6 text-center text-[11px] text-slate-500 dark:text-slate-700">
               判断材料を整理するためのツールです。売買を推奨するものではありません。
             </p>
           </main>

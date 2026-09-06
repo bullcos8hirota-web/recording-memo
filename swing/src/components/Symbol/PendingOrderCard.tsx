@@ -29,7 +29,7 @@ export function PendingOrderCard({
     <div
       className={`mb-3 rounded-xl px-3 py-3 text-sm ${
         expired
-          ? 'bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-200'
+          ? 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200'
           : 'bg-sky-50 text-sky-900 dark:bg-sky-950/40 dark:text-sky-200'
       }`}
     >
@@ -50,7 +50,7 @@ export function PendingOrderCard({
       {filling ? (
         // 逆指値は「その価格になったら成行」なので、約定価格は注文価格とずれる。
         // ずれたまま損切りを置くとリスクが変わるので、実際の値をもらって引き直す。
-        <div className="mt-3 rounded-lg bg-white/70 p-3 dark:bg-neutral-900/50">
+        <div className="mt-3 rounded-lg bg-white/70 p-3 dark:bg-slate-800/60">
           <label className="block text-xs font-medium">
             実際に約定した価格(円)
             <input

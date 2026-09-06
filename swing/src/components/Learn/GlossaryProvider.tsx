@@ -44,32 +44,32 @@ export function GlossaryProvider({ children }: { children: ReactNode }) {
             type="button"
             aria-label="閉じる"
             onClick={close}
-            className="absolute inset-0 bg-neutral-900/40 backdrop-blur-[2px]"
+            className="absolute inset-0 bg-slate-900/40 backdrop-blur-[2px]"
           />
           <div
             role="dialog"
             aria-modal="true"
             aria-label={term.term}
-            className="relative max-h-[85dvh] w-full overflow-y-auto rounded-t-3xl bg-white pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-xl dark:bg-neutral-900 sm:max-w-lg sm:rounded-3xl sm:pb-6"
+            className="relative max-h-[85dvh] w-full overflow-y-auto rounded-t-3xl bg-white pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-xl dark:bg-slate-800 sm:max-w-lg sm:rounded-3xl sm:pb-6"
           >
-            <div className="sticky top-0 flex items-center gap-2 border-b border-neutral-200 bg-white/95 px-4 py-3 backdrop-blur dark:border-neutral-800 dark:bg-neutral-900/95">
+            <div className="sticky top-0 flex items-center gap-2 border-b border-slate-200 bg-white/95 px-4 py-3 backdrop-blur dark:border-slate-700 dark:bg-slate-800/95">
               {history.length > 1 && (
                 <button
                   type="button"
                   onClick={back}
-                  className="text-sm text-neutral-500 transition hover:text-neutral-900 dark:hover:text-neutral-100"
+                  className="text-sm text-slate-600 transition hover:text-slate-900 dark:hover:text-slate-100"
                 >
                   ← 戻る
                 </button>
               )}
               <div className="min-w-0 flex-1">
-                <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                <p className="text-[11px] text-slate-600 dark:text-slate-300">
                   {CATEGORY_LABEL[term.category]}
                 </p>
                 <h2 className="truncate text-base font-semibold">
                   {term.term}
                   {term.reading && (
-                    <span className="ml-2 text-xs font-normal text-neutral-500 dark:text-neutral-400">
+                    <span className="ml-2 text-xs font-normal text-slate-600 dark:text-slate-300">
                       {term.reading}
                     </span>
                   )}
@@ -79,37 +79,37 @@ export function GlossaryProvider({ children }: { children: ReactNode }) {
                 type="button"
                 onClick={close}
                 aria-label="閉じる"
-                className="flex size-9 shrink-0 items-center justify-center rounded-full text-neutral-500 transition hover:bg-neutral-100 dark:hover:bg-neutral-800"
+                className="flex size-9 shrink-0 items-center justify-center rounded-full text-slate-600 transition hover:bg-slate-100 dark:hover:bg-slate-700"
               >
                 ✕
               </button>
             </div>
 
             <div className="space-y-3 px-4 py-4">
-              <p className="rounded-xl bg-neutral-100 px-3 py-2 text-sm font-medium dark:bg-neutral-800">
+              <p className="rounded-xl bg-slate-100 px-3 py-2 text-sm font-medium dark:bg-slate-700">
                 {term.short}
               </p>
               {term.body.map((paragraph) => (
                 <p
                   key={paragraph.slice(0, 16)}
-                  className="text-sm leading-relaxed text-neutral-700 dark:text-neutral-300"
+                  className="text-sm leading-relaxed text-slate-700 dark:text-slate-200"
                 >
                   {paragraph}
                 </p>
               ))}
 
               {term.inApp && (
-                <div className="rounded-xl border border-neutral-200 px-3 py-2 dark:border-neutral-700">
-                  <p className="text-[11px] font-semibold text-neutral-500 dark:text-neutral-400">
+                <div className="rounded-xl border border-slate-200 px-3 py-2 dark:border-slate-600">
+                  <p className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">
                     このアプリでは
                   </p>
-                  <p className="mt-1 text-sm text-neutral-700 dark:text-neutral-300">{term.inApp}</p>
+                  <p className="mt-1 text-sm text-slate-700 dark:text-slate-200">{term.inApp}</p>
                 </div>
               )}
 
               {term.related && term.related.length > 0 && (
                 <div>
-                  <p className="text-[11px] font-semibold text-neutral-500 dark:text-neutral-400">
+                  <p className="text-[11px] font-semibold text-slate-600 dark:text-slate-300">
                     あわせて読む
                   </p>
                   <div className="mt-2 flex flex-wrap gap-2">
@@ -121,7 +121,7 @@ export function GlossaryProvider({ children }: { children: ReactNode }) {
                           key={id}
                           type="button"
                           onClick={() => openTerm(id)}
-                          className="rounded-full bg-neutral-100 px-3 py-1.5 text-xs font-medium transition hover:bg-neutral-200 dark:bg-neutral-800 dark:hover:bg-neutral-700"
+                          className="rounded-full bg-slate-100 px-3 py-1.5 text-xs font-medium transition hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-700"
                         >
                           {related.term}
                         </button>

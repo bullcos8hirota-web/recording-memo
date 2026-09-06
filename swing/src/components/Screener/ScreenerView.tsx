@@ -88,9 +88,10 @@ export function ScreenerView({
 
   return (
     <div className="space-y-4">
-      <AddStockForm />
-
       {stocks.length === 0 ? (
+        <>
+        <AddStockForm />
+
         <EmptyState title="まだ銘柄が登録されていません">
           <p>上のフォームで銘柄を追加すると、「銘柄」タブでその銘柄の株価を貼り付けられます。</p>
           <p className="mt-2">
@@ -105,15 +106,16 @@ export function ScreenerView({
             </button>
           </div>
         </EmptyState>
+        </>
       ) : (
         <>
         <WeeklyPlanCard onOpen={onOpen} />
 
         <Card
           title="ウォッチリスト"
-          description="スコア順。チャートの状態を点数にしたもので、売買の指示ではありません。"
+          description="スコア順。売買の指示ではありません。"
           actions={
-            <div className="flex flex-col items-end gap-2">
+            <div className="flex items-center gap-2">
               <UpdateAllButton />
               <CopyStateButton />
             </div>
@@ -128,8 +130,8 @@ export function ScreenerView({
                 onClick={() => setFilter(item.id)}
                 className={`shrink-0 whitespace-nowrap rounded-full px-3 py-1.5 text-xs font-medium transition ${
                   filter === item.id
-                    ? 'bg-neutral-900 text-white dark:bg-neutral-100 dark:text-neutral-900'
-                    : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-300'
+                    ? 'bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900'
+                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-200'
                 }`}
               >
                 {item.label}
@@ -138,11 +140,11 @@ export function ScreenerView({
           </div>
 
           {visible.length === 0 ? (
-            <p className="py-6 text-center text-sm text-neutral-500 dark:text-neutral-400">
+            <p className="py-6 text-center text-sm text-slate-600 dark:text-slate-300">
               条件に合う銘柄はありません。
             </p>
           ) : (
-            <ul className="divide-y divide-neutral-200 dark:divide-neutral-800">
+            <ul className="divide-y divide-slate-200 dark:divide-slate-700">
               {visible.map((row) => (
                 <ScreenerRow
                   key={row.stock.code}
@@ -154,6 +156,8 @@ export function ScreenerView({
             </ul>
           )}
         </Card>
+
+        <AddStockForm />
         </>
       )}
     </div>
@@ -195,12 +199,12 @@ function ScreenerRow({
       <button
         type="button"
         onClick={() => onOpen(stock.code)}
-        className="w-full py-3.5 text-left transition active:bg-neutral-100 hover:bg-neutral-50 dark:hover:bg-neutral-800/50 dark:active:bg-neutral-800"
+        className="w-full py-3.5 text-left transition active:bg-slate-100 hover:bg-slate-50 dark:hover:bg-slate-700/50 dark:active:bg-slate-700"
       >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <div className="flex items-center gap-2">
-              <span className="shrink-0 font-mono text-sm text-neutral-500 dark:text-neutral-400">
+              <span className="shrink-0 font-mono text-sm text-slate-600 dark:text-slate-300">
                 {stock.code}
               </span>
               <span className="truncate font-medium">{stock.name}</span>
@@ -221,9 +225,11 @@ function ScreenerRow({
             <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
               <span className="tabular-nums">{price(snapshot?.close)}円</span>
               <span className={`tabular-nums ${toneClass(snapshot?.changeRate)}`}>
+                {/* 色だけで上下を伝えない。色が見分けにくくても記号で分かるようにする。 */}
+                {snapshot?.changeRate ? (snapshot.changeRate > 0 ? '▲' : '▼') : ''}
                 {percent(snapshot?.changeRate)}
               </span>
-              <span className="text-xs text-neutral-500 dark:text-neutral-400">
+              <span className="text-xs text-slate-600 dark:text-slate-300">
                 {row.bars}本 / {shortDate(row.lastDate)}まで
               </span>
             </div>
@@ -251,7 +257,7 @@ function ScreenerRow({
 
 function ScoreDial({ analysis }: { analysis: Analysis | null }) {
   if (!analysis) {
-    return <span className="text-xs text-neutral-400">—</span>
+    return <span className="text-xs text-slate-500">—</span>
   }
   const color =
     analysis.verdict === 'ready'
@@ -260,14 +266,14 @@ function ScoreDial({ analysis }: { analysis: Analysis | null }) {
         ? 'bg-amber-500'
         : analysis.verdict === 'avoid'
           ? 'bg-sky-500'
-          : 'bg-neutral-400'
+          : 'bg-slate-400'
   return (
     <div className="w-24 shrink-0 text-right">
       <div className="text-lg font-semibold tabular-nums">{analysis.score}</div>
-      <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-700">
+      <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-600">
         <div className={`h-full rounded-full ${color}`} style={{ width: `${analysis.score}%` }} />
       </div>
-      <div className="mt-1 whitespace-nowrap text-[10px] text-neutral-500 dark:text-neutral-400 sm:text-[11px]">
+      <div className="mt-1 whitespace-nowrap text-[10px] text-slate-600 dark:text-slate-300 sm:text-[11px]">
         {VERDICT_LABEL[analysis.verdict]}
       </div>
     </div>
@@ -296,7 +302,7 @@ function AddStockForm() {
       <button
         type="button"
         onClick={() => setOpen(true)}
-        className="flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-neutral-300 text-sm font-medium text-neutral-600 transition hover:bg-neutral-100 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800"
+        className="flex min-h-12 w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-slate-300 text-sm font-medium text-slate-700 transition hover:bg-slate-100 dark:border-slate-600 dark:text-slate-200 dark:hover:bg-slate-700"
       >
         ＋ 銘柄を追加
       </button>
@@ -315,7 +321,7 @@ function AddStockForm() {
     >
       <form onSubmit={submit} className="flex flex-wrap items-end gap-2">
         <label className="min-w-32 flex-1 text-sm sm:flex-none">
-          <span className="text-neutral-600 dark:text-neutral-300">コード</span>
+          <span className="text-slate-700 dark:text-slate-200">コード</span>
           <input
             className={`${inputClass} w-full sm:w-28`}
             value={code}
@@ -325,7 +331,7 @@ function AddStockForm() {
           />
         </label>
         <label className="min-w-40 flex-1 text-sm">
-          <span className="text-neutral-600 dark:text-neutral-300">銘柄名</span>
+          <span className="text-slate-700 dark:text-slate-200">銘柄名</span>
           <input
             className={inputClass}
             value={name}
@@ -334,7 +340,7 @@ function AddStockForm() {
           />
         </label>
         <label className="min-w-28 flex-1 text-sm sm:flex-none">
-          <span className="text-neutral-600 dark:text-neutral-300">売買単位</span>
+          <span className="text-slate-700 dark:text-slate-200">売買単位</span>
           <input
             className={`${inputClass} w-full sm:w-24`}
             value={lot}

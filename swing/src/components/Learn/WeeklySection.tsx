@@ -89,18 +89,18 @@ const SELL_FIELDS: { field: string; value: string; note?: string }[] = [
 
 function FieldTable({ rows }: { rows: { field: string; value: string; note?: string }[] }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-neutral-200 dark:border-neutral-800">
+    <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700">
       <table className="w-full text-sm">
-        <tbody className="divide-y divide-neutral-200 dark:divide-neutral-800">
+        <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
           {rows.map((row) => (
             <tr key={row.field}>
-              <td className="w-2/5 px-3 py-2 align-top text-neutral-500 dark:text-neutral-400">
+              <td className="w-2/5 px-3 py-2 align-top text-slate-600 dark:text-slate-300">
                 {row.field}
               </td>
               <td className="px-3 py-2 align-top">
                 <span className="font-medium">{row.value}</span>
                 {row.note && (
-                  <span className="mt-0.5 block text-xs text-neutral-500 dark:text-neutral-400">
+                  <span className="mt-0.5 block text-xs text-slate-600 dark:text-slate-300">
                     {row.note}
                   </span>
                 )}
@@ -120,7 +120,7 @@ export function WeeklySection() {
         title="1週間を1サイクルにする"
         description="日中に相場を見られない人向けの回し方です。"
       >
-        <p className="text-sm leading-relaxed text-neutral-700 dark:text-neutral-300">
+        <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-200">
           スイングトレードは数日〜数週間の値動きを取るので、平日に張り付く必要はありません。
           週末に考えて、日曜に注文を仕込み、金曜にまとめて記録する、という形で回せます。
         </p>
@@ -142,17 +142,17 @@ export function WeeklySection() {
       <Card title="週のスケジュール">
         <ol className="space-y-4">
           {SCHEDULE.map((item) => (
-            <li key={item.when} className="border-l-2 border-neutral-200 pl-3 dark:border-neutral-700">
+            <li key={item.when} className="border-l-2 border-slate-200 pl-3 dark:border-slate-600">
               <div className="flex flex-wrap items-baseline gap-2">
-                <span className="rounded-full bg-neutral-900 px-2 py-0.5 text-xs font-medium text-white dark:bg-neutral-100 dark:text-neutral-900">
+                <span className="rounded-full bg-slate-900 px-2 py-0.5 text-xs font-medium text-white dark:bg-slate-100 dark:text-slate-900">
                   {item.when}
                 </span>
                 <span className="font-semibold">{item.what}</span>
               </div>
-              <p className="mt-1 text-sm leading-relaxed text-neutral-700 dark:text-neutral-300">
+              <p className="mt-1 text-sm leading-relaxed text-slate-700 dark:text-slate-200">
                 {item.detail}
               </p>
-              <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">{item.where}</p>
+              <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">{item.where}</p>
             </li>
           ))}
         </ol>
@@ -163,25 +163,25 @@ export function WeeklySection() {
         description="スマホの注文画面に出てくる欄の順に並べています。上から埋めれば1件の注文になります。"
       >
         <h3 className="font-semibold">買い注文（週明けに出す）</h3>
-        <p className="mt-1 mb-2 text-sm text-neutral-600 dark:text-neutral-300">
+        <p className="mt-1 mb-2 text-sm text-slate-700 dark:text-slate-200">
           出した時点では約定しません。株価が条件の値まで上がって初めて成立します。
         </p>
         <FieldTable rows={BUY_FIELDS} />
 
-        <p className="mt-2 rounded-lg bg-neutral-100 px-3 py-2 text-xs text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">
+        <p className="mt-2 rounded-lg bg-slate-100 px-3 py-2 text-xs text-slate-700 dark:bg-slate-700 dark:text-slate-200">
           損切りの注文は、株を持っていないと出せません。買い注文と同時には出せない、ということです。
           約定した日に出したいので、SBI証券側で約定通知(メール・アプリ通知)を受け取る設定にしておいてください。
           週末まで気づかないと、その間は損切りが無いまま持っていることになります。
         </p>
 
         <h3 className="mt-5 font-semibold">売りの損切り注文（買えた日に出す）</h3>
-        <p className="mt-1 mb-2 text-sm text-neutral-600 dark:text-neutral-300">
+        <p className="mt-1 mb-2 text-sm text-slate-700 dark:text-slate-200">
           買えたその日のうちに出します。ここまでやって1セットです。
           利確の注文は出しません（毎週末、この注文を上に出し直していきます）。
         </p>
         <FieldTable rows={SELL_FIELDS} />
 
-        <p className="mt-4 text-sm text-neutral-600 dark:text-neutral-300">
+        <p className="mt-4 text-sm text-slate-700 dark:text-slate-200">
           毎週末、建玉タブのトレーリング目安を見ます。上げるのは、その値が「買値より上」かつ
           「今の損切りより上」のときだけで、そのときはこの売り注文を訂正します。アプリで更新した
           だけでは注文は変わりません。買値より下のうちは、負けが少し小さくなる代わりに普通の押し目
@@ -197,7 +197,7 @@ export function WeeklySection() {
       </Card>
 
       <Card title="週次でやるときの落とし穴">
-        <ul className="space-y-2 text-sm leading-relaxed text-neutral-700 dark:text-neutral-300">
+        <ul className="space-y-2 text-sm leading-relaxed text-slate-700 dark:text-slate-200">
           <li>
             ・<strong>逆指値を入れ忘れる</strong> —
             これだけで週次運用は破綻します。約定通知が来たら真っ先に確認してください。

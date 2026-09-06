@@ -74,14 +74,14 @@ export function PriceImportCard({ stock, barCount }: { stock: Stock; barCount: n
     return (
       <Card>
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <p className="text-sm text-neutral-500 dark:text-neutral-400">
+          <p className="text-sm text-slate-600 dark:text-slate-300">
             株価データ {barCount}本
           </p>
           <button type="button" className={subtleButtonClass} onClick={() => setOpen(true)}>
             株価を貼り付ける
           </button>
         </div>
-        {message && <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-300">{message}</p>}
+        {message && <p className="mt-2 text-sm text-slate-700 dark:text-slate-200">{message}</p>}
       </Card>
     )
   }
@@ -122,11 +122,11 @@ export function PriceImportCard({ stock, barCount }: { stock: Stock; barCount: n
       />
 
       {last && (
-        <div className="mt-3 rounded-xl bg-neutral-50 px-3 py-2 text-sm dark:bg-neutral-800/60">
+        <div className="mt-3 rounded-xl bg-slate-50 px-3 py-2 text-sm dark:bg-slate-700/40">
           <p className="font-medium">
             {bars.length}本 / {shortDate(bars[0].date)}〜{shortDate(last.date)}
           </p>
-          <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+          <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
             出来高が読めた行 {bars.filter((bar) => bar.volume > 0).length}/{bars.length}
             {parsed && parsed.skipped > 0 && ` / 読めなかった行 ${parsed.skipped}`}
             <br />
@@ -134,7 +134,7 @@ export function PriceImportCard({ stock, barCount }: { stock: Stock; barCount: n
             {price(last.low)} 終値{price(last.close)} 出来高
             {last.volume > 0 ? last.volume.toLocaleString('ja-JP') : '—'}
           </p>
-          <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+          <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
             この終値が{stock.name}のものか、元の画面と見比べてください。
           </p>
         </div>
@@ -167,7 +167,7 @@ export function PriceImportCard({ stock, barCount }: { stock: Stock; barCount: n
       )}
 
       {trimFrom && (
-        <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
+        <p className="mt-2 text-xs text-slate-600 dark:text-slate-300">
           {shortDate(trimFrom)}より前の{all.length - bars.length}本を除いています。
           <button
             type="button"
@@ -202,7 +202,7 @@ export function PriceImportCard({ stock, barCount }: { stock: Stock; barCount: n
             次の銘柄へ（{next.name}）
           </button>
         )}
-        {message && <span className="text-sm text-neutral-600 dark:text-neutral-300">{message}</span>}
+        {message && <span className="text-sm text-slate-700 dark:text-slate-200">{message}</span>}
         {error && <span className="text-sm text-rose-600 dark:text-rose-400">{error}</span>}
       </div>
     </Card>

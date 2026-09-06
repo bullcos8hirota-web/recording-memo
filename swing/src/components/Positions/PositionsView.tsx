@@ -123,16 +123,16 @@ function PositionCard({ trade, bars }: { trade: Trade; bars: Bar[] }) {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <span className="font-mono text-sm text-neutral-500 dark:text-neutral-400">{trade.code}</span>
+            <span className="font-mono text-sm text-slate-600 dark:text-slate-300">{trade.code}</span>
             <span className="font-medium">{trade.name}</span>
             <Badge tone={status.tone}>{status.text}</Badge>
           </div>
-          <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+          <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
             {shortDate(trade.entryDate)} に {price(trade.entryPrice)}円 × {trade.shares.toLocaleString('ja-JP')}株
             {result.holdingDays !== null && ` / 保有${result.holdingDays}日`}
           </p>
           {trade.reason && (
-            <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">根拠: {trade.reason}</p>
+            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">根拠: {trade.reason}</p>
           )}
         </div>
         <div className="text-right">
@@ -188,7 +188,7 @@ function PositionCard({ trade, bars }: { trade: Trade; bars: Bar[] }) {
       {/* 約定日と約定価格は、記録したあとに気づいて直したくなる(日付をまたいで記録した、
           成行で数円ずれた、など)。記録し直さずに直せるようにしておく。 */}
       {editingEntry ? (
-        <div className="mt-3 flex flex-wrap items-end gap-2 rounded-xl bg-neutral-50 p-3 dark:bg-neutral-800/60">
+        <div className="mt-3 flex flex-wrap items-end gap-2 rounded-xl bg-slate-50 p-3 dark:bg-slate-700/40">
           <Field label="約定日">
             <input
               type="date"
@@ -291,7 +291,7 @@ function PositionCard({ trade, bars }: { trade: Trade; bars: Bar[] }) {
       </div>
 
       {closing && (
-        <div className="mt-3 rounded-xl bg-neutral-50 p-3 dark:bg-neutral-800/60">
+        <div className="mt-3 rounded-xl bg-slate-50 p-3 dark:bg-slate-700/40">
           <div className="grid gap-3 sm:grid-cols-3">
             <Field label="売却日">
               <input
@@ -309,12 +309,12 @@ function PositionCard({ trade, bars }: { trade: Trade; bars: Bar[] }) {
                 inputMode="decimal"
               />
             </Field>
-            <div className="self-end text-sm text-neutral-600 dark:text-neutral-300">
+            <div className="self-end text-sm text-slate-700 dark:text-slate-200">
               確定損益の見込み:{' '}
               <span className={toneClass(estimateProfit(trade, Number(exitPrice), feeConfig))}>
                 {yen(estimateProfit(trade, Number(exitPrice), feeConfig))}
               </span>
-              <div className="text-xs text-neutral-500 dark:text-neutral-400">
+              <div className="text-xs text-slate-600 dark:text-slate-300">
                 税引後 {yen(afterTax(estimateProfit(trade, Number(exitPrice), feeConfig)))}
               </div>
             </div>

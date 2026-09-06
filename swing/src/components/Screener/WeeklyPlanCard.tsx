@@ -1,14 +1,16 @@
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { useAppStore } from '../../stores/appStore'
-import { weeklyPlan } from '../../lib/plan/weekly'
+import { weeklyPlan, type PositionAction } from '../../lib/plan/weekly'
 import { comingFriday, price, shortDate, today, yen } from '../../lib/format'
-import { Card, subtleButtonClass } from '../ui/Primitives'
+import { Card, Disclosure, subtleButtonClass } from '../ui/Primitives'
 
 /**
  * 「今週やること」。
  *
  * 点数を並べるだけでは、結局どれを買うのか分からない。毎週の判断は決まった手順なので、
  * 落とした理由まで含めてここに出す。何もしない週は、何もしないと書く。
+ *
+ * 手を動かすものだけを箱で見せ、確認するだけのものは畳む。毎週同じ説明を読ませない。
  */
 export function WeeklyPlanCard({ onOpen }: { onOpen: (code: string) => void }) {
   const stocks = useAppStore((s) => s.stocks)
@@ -17,215 +19,269 @@ export function WeeklyPlanCard({ onOpen }: { onOpen: (code: string) => void }) {
   const settings = useAppStore((s) => s.settings)
   const updateStock = useAppStore((s) => s.updateStock)
   const updateTrade = useAppStore((s) => s.updateTrade)
-  const [showSkipped, setShowSkipped] = useState(false)
 
   const plan = useMemo(
     () => weeklyPlan({ stocks, series, trades, settings }),
     [stocks, series, trades, settings],
   )
 
+  // どの日の株価で計算したか。毎週同じ説明文より、この1行のほうが役に立つ。
+  const asOf = useMemo(() => {
+    const dates = Object.values(series)
+      .map((bars) => bars[bars.length - 1]?.date)
+      .filter((date): date is string => Boolean(date))
+    return dates.length ? dates.sort().at(-1)! : null
+  }, [series])
+
   if (stocks.length === 0) return null
 
   const riskPercent = settings.capital > 0 ? (plan.totalRisk / settings.capital) * 100 : 0
+  const holding = plan.positions.filter((item) => item.kind === 'hold-stop')
+  const acting = plan.positions.filter((item) => item.kind !== 'hold-stop')
+  const warned = holding.filter((item) => item.warnings.length > 0)
+  const quiet = holding.filter((item) => item.warnings.length === 0)
 
   return (
     <Card
       title="今週やること"
-      description="株価を更新するたびに引き直します。注文の数字はそのまま証券会社に入れられます。"
+      description={asOf ? `${shortDate(asOf)}の終値で計算しています` : undefined}
     >
       {plan.nothingToDo && (
-        <p className="mb-3 rounded-xl bg-neutral-100 px-3 py-3 text-sm dark:bg-neutral-800">
-          {plan.pending.length > 0 ? (
-            <>
-              <span className="font-medium">新しく出す注文はありません。</span>
-              <span className="mt-1 block text-neutral-600 dark:text-neutral-300">
-                出してある注文の約定を待ちます。約定したら、銘柄タブの「約定した」を押してください。
-              </span>
-            </>
-          ) : (
-            <>
-              <span className="font-medium">今週は何もしません。</span>
-              <span className="mt-1 block text-neutral-600 dark:text-neutral-300">
-                条件が揃った銘柄が無く、損切りも動かす必要がありません。動かないことも判断のうちです。
-              </span>
-            </>
-          )}
+        <p className="mb-3 rounded-xl bg-slate-100 px-3 py-3 text-sm dark:bg-slate-700/40">
+          {plan.pending.length > 0
+            ? '新しく出す注文はありません。出してある注文の約定を待ちます。'
+            : '今週は何もしません。条件が揃った銘柄が無く、損切りも動かす必要がありません。'}
         </p>
       )}
 
       {/* 出す注文 */}
       {plan.orders.map((order) => (
-        <div
+        <section
           key={order.code}
-          className="mb-3 rounded-xl bg-emerald-50 px-3 py-3 text-sm text-emerald-950 dark:bg-emerald-950/40 dark:text-emerald-100"
+          className="mb-3 overflow-hidden rounded-xl border border-emerald-300 dark:border-emerald-800"
         >
           <button
             type="button"
-            className="text-left text-base font-semibold underline-offset-2 hover:underline"
+            className="flex w-full items-baseline justify-between gap-2 bg-emerald-100 px-3 py-2.5 text-left dark:bg-emerald-950/60"
             onClick={() => onOpen(order.code)}
           >
-            {order.code} {order.name} を買う注文を出す
-          </button>
-          <dl className="mt-2 grid grid-cols-[6.5rem_1fr] gap-y-1">
-            <dt>取引</dt>
-            <dd className="font-medium">現物買い</dd>
-            <dt>株数</dt>
-            <dd className="font-medium tabular-nums">
+            <span className="min-w-0">
+              <span className="block text-xs text-emerald-800 dark:text-emerald-300">買う</span>
+              <span className="block truncate text-base font-semibold">{order.name}</span>
+            </span>
+            <span className="shrink-0 text-sm tabular-nums">
               {order.shares.toLocaleString('ja-JP')}株
-            </dd>
-            <dt>執行条件</dt>
-            <dd className="font-medium">逆指値</dd>
-            <dt>条件</dt>
-            <dd className="font-medium tabular-nums">
-              {price(order.trigger)}円 以上になったら
-            </dd>
-            <dt>価格</dt>
-            <dd className="font-medium">成行</dd>
-            <dt>期間</dt>
-            <dd className="font-medium">今週中（{shortDate(comingFriday())}まで）</dd>
-          </dl>
-          <p className="mt-2">
-            買えたら、売りの逆指値 <span className="font-medium">{price(order.stopPrice)}円</span>
-            <span className="font-medium">以下になったら</span> / 成行 を続けて入れます。
-            負けたときの損は {yen(order.risk)}（資金の
-            {((order.risk / settings.capital) * 100).toFixed(2)}%）です。
-          </p>
-          {order.earningsUnknown && (
-            <p className="mt-2 text-amber-800 dark:text-amber-300">
-              この銘柄の決算発表日が未登録です。決算をまたぐと損切りを飛び越えて始まることがあるので、
-              発注前にSBI証券アプリで確認し、2週間以内なら見送ってください。
-            </p>
-          )}
-          <button
-            type="button"
-            className={`${subtleButtonClass} mt-2`}
-            onClick={() =>
-              void updateStock(order.code, {
-                pendingOrder: {
-                  trigger: order.trigger,
-                  shares: order.shares,
-                  stopPrice: order.stopPrice,
-                  expiresOn: comingFriday(),
-                  placedOn: today(),
-                },
-              })
-            }
-          >
-            この内容で注文を出した
+            </span>
           </button>
-        </div>
+
+          <div className="px-3 py-3 text-sm">
+            <dl className="grid grid-cols-[5.5rem_1fr] gap-y-1.5">
+              <dt className="text-slate-600 dark:text-slate-300">執行条件</dt>
+              <dd className="font-medium">逆指値</dd>
+              <dt className="text-slate-600 dark:text-slate-300">条件</dt>
+              <dd className="font-medium tabular-nums">{price(order.trigger)}円 以上になったら</dd>
+              <dt className="text-slate-600 dark:text-slate-300">価格</dt>
+              <dd className="font-medium">成行 ／ 今週中（{shortDate(comingFriday())}まで）</dd>
+            </dl>
+
+            <p className="mt-2.5 border-t border-slate-200 pt-2.5 tabular-nums dark:border-slate-700">
+              買えたら損切り <span className="font-medium">{price(order.stopPrice)}円</span>
+              <span className="mx-1.5 text-slate-400">|</span>
+              負けたら <span className="font-medium">−{yen(order.risk)}</span>（
+              {((order.risk / settings.capital) * 100).toFixed(2)}%）
+            </p>
+
+            {order.earningsUnknown && (
+              <div className="mt-2 rounded-lg bg-amber-100 px-2.5 py-2 text-amber-900 dark:bg-amber-950/50 dark:text-amber-200">
+                <Disclosure summary="⚠ 決算発表日が未登録です">
+                  <p className="text-sm">
+                    決算をまたぐと、翌朝に損切り価格を飛び越えて始まることがあります。
+                    発注前にSBI証券アプリで次の決算発表日を確認し、2週間以内なら見送ってください。
+                  </p>
+                </Disclosure>
+              </div>
+            )}
+
+            <button
+              type="button"
+              className={`${subtleButtonClass} mt-2.5 w-full`}
+              onClick={() =>
+                void updateStock(order.code, {
+                  pendingOrder: {
+                    trigger: order.trigger,
+                    shares: order.shares,
+                    stopPrice: order.stopPrice,
+                    expiresOn: comingFriday(),
+                    placedOn: today(),
+                  },
+                })
+              }
+            >
+              この内容で注文を出した
+            </button>
+          </div>
+        </section>
       ))}
 
       {/* 証券会社に出してある注文 */}
       {plan.pending.map((item) => (
-        <div
+        <button
           key={item.code}
-          className={`mb-3 rounded-xl px-3 py-3 text-sm ${
+          type="button"
+          onClick={() => onOpen(item.code)}
+          className={`mb-3 block w-full rounded-xl px-3 py-2.5 text-left text-sm ${
             item.expired
-              ? 'bg-amber-50 text-amber-900 dark:bg-amber-950/40 dark:text-amber-200'
-              : 'bg-sky-50 text-sky-900 dark:bg-sky-950/40 dark:text-sky-200'
+              ? 'bg-amber-100 text-amber-900 dark:bg-amber-950/50 dark:text-amber-200'
+              : 'bg-sky-100 text-sky-900 dark:bg-sky-950/50 dark:text-sky-200'
           }`}
         >
-          <button
-            type="button"
-            className="text-left font-medium underline-offset-2 hover:underline"
-            onClick={() => onOpen(item.code)}
-          >
-            {item.code} {item.name}：{item.expired ? '注文の期限が過ぎています' : '注文中'}
-          </button>
-          <p className="mt-1 tabular-nums">
-            逆指値 {price(item.trigger)}円以上 / {item.shares.toLocaleString('ja-JP')}株 / 損切り{' '}
-            {price(item.stopPrice)}円 / {shortDate(item.expiresOn)}まで
-          </p>
-          <p className="mt-1 text-xs">
-            {item.expired
-              ? '約定していなければ証券会社側でも失効しています。銘柄タブで消してください。'
-              : '約定したら、銘柄タブの「約定した」を押してください。'}
-          </p>
-        </div>
+          <span className="font-medium">
+            {item.name}：{item.expired ? '注文の期限切れ' : '注文中'}
+          </span>
+          <span className="mt-0.5 block tabular-nums">
+            逆指値 {price(item.trigger)}円以上 / {item.shares.toLocaleString('ja-JP')}株 /{' '}
+            {shortDate(item.expiresOn)}まで
+          </span>
+        </button>
       ))}
 
-      {/* 建玉 */}
-      {plan.positions.map((item) => (
+      {/* 手当てが要る建玉 */}
+      {acting.map((item) => (
+        <PositionBox
+          key={item.code}
+          item={item}
+          onOpen={onOpen}
+          onRaise={() => {
+            const trade = trades.find(
+              (candidate) => candidate.code === item.code && candidate.exitPrice === null,
+            )
+            if (trade && item.raiseTo !== null) void updateTrade(trade.id, { stopPrice: item.raiseTo })
+          }}
+        />
+      ))}
+
+      {/* 決算・権利落ちが近い建玉は畳まない */}
+      {warned.map((item) => (
         <div
           key={item.code}
-          className={`mb-3 rounded-xl px-3 py-3 text-sm ${
-            item.kind === 'hold-stop' && item.warnings.length === 0
-              ? 'bg-neutral-100 dark:bg-neutral-800'
-              : 'bg-amber-50 text-amber-900 dark:bg-amber-950/40 dark:text-amber-200'
-          }`}
+          className="mb-3 rounded-xl bg-amber-100 px-3 py-2.5 text-sm text-amber-900 dark:bg-amber-950/50 dark:text-amber-200"
         >
           <button
             type="button"
-            className="text-left font-medium underline-offset-2 hover:underline"
+            className="text-left font-medium"
             onClick={() => onOpen(item.code)}
           >
-            {item.code} {item.name}：
-            {item.kind === 'set-stop'
-              ? '損切りを決めてください'
-              : item.kind === 'raise-stop'
-                ? `損切りを ${price(item.raiseTo!)}円 に上げる`
-                : `損切り ${price(item.stopPrice!)}円 のまま`}
+            {item.name}：損切り {price(item.stopPrice!)}円 のまま
           </button>
-          <p className="mt-1">{item.note}</p>
           {item.warnings.map((warning) => (
-            <p key={warning} className="mt-1 font-medium">
+            <p key={warning} className="mt-0.5">
               {warning}
             </p>
           ))}
-          {item.kind === 'raise-stop' && item.raiseTo !== null && (
-            <div className="mt-2">
-              <p className="tabular-nums">
-                証券会社の売り注文を訂正：逆指値 {price(item.raiseTo)}円
-                <span className="font-medium">以下になったら</span> / 成行 /{' '}
-                {item.shares.toLocaleString('ja-JP')}株
-              </p>
-              <button
-                type="button"
-                className={`${subtleButtonClass} mt-2`}
-                onClick={() => {
-                  const trade = trades.find(
-                    (candidate) => candidate.code === item.code && candidate.exitPrice === null,
-                  )
-                  if (trade) void updateTrade(trade.id, { stopPrice: item.raiseTo })
-                }}
-              >
-                訂正したので記録する
-              </button>
-            </div>
-          )}
         </div>
       ))}
 
+      {/* 動かさない建玉は1行に畳む */}
+      {quiet.length > 0 && (
+        <div className="border-t border-slate-200 pt-1 dark:border-slate-700">
+          <Disclosure
+            summary="動かさないもの"
+            detail={quiet
+              .map((item) => `${item.name} ${price(item.stopPrice!)}円`)
+              .join(' ／ ')}
+          >
+            <ul className="space-y-2 text-sm text-slate-600 dark:text-slate-300">
+              {quiet.map((item) => (
+                <li key={item.code}>
+                  <span className="font-medium text-slate-900 dark:text-slate-100">
+                    {item.name}
+                  </span>
+                  ：{item.note}
+                </li>
+              ))}
+            </ul>
+          </Disclosure>
+        </div>
+      )}
+
       {/* 落ちた理由 */}
       {plan.skipped.length > 0 && (
-        <div className="mt-1">
-          <button
-            type="button"
-            className="text-sm text-neutral-600 underline underline-offset-2 dark:text-neutral-300"
-            onClick={() => setShowSkipped(!showSkipped)}
-          >
-            見送った銘柄 {plan.skipped.length}件{showSkipped ? 'を隠す' : 'を見る'}
-          </button>
-          {showSkipped && (
-            <ul className="mt-2 space-y-1 text-sm text-neutral-600 dark:text-neutral-300">
+        <div className="border-t border-slate-200 dark:border-slate-700">
+          <Disclosure summary={`見送り ${plan.skipped.length}件`}>
+            <ul className="space-y-2 text-sm text-slate-600 dark:text-slate-300">
               {plan.skipped.map((item) => (
                 <li key={item.code}>
-                  <span className="font-medium">
-                    {item.code} {item.name}
+                  <span className="font-medium text-slate-900 dark:text-slate-100">
+                    {item.name}
                   </span>
                   ：{item.reason}
                 </li>
               ))}
             </ul>
-          )}
+          </Disclosure>
         </div>
       )}
 
-      <p className="mt-3 text-xs text-neutral-500 dark:text-neutral-400">
-        建玉と注文を合わせた想定損失 {yen(plan.totalRisk)}（資金の{riskPercent.toFixed(2)}%）。
-        新規は週1銘柄まで、合計は資金の3%までにしています。
+      <p className="mt-2 border-t border-slate-200 pt-2 text-xs text-slate-600 tabular-nums dark:border-slate-700 dark:text-slate-300">
+        合計リスク {yen(plan.totalRisk)}（資金の{riskPercent.toFixed(2)}%）／ 新規は週1銘柄・合計3%まで
       </p>
     </Card>
+  )
+}
+
+function PositionBox({
+  item,
+  onOpen,
+  onRaise,
+}: {
+  item: PositionAction
+  onOpen: (code: string) => void
+  onRaise: () => void
+}) {
+  return (
+    <section className="mb-3 overflow-hidden rounded-xl border border-amber-300 dark:border-amber-800">
+      <button
+        type="button"
+        className="flex w-full items-baseline justify-between gap-2 bg-amber-100 px-3 py-2.5 text-left dark:bg-amber-950/60"
+        onClick={() => onOpen(item.code)}
+      >
+        <span className="min-w-0">
+          <span className="block text-xs text-amber-800 dark:text-amber-300">
+            {item.kind === 'set-stop' ? '損切りを決める' : '損切りを上げる'}
+          </span>
+          <span className="block truncate text-base font-semibold">{item.name}</span>
+        </span>
+        {item.raiseTo !== null && (
+          <span className="shrink-0 text-sm font-medium tabular-nums">
+            {price(item.stopPrice!)} → {price(item.raiseTo)}円
+          </span>
+        )}
+      </button>
+
+      <div className="px-3 py-3 text-sm">
+        {item.kind === 'raise-stop' && item.raiseTo !== null ? (
+          <>
+            <p className="tabular-nums">
+              売り注文を訂正：逆指値 <span className="font-medium">{price(item.raiseTo)}円</span>
+              <span className="font-medium">以下になったら</span> / 成行 /{' '}
+              {item.shares.toLocaleString('ja-JP')}株
+            </p>
+            <Disclosure summary="なぜ上げるのか">
+              <p className="text-sm text-slate-600 dark:text-slate-300">{item.note}</p>
+            </Disclosure>
+            <button type="button" className={`${subtleButtonClass} mt-1 w-full`} onClick={onRaise}>
+              訂正したので記録する
+            </button>
+          </>
+        ) : (
+          <p>{item.note}</p>
+        )}
+        {item.warnings.map((warning) => (
+          <p key={warning} className="mt-2 font-medium text-amber-800 dark:text-amber-300">
+            {warning}
+          </p>
+        ))}
+      </div>
+    </section>
   )
 }

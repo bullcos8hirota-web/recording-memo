@@ -101,7 +101,7 @@ export function BackupCard() {
           />
           <span>
             J-QuantsのAPIキーも書き出す
-            <span className="block text-xs text-neutral-500 dark:text-neutral-400">
+            <span className="block text-xs text-slate-600 dark:text-slate-300">
               入れておくと新しい端末でそのまま使えます。ファイルを人に渡すなら外してください。
             </span>
           </span>

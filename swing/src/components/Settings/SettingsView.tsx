@@ -79,7 +79,7 @@ export function SettingsView() {
                 </button>
               ))}
             </div>
-            <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
+            <p className="mt-2 text-xs text-slate-600 dark:text-slate-300">
               {settings.exitStyle === 'trailing'
                 ? '建玉を記録するとき、利確目標は入れません。毎週末、建玉タブのトレーリング目安まで損切りを上げていきます。'
                 : '建玉を記録するとき、利確倍率から計算した価格を利確目標として入れます。'}
@@ -138,7 +138,7 @@ export function SettingsView() {
           <ul className="mt-3 space-y-2">
             {settings.feeConfig.tiers.map((tier, index) => (
               <li key={`${tier.upTo}-${index}`} className="flex items-center gap-2 text-sm">
-                <span className="w-40 text-neutral-500 dark:text-neutral-400">
+                <span className="w-40 text-slate-600 dark:text-slate-300">
                   {Number.isFinite(tier.upTo) ? `${tier.upTo.toLocaleString('ja-JP')}円まで` : 'それ以上'}
                 </span>
                 <NumberField
@@ -153,12 +153,12 @@ export function SettingsView() {
                     void saveSettings({ feeConfig: { ...settings.feeConfig, tiers } })
                   }}
                 />
-                <span className="text-neutral-500 dark:text-neutral-400">円(税込)</span>
+                <span className="text-slate-600 dark:text-slate-300">円(税込)</span>
               </li>
             ))}
           </ul>
         )}
-        <p className="mt-3 text-xs text-neutral-500 dark:text-neutral-400">
+        <p className="mt-3 text-xs text-slate-600 dark:text-slate-300">
           表示している金額は目安です。実際の手数料はSBI証券の最新の料金体系を確認してください。
         </p>
       </Card>
@@ -187,12 +187,12 @@ export function SettingsView() {
       </Card>
 
       <Card title="このアプリについて">
-        <p className="text-sm text-neutral-600 dark:text-neutral-300">
+        <p className="text-sm text-slate-700 dark:text-slate-200">
           チャートの状態を点数化したり、許容損失から株数を計算したりして、スイングトレードの判断材料を整理するためのツールです。
           将来の値動きを予測するものではなく、特定の銘柄の売買を推奨するものでもありません。投資判断はご自身の責任で行ってください。
           SBI証券とは無関係の個人ツールで、発注機能はありません。
         </p>
-        <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
+        <p className="mt-2 text-xs text-slate-600 dark:text-slate-300">
           画面の版 {BUILD_ID}
           （うまく動かないときは、この版が最新か確認してから、ブラウザを一度閉じて開き直してください）
         </p>
@@ -208,7 +208,7 @@ function InstallCard() {
   if (installed) {
     return (
       <Card title="アプリとして起動中">
-        <p className="text-sm text-neutral-600 dark:text-neutral-300">
+        <p className="text-sm text-slate-700 dark:text-slate-200">
           ホーム画面から起動しています。オフラインでも開けます。
         </p>
       </Card>
@@ -225,13 +225,13 @@ function InstallCard() {
           ホーム画面に追加
         </button>
       ) : isIos ? (
-        <ol className="list-decimal space-y-1 pl-5 text-sm text-neutral-600 dark:text-neutral-300">
+        <ol className="list-decimal space-y-1 pl-5 text-sm text-slate-700 dark:text-slate-200">
           <li>Safariの下にある共有ボタン(□に↑)を押す</li>
           <li>メニューを下にスクロールして「ホーム画面に追加」を選ぶ</li>
           <li>右上の「追加」を押す</li>
         </ol>
       ) : (
-        <p className="text-sm text-neutral-600 dark:text-neutral-300">
+        <p className="text-sm text-slate-700 dark:text-slate-200">
           ブラウザのメニューから「ホーム画面に追加」または「アプリをインストール」を選んでください。
         </p>
       )}

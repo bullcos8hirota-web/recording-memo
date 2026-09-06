@@ -7,7 +7,7 @@ import { TradePlan } from './TradePlan'
 import { PriceImportCard } from './PriceImportCard'
 import { EarningsCard } from './EarningsCard'
 import { count, percent, price, shortDate, toneClass } from '../../lib/format'
-import { Badge, Card, EmptyState, Stat, subtleButtonClass } from '../ui/Primitives'
+import { Badge, Card, Disclosure, EmptyState, Stat, subtleButtonClass } from '../ui/Primitives'
 import { HelpButton } from '../Learn/HelpButton'
 import { SIGNAL_TERMS } from '../../lib/learn/signalTerms'
 
@@ -57,7 +57,7 @@ export function SymbolDetail() {
       <Card>
         {/* どの銘柄を見ているのかを取り違えると、発注そのものを間違える。大きく出す。 */}
         <div className="mb-2 flex items-baseline gap-2">
-          <span className="font-mono text-base text-neutral-500 dark:text-neutral-400">
+          <span className="font-mono text-base text-slate-600 dark:text-slate-300">
             {stock.code}
           </span>
           <span className="truncate text-2xl font-bold">{stock.name}</span>
@@ -68,7 +68,7 @@ export function SymbolDetail() {
             <select
               value={stock.code}
               onChange={(e) => select(e.target.value)}
-              className="min-h-11 w-full min-w-0 rounded-lg border border-neutral-300 bg-white px-3 py-2 text-base dark:border-neutral-700 dark:bg-neutral-950 sm:w-auto sm:text-sm"
+              className="min-h-11 w-full min-w-0 rounded-lg border border-slate-300 bg-white px-3 py-2 text-base dark:border-slate-600 dark:bg-slate-900 sm:w-auto sm:text-sm"
               aria-label="銘柄を切り替える"
             >
               {stocks.map((item) => (
@@ -117,13 +117,13 @@ export function SymbolDetail() {
           </div>
         )}
         {stock.memo && (
-          <p className="mt-2 text-sm text-neutral-500 dark:text-neutral-400">{stock.memo}</p>
+          <p className="mt-2 text-sm text-slate-600 dark:text-slate-300">{stock.memo}</p>
         )}
 
         {bars.length > 0 && (
           <div className="mt-4">
             <CandleChart bars={bars} overlays={overlays} levels={levels} />
-            <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
+            <p className="mt-2 text-xs text-slate-600 dark:text-slate-300">
               {bars.length}本 / {shortDate(bars[0].date)}〜{shortDate(bars[bars.length - 1].date)}
               {bars.length < MIN_BARS && '(判定の精度を上げるには80本以上を推奨)'}
             </p>
@@ -136,14 +136,11 @@ export function SymbolDetail() {
       {snapshot && analysis && (
         <>
           <Card title="いまの状態" description={`${snapshot.date} 終値ベース`}>
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {/* よく見る4つだけ出し、残りは畳む。毎回15個並べても読まない。 */}
+            <div className="grid grid-cols-2 gap-2">
               <Stat label="終値" help="ohlc" value={`${price(snapshot.close)}円`} tone={toneClass(snapshot.changeRate)} hint={percent(snapshot.changeRate)} />
-              <Stat label="5日線" help="moving-average" value={price(snapshot.sma5)} />
               <Stat label="25日線" help="moving-average" value={price(snapshot.sma25)} hint={`乖離 ${percent(snapshot.deviation25)}`} />
-              <Stat label="75日線" help="moving-average" value={price(snapshot.sma75)} />
-              <Stat label="RSI(14)" help="rsi" value={snapshot.rsi14 === null ? '—' : snapshot.rsi14.toFixed(1)} hint="30以下で売られすぎ / 70以上で買われすぎ" />
-              <Stat label="MACD" help="macd" value={snapshot.macd === null ? '—' : snapshot.macd.toFixed(1)} hint={`シグナル ${snapshot.macdSignal?.toFixed(1) ?? '—'}`} />
-              <Stat label="ATR(14)" help="atr" value={`${price(snapshot.atr14)}円`} hint={`終値の${snapshot.atrRate?.toFixed(1) ?? '—'}%`} />
+              <Stat label="ATR(14)" help="atr" value={`${price(snapshot.atr14)}円`} hint={`終値の${snapshot.atrRate?.toFixed(1) ?? '—'}% / 損切り幅のもと`} />
               <Stat
                 label="20日平均売買代金"
                 help="volume"
@@ -154,22 +151,32 @@ export function SymbolDetail() {
                 }
                 hint="出入りのしやすさ"
               />
-              <Stat label="出来高" help="volume" value={count(snapshot.volume)} hint={`20日平均の${snapshot.volumeRatio ? (snapshot.volumeRatio * 100).toFixed(0) : '—'}%`} />
-              <Stat label="この日の高値" help="ohlc" value={`${price(snapshot.high)}円`} hint="逆指値の目安" />
-              <Stat label="この日の安値" help="ohlc" value={`${price(snapshot.low)}円`} />
-              <Stat label="20日高値" help="high-low" value={price(snapshot.high20)} hint="前日までの高値" />
-              <Stat label="20日安値" help="high-low" value={price(snapshot.low20)} hint="前日までの安値" />
-              <Stat label="直近5日安値" help="stop-loss" value={price(snapshot.low5)} hint="損切り位置の候補" />
-              <Stat label="ボリンジャー" help="bollinger" value={`${price(snapshot.bbLower)}〜${price(snapshot.bbUpper)}`} hint="20日 ±2σ" />
+            </div>
+            <div className="mt-1 border-t border-slate-200 pt-1 dark:border-slate-700">
+              <Disclosure summary="ほかの指標を見る">
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+                  <Stat label="5日線" help="moving-average" value={price(snapshot.sma5)} />
+                  <Stat label="75日線" help="moving-average" value={price(snapshot.sma75)} />
+                  <Stat label="RSI(14)" help="rsi" value={snapshot.rsi14 === null ? '—' : snapshot.rsi14.toFixed(1)} hint="30以下で売られすぎ / 70以上で買われすぎ" />
+                  <Stat label="MACD" help="macd" value={snapshot.macd === null ? '—' : snapshot.macd.toFixed(1)} hint={`シグナル ${snapshot.macdSignal?.toFixed(1) ?? '—'}`} />
+                  <Stat label="出来高" help="volume" value={count(snapshot.volume)} hint={`20日平均の${snapshot.volumeRatio ? (snapshot.volumeRatio * 100).toFixed(0) : '—'}%`} />
+                  <Stat label="この日の高値" help="ohlc" value={`${price(snapshot.high)}円`} hint="逆指値の目安" />
+                  <Stat label="この日の安値" help="ohlc" value={`${price(snapshot.low)}円`} />
+                  <Stat label="20日高値" help="high-low" value={price(snapshot.high20)} hint="前日までの高値" />
+                  <Stat label="20日安値" help="high-low" value={price(snapshot.low20)} hint="前日までの安値" />
+                  <Stat label="直近5日安値" help="stop-loss" value={price(snapshot.low5)} hint="損切り位置の候補" />
+                  <Stat label="ボリンジャー" help="bollinger" value={`${price(snapshot.bbLower)}〜${price(snapshot.bbUpper)}`} hint="20日 ±2σ" />
+                </div>
+              </Disclosure>
             </div>
           </Card>
 
           <Card
             title="チャートから読めること"
-            description="買いの根拠になりそうな点と、警戒したい点を並べています。「?」で用語の意味を見られます。"
+            description="買いの根拠と、警戒したい点"
           >
             {analysis.signals.length === 0 ? (
-              <p className="text-sm text-neutral-500 dark:text-neutral-400">
+              <p className="text-sm text-slate-600 dark:text-slate-300">
                 目立った特徴はありません。様子見の局面です。
               </p>
             ) : (
@@ -177,10 +184,10 @@ export function SymbolDetail() {
                 {analysis.signals.map((signal) => (
                   <li
                     key={signal.id}
-                    className="flex items-start gap-3 rounded-xl bg-neutral-50 px-3 py-2 dark:bg-neutral-800/60"
+                    className="flex items-start gap-3 rounded-xl bg-slate-50 px-3 py-2 dark:bg-slate-700/40"
                   >
                     <Badge tone={signal.tone}>{signal.label}</Badge>
-                    <span className="flex-1 text-sm text-neutral-600 dark:text-neutral-300">
+                    <span className="flex-1 text-sm text-slate-700 dark:text-slate-200">
                       {signal.detail}
                     </span>
                     {SIGNAL_TERMS[signal.id] && (

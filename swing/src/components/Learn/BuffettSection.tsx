@@ -36,7 +36,7 @@ export function BuffettSection() {
         title="バフェットは何を見ているのか"
         description="チャートではなく、会社そのものを見る投資です。"
       >
-        <p className="text-sm leading-relaxed text-neutral-700 dark:text-neutral-300">
+        <p className="text-sm leading-relaxed text-slate-700 dark:text-slate-200">
           ウォーレン・バフェットのやり方は、株を「値段が上下する記号」ではなく
           <TermLink term="value-investing">会社の一部を持つ権利</TermLink>
           と考えるところから始まります。良い会社を、価値より安い値段で買い、10年単位で持ち続ける。
@@ -51,14 +51,14 @@ export function BuffettSection() {
         </div>
         <div className="mt-3 overflow-x-auto" data-no-swipe>
           <table className="w-full text-sm">
-            <thead className="text-left text-xs text-neutral-500 dark:text-neutral-400">
+            <thead className="text-left text-xs text-slate-600 dark:text-slate-300">
               <tr>
                 <th className="py-2 pr-3 font-medium">　</th>
                 <th className="py-2 pr-3 font-medium">スイングトレード</th>
                 <th className="py-2 font-medium">バフェット流</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-neutral-200 dark:divide-neutral-800">
+            <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
               {[
                 ['持つ期間', '数日〜数週間', '5年〜一生'],
                 ['判断材料', 'チャートと出来高', '決算書と事業の中身'],
@@ -67,7 +67,7 @@ export function BuffettSection() {
                 ['下げたとき', '決めた線で撤退する', '価値が同じなら買い増す'],
               ].map(([label, swing, buffett]) => (
                 <tr key={label}>
-                  <td className="py-2 pr-3 text-neutral-500 dark:text-neutral-400">{label}</td>
+                  <td className="py-2 pr-3 text-slate-600 dark:text-slate-300">{label}</td>
                   <td className="py-2 pr-3">{swing}</td>
                   <td className="py-2">{buffett}</td>
                 </tr>
@@ -75,12 +75,12 @@ export function BuffettSection() {
             </tbody>
           </table>
         </div>
-        <p className="mt-3 text-sm leading-relaxed text-neutral-700 dark:text-neutral-300">
+        <p className="mt-3 text-sm leading-relaxed text-slate-700 dark:text-slate-200">
           いちばん危ないのは、その2つを途中ですり替えることです。
           短期のつもりで買った株が下がったとき、「長期投資だから」と損切りをやめる——
           これが塩漬けの入口になります。最初にどちらのつもりで買うかを決め、決めた側のルールで手仕舞ってください。
         </p>
-        <p className="mt-3 text-sm leading-relaxed text-neutral-700 dark:text-neutral-300">
+        <p className="mt-3 text-sm leading-relaxed text-slate-700 dark:text-slate-200">
           併用するなら「<strong>何を買うか</strong>は企業の中身で絞り、
           <strong>いつ買うか</strong>はチャートで測る」という分け方が現実的です。
           中身の良い会社だけを監視リストに入れ、押し目が来たら入る。
@@ -93,7 +93,7 @@ export function BuffettSection() {
           {PRINCIPLES.map((principle) => (
             <div key={principle.title}>
               <h3 className="font-semibold">{principle.title}</h3>
-              <p className="mt-1 text-sm leading-relaxed text-neutral-700 dark:text-neutral-300">
+              <p className="mt-1 text-sm leading-relaxed text-slate-700 dark:text-slate-200">
                 {principle.body}
               </p>
               <div className="mt-2 flex flex-wrap gap-2">
@@ -107,7 +107,7 @@ export function BuffettSection() {
       </Card>
 
       <Card title="そのまま真似できない点" description="鵜呑みにしないための注意書きです。">
-        <ul className="space-y-2 text-sm leading-relaxed text-neutral-700 dark:text-neutral-300">
+        <ul className="space-y-2 text-sm leading-relaxed text-slate-700 dark:text-slate-200">
           <li>
             ・バフェットは会社を丸ごと買えます。経営に口を出せる立場と、100株持つ個人とでは条件が違います。
           </li>

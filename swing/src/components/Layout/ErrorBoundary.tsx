@@ -32,27 +32,27 @@ export class ErrorBoundary extends Component<Props, State> {
     ].join('\n')
 
     return (
-      <div className="min-h-[100dvh] bg-neutral-50 p-4 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100">
-        <div className="mx-auto max-w-lg rounded-2xl border border-neutral-200 bg-white p-4 dark:border-neutral-800 dark:bg-neutral-900">
+      <div className="min-h-[100dvh] bg-slate-50 p-4 text-slate-900 dark:bg-slate-900 dark:text-slate-100">
+        <div className="mx-auto max-w-lg rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800">
           <h1 className="text-base font-semibold">画面を出せませんでした</h1>
-          <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-300">
+          <p className="mt-2 text-sm text-slate-700 dark:text-slate-200">
             保存したデータは残っています。下のボタンで開き直してください。
             それでも同じところで止まる場合は、この文章をコピーして知らせてください。
           </p>
-          <pre className="mt-3 max-h-48 overflow-auto rounded-xl bg-neutral-100 p-3 text-xs dark:bg-neutral-800">
+          <pre className="mt-3 max-h-48 overflow-auto rounded-xl bg-slate-100 p-3 text-xs dark:bg-slate-700">
             {report}
           </pre>
           <div className="mt-3 flex flex-wrap gap-2">
             <button
               type="button"
-              className="inline-flex min-h-11 items-center rounded-lg bg-neutral-900 px-4 text-sm font-medium text-white dark:bg-neutral-100 dark:text-neutral-900"
+              className="inline-flex min-h-11 items-center rounded-lg bg-slate-900 px-4 text-sm font-medium text-white dark:bg-slate-100 dark:text-slate-900"
               onClick={() => window.location.reload()}
             >
               開き直す
             </button>
             <button
               type="button"
-              className="inline-flex min-h-11 items-center rounded-lg border border-neutral-300 px-4 text-sm font-medium dark:border-neutral-700"
+              className="inline-flex min-h-11 items-center rounded-lg border border-slate-300 px-4 text-sm font-medium dark:border-slate-600"
               onClick={() => void navigator.clipboard?.writeText(report)}
             >
               内容をコピー

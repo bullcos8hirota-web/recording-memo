@@ -14,7 +14,7 @@ export function BottomTabBar({
   badges?: Partial<Record<TabId, number>>
 }) {
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-neutral-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur dark:border-neutral-800 dark:bg-neutral-900/95 sm:hidden">
+    <nav className="fixed inset-x-0 bottom-0 z-20 border-t border-slate-200 bg-white/95 pb-[env(safe-area-inset-bottom)] backdrop-blur dark:border-slate-700 dark:bg-slate-800/95 sm:hidden">
       <ul className="flex">
         {TABS.map((item) => {
           const active = tab === item.id
@@ -27,8 +27,8 @@ export function BottomTabBar({
                 aria-current={active ? 'page' : undefined}
                 className={`flex h-14 w-full flex-col items-center justify-center gap-0.5 transition ${
                   active
-                    ? 'text-neutral-900 dark:text-neutral-100'
-                    : 'text-neutral-400 dark:text-neutral-500'
+                    ? 'text-slate-900 dark:text-slate-100'
+                    : 'text-slate-500 dark:text-slate-400'
                 }`}
               >
                 <span className="relative">
@@ -70,13 +70,13 @@ export function TopTabBar({
             aria-current={tab === item.id ? 'page' : undefined}
             className={`shrink-0 border-b-2 px-3 py-2 text-sm font-medium transition ${
               tab === item.id
-                ? 'border-neutral-900 text-neutral-900 dark:border-neutral-100 dark:text-neutral-100'
-                : 'border-transparent text-neutral-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200'
+                ? 'border-slate-900 text-slate-900 dark:border-slate-100 dark:text-slate-100'
+                : 'border-transparent text-slate-600 hover:text-slate-800 dark:text-slate-300 dark:hover:text-slate-200'
             }`}
           >
             {item.label}
             {badge > 0 && (
-              <span className="ml-1 rounded-full bg-neutral-200 px-1.5 py-0.5 text-[10px] tabular-nums dark:bg-neutral-700">
+              <span className="ml-1 rounded-full bg-slate-200 px-1.5 py-0.5 text-[10px] tabular-nums dark:bg-slate-600">
                 {badge}
               </span>
             )}

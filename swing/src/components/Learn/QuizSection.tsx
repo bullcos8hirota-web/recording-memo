@@ -52,11 +52,11 @@ export function QuizSection() {
     const rate = (correct / questions.length) * 100
     return (
       <Card title="結果">
-        <div className="rounded-2xl bg-neutral-50 p-4 text-center dark:bg-neutral-800/60">
+        <div className="rounded-2xl bg-slate-50 p-4 text-center dark:bg-slate-700/40">
           <div className="text-3xl font-semibold tabular-nums">
             {correct} / {questions.length}
           </div>
-          <p className="mt-2 text-sm text-neutral-600 dark:text-neutral-300">
+          <p className="mt-2 text-sm text-slate-700 dark:text-slate-200">
             {rate === 100
               ? '全問正解です。用語は身についています。'
               : rate >= 60
@@ -80,13 +80,13 @@ export function QuizSection() {
         description={`全${QUESTIONS.length}問からランダムに${QUIZ_LENGTH}問出します。正解しなくても、解説を読めば十分です。`}
       >
         <div className="flex items-center gap-3">
-          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-neutral-200 dark:bg-neutral-700">
+          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-600">
             <div
-              className="h-full rounded-full bg-neutral-900 transition-all dark:bg-neutral-100"
+              className="h-full rounded-full bg-slate-900 transition-all dark:bg-slate-100"
               style={{ width: `${((index + (answered ? 1 : 0)) / questions.length) * 100}%` }}
             />
           </div>
-          <span className="shrink-0 text-xs tabular-nums text-neutral-500 dark:text-neutral-400">
+          <span className="shrink-0 text-xs tabular-nums text-slate-600 dark:text-slate-300">
             {index + 1} / {questions.length}
           </span>
         </div>
@@ -99,12 +99,12 @@ export function QuizSection() {
             const isAnswer = choiceIndex === question.answer
             const isSelected = selected === choiceIndex
             const style = !answered
-              ? 'border-neutral-300 dark:border-neutral-700'
+              ? 'border-slate-300 dark:border-slate-600'
               : isAnswer
                 ? 'border-rose-400 bg-rose-50 dark:border-rose-700 dark:bg-rose-950/40'
                 : isSelected
                   ? 'border-sky-400 bg-sky-50 dark:border-sky-700 dark:bg-sky-950/40'
-                  : 'border-neutral-200 opacity-60 dark:border-neutral-800'
+                  : 'border-slate-200 opacity-60 dark:border-slate-700'
             return (
               <li key={choice}>
                 <button
@@ -113,7 +113,7 @@ export function QuizSection() {
                   disabled={answered}
                   className={`flex w-full items-start gap-2 rounded-xl border px-3 py-3 text-left text-sm transition ${style}`}
                 >
-                  <span className="mt-0.5 shrink-0 text-xs text-neutral-400">
+                  <span className="mt-0.5 shrink-0 text-xs text-slate-500">
                     {'ABCD'[choiceIndex]}
                   </span>
                   <span className="flex-1">{choice}</span>
@@ -128,11 +128,11 @@ export function QuizSection() {
         </ul>
 
         {answered && (
-          <div className="mt-3 rounded-xl bg-neutral-50 px-3 py-3 dark:bg-neutral-800/60">
+          <div className="mt-3 rounded-xl bg-slate-50 px-3 py-3 dark:bg-slate-700/40">
             <p className="text-sm font-medium">
               {selected === question.answer ? '正解です' : '惜しい'}
             </p>
-            <p className="mt-1 text-sm leading-relaxed text-neutral-700 dark:text-neutral-300">
+            <p className="mt-1 text-sm leading-relaxed text-slate-700 dark:text-slate-200">
               {question.explanation}
             </p>
             <div className="mt-2 flex flex-wrap gap-2">

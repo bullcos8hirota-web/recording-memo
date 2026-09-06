@@ -52,7 +52,7 @@ export function UpdateAllButton({ onDone }: { onDone?: () => void }) {
 
       {results && (
         <div className="mt-2 text-left text-xs">
-          <p className="text-neutral-600 dark:text-neutral-300">
+          <p className="text-slate-700 dark:text-slate-200">
             {okCount}銘柄を更新しました。
             {failed.length > 0 && `${failed.length}銘柄は取れませんでした。`}
           </p>
@@ -62,7 +62,7 @@ export function UpdateAllButton({ onDone }: { onDone?: () => void }) {
             </p>
           ))}
           {failed.length > 0 && (
-            <p className="mt-1 text-neutral-500 dark:text-neutral-400">
+            <p className="mt-1 text-slate-600 dark:text-slate-300">
               取れなかった銘柄は、銘柄タブの「株価を貼り付ける」で今までどおり取り込めます。
             </p>
           )}

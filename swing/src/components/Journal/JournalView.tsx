@@ -74,7 +74,7 @@ export function JournalView() {
             description="振り返りを書き残すほど、次の判断が速くなります。"
             actions={<ExportButton trades={closed} />}
           >
-            <ul className="divide-y divide-neutral-200 dark:divide-neutral-800">
+            <ul className="divide-y divide-slate-200 dark:divide-slate-700">
               {closed.map((trade) => (
                 <JournalRow key={trade.id} trade={trade} />
               ))}
@@ -98,16 +98,16 @@ function JournalRow({ trade }: { trade: Trade }) {
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <div className="flex flex-wrap items-center gap-2">
-            <span className="font-mono text-sm text-neutral-500 dark:text-neutral-400">{trade.code}</span>
+            <span className="font-mono text-sm text-slate-600 dark:text-slate-300">{trade.code}</span>
             <span className="font-medium">{trade.name}</span>
           </div>
-          <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+          <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">
             {shortDate(trade.entryDate)} {price(trade.entryPrice)}円 → {shortDate(trade.exitDate)}{' '}
             {price(trade.exitPrice)}円 / {trade.shares.toLocaleString('ja-JP')}株
             {result.holdingDays !== null && ` / ${result.holdingDays}日`}
           </p>
           {trade.reason && (
-            <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">根拠: {trade.reason}</p>
+            <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">根拠: {trade.reason}</p>
           )}
         </div>
         <div className="text-right">
@@ -156,7 +156,7 @@ function JournalRow({ trade }: { trade: Trade }) {
         <button
           type="button"
           onClick={() => setEditing(true)}
-          className="mt-2 w-full rounded-lg bg-neutral-50 px-3 py-2 text-left text-sm text-neutral-600 transition hover:bg-neutral-100 dark:bg-neutral-800/60 dark:text-neutral-300 dark:hover:bg-neutral-800"
+          className="mt-2 w-full rounded-lg bg-slate-50 px-3 py-2 text-left text-sm text-slate-700 transition hover:bg-slate-100 dark:bg-slate-700/40 dark:text-slate-200 dark:hover:bg-slate-700"
         >
           {trade.review || '振り返りを書く'}
         </button>
@@ -185,10 +185,10 @@ function EquityChart({ points }: { points: { date: string; equity: number }[] })
         x2={width}
         y1={y(0)}
         y2={y(0)}
-        className="stroke-neutral-300 dark:stroke-neutral-700"
+        className="stroke-slate-300 dark:stroke-slate-600"
         strokeDasharray="4 4"
       />
-      <path d={path} fill="none" className="stroke-neutral-900 dark:stroke-neutral-100" strokeWidth={1.6} />
+      <path d={path} fill="none" className="stroke-slate-900 dark:stroke-slate-100" strokeWidth={1.6} />
     </svg>
   )
 }

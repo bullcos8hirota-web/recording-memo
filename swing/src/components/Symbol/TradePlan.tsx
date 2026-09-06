@@ -21,6 +21,7 @@ import {
 import {
   buttonClass,
   Card,
+  Disclosure,
   Field,
   inputClass,
   NumberField,
@@ -304,7 +305,7 @@ export function TradePlan({
 
           {entries.length > 0 && (
             <div className="mt-3">
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">
+              <p className="text-xs text-slate-600 dark:text-slate-300">
                 エントリー価格の候補（押すと上の欄に入ります）
               </p>
               <div className="mt-1 flex flex-wrap gap-2">
@@ -314,7 +315,7 @@ export function TradePlan({
                     type="button"
                     title={candidate.note}
                     onClick={() => setEntryInput(String(candidate.price))}
-                    className="rounded-full bg-neutral-100 px-3 py-1 text-xs font-medium text-neutral-700 transition hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
+                    className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700 transition hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-700"
                   >
                     {candidate.label}: {price(candidate.price)}円
                   </button>
@@ -325,7 +326,7 @@ export function TradePlan({
 
           {candidates.length > 0 && (
             <div className="mt-3">
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">
+              <p className="text-xs text-slate-600 dark:text-slate-300">
                 損切り価格の候補（押すと上の欄に入ります）
               </p>
             </div>
@@ -341,7 +342,7 @@ export function TradePlan({
                     setStopPinned(true)
                     setStopInput(String(candidate.price))
                   }}
-                  className="rounded-full bg-neutral-100 px-3 py-1 text-xs font-medium text-neutral-700 transition hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-200 dark:hover:bg-neutral-700"
+                  className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-700 transition hover:bg-slate-200 dark:bg-slate-700 dark:text-slate-200 dark:hover:bg-slate-700"
                 >
                   {candidate.label}: {price(candidate.price)}円
                 </button>
@@ -390,26 +391,30 @@ export function TradePlan({
                 />
               </div>
 
-              <dl className="mt-3 grid gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
-                <Row
-                  label="損切りまでの値幅"
-                  value={`${price(plan.riskPerShare)}円 (${percent(-plan.riskPercent)})`}
-                />
-                <Row
-                  label="利確までの値幅"
-                  value={`${price(plan.rewardPerShare)}円 (${percent(plan.rewardPercent)})`}
-                />
-                <Row
-                  help="risk-reward"
-                  label="リスクリワード"
-                  value={`1 : ${ratio(plan.rewardRatio)}`}
-                />
-                <Row
-                  help="commission"
-                  label="手数料(往復概算)"
-                  value={yen(entryFee + exitFee)}
-                />
-              </dl>
+              <div className="mt-2 border-t border-slate-200 pt-1 dark:border-slate-700">
+                <Disclosure summary="内訳を見る">
+                  <dl className="grid gap-x-6 gap-y-1 text-sm sm:grid-cols-2">
+                    <Row
+                      label="損切りまでの値幅"
+                      value={`${price(plan.riskPerShare)}円 (${percent(-plan.riskPercent)})`}
+                    />
+                    <Row
+                      label="利確までの値幅"
+                      value={`${price(plan.rewardPerShare)}円 (${percent(plan.rewardPercent)})`}
+                    />
+                    <Row
+                      help="risk-reward"
+                      label="リスクリワード"
+                      value={`1 : ${ratio(plan.rewardRatio)}`}
+                    />
+                    <Row
+                      help="commission"
+                      label="手数料(往復概算)"
+                      value={yen(entryFee + exitFee)}
+                    />
+                  </dl>
+                </Disclosure>
+              </div>
             </>
           )}
 
@@ -434,14 +439,14 @@ export function TradePlan({
           )}
 
           {shares > 0 && stopValid && !pending && (
-            <div className="mt-4 rounded-xl border border-neutral-200 p-3 dark:border-neutral-800">
+            <div className="mt-4 rounded-xl border border-slate-200 p-3 dark:border-slate-700">
               <h3 className="text-sm font-semibold">
                 {filled === null
                   ? '証券会社に入れる注文'
                   : '次に入れる注文（損切り）'}
               </h3>
               {filled !== null && (
-                <p className="mt-1 text-xs text-neutral-600 dark:text-neutral-300">
+                <p className="mt-1 text-xs text-slate-700 dark:text-slate-200">
                   {price(filled)}
                   円で買えたものとして計算し直しました。買い注文はもう要りません。
                 </p>
@@ -452,7 +457,7 @@ export function TradePlan({
                   」です。条件は揃っていません。
                 </p>
               )}
-              <ol className="mt-2 space-y-2 text-sm text-neutral-700 dark:text-neutral-300">
+              <ol className="mt-2 space-y-2 text-sm text-slate-700 dark:text-slate-200">
                 {filled === null && (
                   <li>
                     <span className="font-medium">1. 買い注文（今すぐ）</span>
@@ -510,16 +515,16 @@ export function TradePlan({
                 </button>
               )}
               {filled === null && (
-                <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
+                <p className="mt-2 text-xs text-slate-600 dark:text-slate-300">
                   買えたら、上の「エントリー価格」に実際の約定価格を入れ直してください。
                   2つめの売り注文の価格も、それに合わせて動きます（計算は要りません）。
                 </p>
               )}
-              <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+              <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
                 買いは「以上」、売りは「以下」です。逆にすると、下がったところで買う注文や、
                 上がったところで売る注文になります。
               </p>
-              <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+              <p className="mt-1 text-xs text-slate-600 dark:text-slate-300">
                 アプリの数字は手元のメモです。実際に売り買いするのは証券会社に出した注文だけなので、
                 {filled === null
                   ? '2つめを入れるまでが1セットです。'
@@ -530,7 +535,7 @@ export function TradePlan({
             </div>
           )}
 
-          <div className="mt-5 border-t border-neutral-200 pt-4 dark:border-neutral-800">
+          <div className="mt-5 border-t border-slate-200 pt-4 dark:border-slate-700">
             <div className="flex flex-wrap items-center gap-3">
               <button
                 type="button"
@@ -541,12 +546,12 @@ export function TradePlan({
                 この計画で建玉を記録
               </button>
               {saved && (
-                <span className="text-sm text-neutral-500 dark:text-neutral-400">
+                <span className="text-sm text-slate-600 dark:text-slate-300">
                   {saved}
                 </span>
               )}
             </div>
-            <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
+            <p className="mt-2 text-xs text-slate-600 dark:text-slate-300">
               記録するのは、実際にSBI証券で買えたあとにしてください。
               {settings.exitStyle === 'trailing'
                 ? '出口はトレーリング(設定タブ)なので、利確目標は記録しません。上の利確価格は「損切り幅の何倍か」を見るための目安です。'
@@ -569,8 +574,8 @@ function Row({
   help?: string
 }) {
   return (
-    <div className="flex justify-between gap-4 border-b border-dashed border-neutral-200 py-1 dark:border-neutral-800">
-      <dt className="flex items-center gap-1.5 text-neutral-500 dark:text-neutral-400">
+    <div className="flex justify-between gap-4 border-b border-dashed border-slate-200 py-1 dark:border-slate-700">
+      <dt className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
         {label}
         {help && <HelpButton term={help} label={label} />}
       </dt>
