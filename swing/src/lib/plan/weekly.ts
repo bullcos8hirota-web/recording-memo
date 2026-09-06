@@ -194,7 +194,7 @@ export function weeklyPlan(input: {
 
   // 新規の候補。落ちた理由は、落ちたぶんだけ残して見せる。
   const skipped: Skipped[] = []
-  const candidates: (OrderAction & { volumeOk: boolean })[] = []
+  const candidates: (OrderAction & { volumeOk: boolean; turnover: number })[] = []
   const riskBudget = Math.floor((settings.capital * settings.riskPercent) / 100)
 
   for (const stock of stocks) {
@@ -257,15 +257,23 @@ export function weeklyPlan(input: {
         snapshot.volumeAvg20 !== null && snapshot.volumeAvg20 > 0
           ? snapshot.volume >= snapshot.volumeAvg20
           : false,
+      // 出入りのしやすさ。点も出来高も並んだときは、売買代金が大きいほうを選ぶ。
+      // 薄い銘柄は、成行で出したときに思った値段で約定しない。
+      turnover: snapshot.turnoverAvg20 ?? 0,
     })
   }
 
-  candidates.sort((a, b) => b.score - a.score || Number(b.volumeOk) - Number(a.volumeOk))
+  candidates.sort(
+    (a, b) =>
+      b.score - a.score ||
+      Number(b.volumeOk) - Number(a.volumeOk) ||
+      b.turnover - a.turnover,
+  )
 
   const orders: OrderAction[] = []
   const riskCap = (settings.capital * MAX_TOTAL_RISK_PERCENT) / 100
   for (const candidate of candidates) {
-    const { volumeOk: _volumeOk, ...order } = candidate
+    const { volumeOk: _volumeOk, turnover: _turnover, ...order } = candidate
     if (orders.length >= MAX_NEW_ORDERS) {
       skipped.push({
         code: order.code,

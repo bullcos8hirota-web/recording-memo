@@ -54,6 +54,26 @@ describe('weeklyPlan / 新規の注文', () => {
     expect(order.shares).toBeGreaterThan(0)
   })
 
+  it('点も出来高も並んだら、売買代金が大きいほうを選ぶ', () => {
+    // 同じ値動きの2銘柄を作り、片方だけ出来高(=売買代金)を10倍にする。
+    const source = samples.find((sample) => sample.stock.code === 'SMPL1')!
+    const thin = source.bars.map((bar) => ({ ...bar, volume: bar.volume }))
+    const thick = source.bars.map((bar) => ({ ...bar, volume: bar.volume * 10 }))
+    const stocks: Stock[] = [
+      { ...source.stock, code: 'THIN', name: '薄いほう' },
+      { ...source.stock, code: 'THICK', name: '厚いほう' },
+    ]
+    const result = weeklyPlan({
+      stocks,
+      series: { THIN: thin, THICK: thick },
+      trades: [],
+      settings,
+      now,
+    })
+    expect(result.orders[0].code).toBe('THICK')
+    expect(result.skipped.find((item) => item.code === 'THIN')?.reason).toContain('週1銘柄')
+  })
+
   it('選ばなかった銘柄には理由が付く', () => {
     const result = plan()
     for (const item of result.skipped) expect(item.reason).not.toBe('')
