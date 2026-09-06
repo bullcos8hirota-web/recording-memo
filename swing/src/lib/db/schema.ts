@@ -32,6 +32,11 @@ export type Settings = {
   /** 新規登録時の売買単位。 */
   defaultLot: number
   feeConfig: FeeConfig
+  /**
+   * J-Quants API のキー。端末の中だけに置く。
+   * 「状態をコピー」の出力には入れない(あの文章は人に渡すため)。
+   */
+  jquantsApiKey?: string
   updatedAt: number
 }
 

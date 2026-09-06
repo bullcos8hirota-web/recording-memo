@@ -4,6 +4,7 @@ import {
   buildExitPlan,
   calculatePosition,
   entryCandidates,
+  trailingAdvice,
   stopCandidates,
 } from '../money/position'
 import { DEFAULT_FEE_CONFIG, STANDARD_PLAN_TIERS, capitalGainTax, tradeFee } from '../money/fees'
@@ -61,6 +62,30 @@ describe('fees', () => {
   it('利益にだけ税金がかかる', () => {
     expect(capitalGainTax(100_000)).toBe(20_315)
     expect(capitalGainTax(-50_000)).toBe(0)
+  })
+})
+
+describe('trailingAdvice', () => {
+  it('買値以上に届くなら上げる', () => {
+    expect(trailingAdvice(3200, 2999, 3148)).toEqual({ raiseTo: 3200, reason: 'raise' })
+  })
+
+  it('買値より下への引き上げはしない', () => {
+    // 実例: 買値3,148 / 損切り2,999 のときトレーリング目安は3,079だった。
+    // ここへ詰めると、負けが8,000円小さくなる代わりに、普通の押し目で切れる位置になる。
+    expect(trailingAdvice(3079, 2999, 3148)).toEqual({ raiseTo: null, reason: 'below-entry' })
+  })
+
+  it('今の損切りより下なら動かさない', () => {
+    expect(trailingAdvice(3076, 3079, 3148)).toEqual({ raiseTo: null, reason: 'not-higher' })
+  })
+
+  it('損切り未設定でも買値以上なら上げる', () => {
+    expect(trailingAdvice(3200, null, 3148)).toEqual({ raiseTo: 3200, reason: 'raise' })
+  })
+
+  it('計算できないときは何も勧めない', () => {
+    expect(trailingAdvice(null, 2999, 3148)).toEqual({ raiseTo: null, reason: 'no-data' })
   })
 })
 

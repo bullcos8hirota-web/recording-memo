@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react'
 import { useAppStore } from '../../stores/appStore'
 import { atr as atrSeries } from '../../lib/market/indicators'
-import { chandelierStop } from '../../lib/money/position'
+import { chandelierStop, trailingAdvice } from '../../lib/money/position'
 import { evaluateTrade, isClosed, type Trade } from '../../lib/money/trade'
 import { openExposure } from '../../lib/money/stats'
 import { earningsAlert } from '../../lib/market/earnings'
@@ -88,8 +88,9 @@ function PositionCard({ trade, bars }: { trade: Trade; bars: Bar[] }) {
   }, [bars, trade.entryDate, atrMultiple])
 
   // 損切りは上げるだけ。下げると許容していたはずの損失が広がってしまう。
-  const canRaiseStop =
-    trailing !== null && (trade.stopPrice === null || trailing > trade.stopPrice)
+  // さらに、上げるのは買値以上に届くときだけ(trailingAdvice を参照)。
+  const advice = trailingAdvice(trailing, trade.stopPrice, trade.entryPrice)
+  const raiseTo = advice.raiseTo
 
   const status = (() => {
     if (!last) return { tone: 'neutral' as const, text: '価格データがありません' }
@@ -159,11 +160,13 @@ function PositionCard({ trade, bars }: { trade: Trade; bars: Bar[] }) {
           label="トレーリング目安"
           value={trailing === null ? '—' : `${price(trailing)}円`}
           hint={
-            trailing === null
+            advice.reason === 'no-data'
               ? '高値からATR分下'
-              : canRaiseStop
+              : advice.reason === 'raise'
                 ? '損切りをここまで上げられます'
-                : '今の損切りより下。今週は動かしません'
+                : advice.reason === 'below-entry'
+                  ? `まだ買値(${price(trade.entryPrice)}円)より下。最初の損切りのままにします`
+                  : '今の損切りより下。今週は動かしません'
           }
         />
       </div>
@@ -249,16 +252,16 @@ function PositionCard({ trade, bars }: { trade: Trade; bars: Bar[] }) {
         >
           更新
         </button>
-        {canRaiseStop && (
+        {raiseTo !== null && (
           <button
             type="button"
             className={subtleButtonClass}
             onClick={() => {
-              setStopInput(String(trailing))
-              void updateTrade(trade.id, { stopPrice: trailing })
+              setStopInput(String(raiseTo))
+              void updateTrade(trade.id, { stopPrice: raiseTo })
             }}
           >
-            損切りを{price(trailing!)}円に上げる
+            損切りを{price(raiseTo)}円に上げる
           </button>
         )}
         {trade.targetPrice !== null && (

@@ -41,6 +41,13 @@ describe('buildWatchlistText', () => {
     expect(text).toContain('許容損失 20,000円(1%)')
   })
 
+  it('APIキーは書き出さない', () => {
+    // この文章は人に渡すもの。鍵が混ざると、貼った先に鍵まで渡ることになる。
+    const withKey = { ...settings, jquantsApiKey: 'SECRET-KEY-VALUE' }
+    const text = buildWatchlistText({ stocks, series, trades: [], settings: withKey, now })
+    expect(text).not.toContain('SECRET-KEY-VALUE')
+  })
+
   it('スコア順に並べ、判定と指標を書く', () => {
     const text = buildWatchlistText({ stocks, series, trades: [], settings, now })
     expect(text).toContain('【監視 5銘柄】')

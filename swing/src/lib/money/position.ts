@@ -240,6 +240,30 @@ export function stopCandidates(options: {
 }
 
 /** トレーリングストップ(シャンデリアエグジット)。含み益が乗ってから使う。 */
+export type TrailingAdvice = {
+  /** 上げてよい損切り価格。上げないときは null。 */
+  raiseTo: number | null
+  reason: 'raise' | 'no-data' | 'not-higher' | 'below-entry'
+}
+
+/**
+ * トレーリングで損切りを上げてよいかを決める。
+ *
+ * 上げるのは「上げた先が買値以上になる」ときだけ。買値より下で損切りを詰めても、
+ * 負けが少し小さくなる代わりに、普通の押し目で振り落とされる確率が跳ね上がる。
+ * 最初の損切りは「ここまでの負けは許容する」と決めた場所なので、途中で動かす必要はない。
+ */
+export function trailingAdvice(
+  trailing: number | null,
+  currentStop: number | null,
+  entryPrice: number,
+): TrailingAdvice {
+  if (trailing === null) return { raiseTo: null, reason: 'no-data' }
+  if (currentStop !== null && trailing <= currentStop) return { raiseTo: null, reason: 'not-higher' }
+  if (trailing < entryPrice) return { raiseTo: null, reason: 'below-entry' }
+  return { raiseTo: trailing, reason: 'raise' }
+}
+
 export function chandelierStop(
   highestSinceEntry: number,
   atrValue: number,
