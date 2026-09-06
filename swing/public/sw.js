@@ -1,4 +1,4 @@
-const CACHE_NAME = 'swing-trade-app-v2'
+const CACHE_NAME = 'swing-trade-app-v3'
 const SCOPE_URL = self.registration.scope
 const INDEX_URL = new URL('index.html', SCOPE_URL).href
 const APP_SHELL = [
@@ -57,6 +57,9 @@ self.addEventListener('fetch', (event) => {
     )
     return
   }
+
+  // 株価の中継は毎回取りに行く。キャッシュに残すと古い株価をつかむ。
+  if (url.pathname.startsWith(new URL('api/', SCOPE_URL).pathname)) return
 
   event.respondWith(
     caches.match(request).then(async (cached) => {

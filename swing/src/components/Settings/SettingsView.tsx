@@ -6,6 +6,7 @@ import { buttonClass, Card, NumberField, subtleButtonClass } from '../ui/Primiti
 import { usePwaInstall } from '../../lib/usePwaInstall'
 import { ReminderCard } from './ReminderCard'
 import { HistoryImportCard, SampleDataCard } from './DataCards'
+import { JQuantsCard } from './JQuantsCard'
 import { BUILD_ID } from '../../lib/version'
 
 export function SettingsView() {
@@ -160,6 +161,8 @@ export function SettingsView() {
           表示している金額は目安です。実際の手数料はSBI証券の最新の料金体系を確認してください。
         </p>
       </Card>
+
+      <JQuantsCard />
 
       <HistoryImportCard />
 

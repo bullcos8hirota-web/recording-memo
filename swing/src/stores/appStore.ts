@@ -49,6 +49,7 @@ type AppState = {
   removeStock: (code: string) => Promise<void>
   clearSeries: (code: string) => Promise<void>
   importBars: (code: string, bars: Bar[]) => Promise<number>
+  replaceBars: (code: string, bars: Bar[]) => Promise<number>
   addTrade: (input: Partial<Trade> & { code: string; entryDate: string; entryPrice: number; shares: number }) => Promise<Trade>
   updateTrade: (id: string, patch: Partial<Trade>) => Promise<void>
   removeTrade: (id: string) => Promise<void>
@@ -200,6 +201,21 @@ export const useAppStore = create<AppState>((set, get) => ({
     )
     set({ series: { ...get().series, [normalized]: merged } })
     return merged.length
+  },
+
+  /**
+   * 取り込んだ日足で丸ごと置き換える。J-Quantsの調整済み株価は分割をまたいでも
+   * 前後がつながっているので、手で貼った古い値を残すとかえって段差ができる。
+   */
+  async replaceBars(code, bars) {
+    const normalized = code.trim().toUpperCase()
+    const sorted = [...bars].sort((a, b) => a.date.localeCompare(b.date))
+    await persist(
+      () => db.series.put({ code: normalized, bars: sorted, updatedAt: Date.now() }),
+      () => set({ storageError: true }),
+    )
+    set({ series: { ...get().series, [normalized]: sorted } })
+    return sorted.length
   },
 
   async addTrade(input) {

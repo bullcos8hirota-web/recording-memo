@@ -7,6 +7,7 @@ import { earningsAlert } from '../../lib/market/earnings'
 import { affordability } from '../../lib/money/position'
 import { useIsPhone } from '../../lib/useMediaQuery'
 import { CopyStateButton } from './CopyStateButton'
+import { UpdateAllButton } from './UpdateAllButton'
 import { useRegisterSwipeStep } from '../../lib/swipeStepContext'
 import { useActiveChipScroll } from '../../lib/useActiveChipScroll'
 import {
@@ -107,7 +108,12 @@ export function ScreenerView({
         <Card
           title="ウォッチリスト"
           description="スコア順。チャートの状態を点数にしたもので、売買の指示ではありません。"
-          actions={<CopyStateButton />}
+          actions={
+            <div className="flex flex-col items-end gap-2">
+              <UpdateAllButton />
+              <CopyStateButton />
+            </div>
+          }
         >
           <div className="-mx-1 mb-3 flex gap-2 overflow-x-auto px-1 pb-1" data-no-swipe ref={chips}>
             {FILTERS.map((item) => (
