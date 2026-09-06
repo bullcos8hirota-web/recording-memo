@@ -121,6 +121,46 @@ describe('weeklyPlan / 新規の注文', () => {
     expect(result.pending.map((item) => item.code)).toContain('SMPL1')
   })
 
+  it('証券会社に出してある注文も、今週の1件として数える', () => {
+    // 注文中の銘柄があるあいだは、別の銘柄の新規注文を勧めない。
+    const stocks = allStocks.map((stock) =>
+      stock.code === 'SMPL2'
+        ? {
+            ...stock,
+            pendingOrder: {
+              trigger: 1_200,
+              shares: 100,
+              stopPrice: 1_100,
+              expiresOn: '2099-01-01',
+              placedOn: '2026-01-01',
+            },
+          }
+        : stock,
+    )
+    const result = plan({ stocks })
+    expect(result.orders).toHaveLength(0)
+    expect(result.skipped.some((item) => item.reason.includes('すでに'))).toBe(true)
+  })
+
+  it('期限切れの注文は枠を使っていない', () => {
+    const stocks = allStocks.map((stock) =>
+      stock.code === 'SMPL2'
+        ? {
+            ...stock,
+            pendingOrder: {
+              trigger: 1_200,
+              shares: 100,
+              stopPrice: 1_100,
+              expiresOn: '2020-01-01',
+              placedOn: '2020-01-01',
+            },
+          }
+        : stock,
+    )
+    const result = plan({ stocks })
+    expect(result.orders).toHaveLength(1)
+  })
+
   it('資金が小さければ買える銘柄が無く、理由が残る', () => {
     const result = plan({ settings: { ...settings, capital: 200_000 } })
     expect(result.orders).toHaveLength(0)

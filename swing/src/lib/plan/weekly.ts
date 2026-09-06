@@ -272,13 +272,20 @@ export function weeklyPlan(input: {
 
   const orders: OrderAction[] = []
   const riskCap = (settings.capital * MAX_TOTAL_RISK_PERCENT) / 100
+  // 証券会社に出してある注文も、今週使った枠として数える。約定していなくても
+  // 「今週はもう1件出した」ことに変わりはない。期限切れのものは数えない。
+  const placed = pending.filter((item) => !item.expired)
+
   for (const candidate of candidates) {
     const { volumeOk: _volumeOk, turnover: _turnover, ...order } = candidate
-    if (orders.length >= MAX_NEW_ORDERS) {
+    if (orders.length + placed.length >= MAX_NEW_ORDERS) {
+      const already = placed.map((item) => item.name).join('・')
       skipped.push({
         code: order.code,
         name: order.name,
-        reason: `新規は週${MAX_NEW_ORDERS}銘柄までにしています。来週また見ます。`,
+        reason: already
+          ? `今週はすでに${already}の注文を出しています。新規は週${MAX_NEW_ORDERS}銘柄までです。`
+          : `新規は週${MAX_NEW_ORDERS}銘柄までにしています。来週また見ます。`,
       })
       continue
     }
