@@ -7,6 +7,7 @@ import { usePwaInstall } from '../../lib/usePwaInstall'
 import { ReminderCard } from './ReminderCard'
 import { HistoryImportCard, SampleDataCard } from './DataCards'
 import { JQuantsCard } from './JQuantsCard'
+import { ThemeCard } from './ThemeCard'
 import { BackupCard } from './BackupCard'
 import { BUILD_ID } from '../../lib/version'
 
@@ -20,6 +21,8 @@ export function SettingsView() {
   return (
     <div className="space-y-4">
       <InstallCard />
+
+      <ThemeCard />
 
       <ReminderCard />
 

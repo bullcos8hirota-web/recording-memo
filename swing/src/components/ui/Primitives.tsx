@@ -14,8 +14,10 @@ export function Card({
 }) {
   return (
     <section className="rounded-2xl border border-slate-200 bg-white p-3.5 shadow-sm dark:border-slate-700 dark:bg-slate-800 sm:p-5">
+      {/* 狭い画面では、見出しとボタンを横に並べない。
+          並べると見出しが2行に折り返して読みにくくなる。 */}
       {(title || actions) && (
-        <header className="mb-3 flex items-start justify-between gap-3">
+        <header className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-3">
           <div className="min-w-0">
             {title && <h2 className="text-base font-semibold">{title}</h2>}
             {description && (

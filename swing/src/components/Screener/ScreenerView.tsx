@@ -113,7 +113,6 @@ export function ScreenerView({
 
         <Card
           title="ウォッチリスト"
-          description="スコア順。売買の指示ではありません。"
           actions={
             <div className="flex items-center gap-2">
               <UpdateAllButton />
