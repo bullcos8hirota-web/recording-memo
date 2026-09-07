@@ -181,6 +181,87 @@ describe('weeklyPlan / 新規の注文', () => {
   })
 })
 
+describe('weeklyPlan / 注文中の見張り', () => {
+  const withOrder = (patch: Record<string, unknown> = {}, order: Record<string, unknown> = {}) =>
+    allStocks.map((stock) =>
+      stock.code === 'SMPL1'
+        ? {
+            ...stock,
+            ...patch,
+            pendingOrder: {
+              trigger: 3_300,
+              shares: 100,
+              stopPrice: 3_100,
+              expiresOn: '2099-01-01',
+              placedOn: '2026-01-01',
+              ...order,
+            },
+          }
+        : stock,
+    )
+
+  const inDays = (days: number) => {
+    const date = new Date(now)
+    date.setDate(date.getDate() + days)
+    return date.toISOString().slice(0, 10)
+  }
+
+  it('期限までに決算があれば取り消しを勧める', () => {
+    const result = plan({ stocks: withOrder({ earningsDate: inDays(3) }) })
+    const item = result.pending.find((entry) => entry.code === 'SMPL1')
+    expect(item?.alert?.level).toBe('cancel')
+    expect(item?.alert?.message).toContain('決算発表')
+    // 手を動かすことがあるので「何もしない週」にはしない
+    expect(result.nothingToDo).toBe(false)
+  })
+
+  it('期限までに権利落ちがあれば取り消しを勧める', () => {
+    const result = plan({ stocks: withOrder({ exRightsDate: inDays(5) }) })
+    expect(result.pending[0].alert?.level).toBe('cancel')
+    expect(result.pending[0].alert?.message).toContain('権利確定日')
+  })
+
+  it('期限より後の決算は関係ない', () => {
+    const result = plan({
+      stocks: withOrder({ earningsDate: inDays(30) }, { expiresOn: inDays(4) }),
+    })
+    expect(result.pending[0].alert?.level).not.toBe('cancel')
+  })
+
+  it('条件が崩れたら知らせるが、取り消しは勧めない', () => {
+    // 条件を満たさない銘柄(下降トレンドのサンプル)に注文を出してある状態にする
+    const stocks = allStocks.map((stock) =>
+      stock.code === 'SMPL3'
+        ? {
+            ...stock,
+            pendingOrder: {
+              trigger: 2_500,
+              shares: 100,
+              stopPrice: 2_300,
+              expiresOn: '2099-01-01',
+              placedOn: '2026-01-01',
+              scoreAtOrder: 88,
+            },
+          }
+        : stock,
+    )
+    const item = plan({ stocks }).pending.find((entry) => entry.code === 'SMPL3')
+    expect(item?.alert?.level).toBe('notice')
+    expect(item?.alert?.message).toContain('注文時のスコア88')
+    expect(item?.alert?.message).toContain('期限切れを待つのが既定')
+  })
+
+  it('条件が揃ったままなら何も言わない', () => {
+    expect(plan({ stocks: withOrder() }).pending[0].alert).toBeNull()
+  })
+
+  it('期限切れの注文は判定しない', () => {
+    const result = plan({ stocks: withOrder({ earningsDate: inDays(3) }, { expiresOn: '2020-01-01' }) })
+    expect(result.pending[0].expired).toBe(true)
+    expect(result.pending[0].alert).toBeNull()
+  })
+})
+
 describe('weeklyPlan / 建玉', () => {
   it('損切りが未設定なら、まずそれを促す', () => {
     const result = plan({ trades: [trade({ stopPrice: null })] })

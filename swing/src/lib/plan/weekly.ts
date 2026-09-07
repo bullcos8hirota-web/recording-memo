@@ -46,6 +46,13 @@ export type OrderAction = {
   earningsUnknown: boolean
 }
 
+/** 注文中の銘柄について、取り消しを勧めるか、事実だけ知らせるか。 */
+export type PendingAlert = {
+  /** cancel は取り消しを勧める。notice は判断材料を出すだけ。 */
+  level: 'cancel' | 'notice'
+  message: string
+}
+
 /** すでに証券会社に出してある注文。 */
 export type PendingAction = {
   code: string
@@ -55,6 +62,8 @@ export type PendingAction = {
   stopPrice: number
   expiresOn: string
   expired: boolean
+  /** 期限までに起きることや、条件が崩れたこと。無ければ null。 */
+  alert: PendingAlert | null
 }
 
 export type Skipped = { code: string; name: string; reason: string }
@@ -76,6 +85,57 @@ export const MAX_NEW_ORDERS = 1
 export const MAX_TOTAL_RISK_PERCENT = 3
 
 const yen = (value: number): string => `${Math.round(value).toLocaleString('ja-JP')}円`
+
+/** 日付が期間内に入るか。両端を含む。 */
+const within = (date: string | null | undefined, from: string, to: string): boolean =>
+  Boolean(date) && date! >= from && date! <= to
+
+/**
+ * 注文中の銘柄に、何か言うことがあるか。
+ *
+ * 期限までに決算や権利落ちを挟むなら、約定した足でそれをまたぐことになる。
+ * 損切りを飛び越えて始まりうるので、ここは取り消しを勧めて構わない。
+ *
+ * 条件が崩れた場合は言い切らない。逆指値の買いは「上がったときだけ買う」注文なので、
+ * 約定するということは形が立て直ったということでもある。取り消せばその上昇を取り逃す。
+ * どちらが正しいかは後にならないと分からないので、事実だけ出して判断は人に返す。
+ */
+function pendingAlert(
+  stock: Stock,
+  order: NonNullable<Stock['pendingOrder']>,
+  bars: Bar[],
+  now: Date,
+): PendingAlert | null {
+  const from = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(
+    now.getDate(),
+  ).padStart(2, '0')}`
+
+  if (within(stock.earningsDate, from, order.expiresOn)) {
+    return {
+      level: 'cancel',
+      message: `注文の期限(${order.expiresOn})までに決算発表(${stock.earningsDate})があります。約定すると決算をまたぐので、取り消してください。`,
+    }
+  }
+  if (within(stock.exRightsDate, from, order.expiresOn)) {
+    return {
+      level: 'cancel',
+      message: `注文の期限(${order.expiresOn})までに権利確定日(${stock.exRightsDate})があります。翌営業日に配当の分だけ下がるので、取り消してください。`,
+    }
+  }
+
+  if (bars.length < 30) return null
+  const { verdict, score } = analyze(bars)
+  if (verdict === 'ready') return null
+
+  const before = order.scoreAtOrder
+  return {
+    level: 'notice',
+    message:
+      `${before === undefined ? `スコアが${score}まで下がり` : `注文時のスコア${before}が${score}まで下がり`}、` +
+      `買う条件から外れました。${order.trigger.toLocaleString('ja-JP')}円を超えたときだけ約定するので、` +
+      'そのまま期限切れを待つのが既定です。取り消すかどうかは、あなたの判断です。',
+  }
+}
 
 export function weeklyPlan(input: {
   stocks: Stock[]
@@ -180,6 +240,7 @@ export function weeklyPlan(input: {
   for (const stock of stocks) {
     const order = stock.pendingOrder
     if (!order) continue
+    const expired = order.expiresOn < today
     pending.push({
       code: stock.code,
       name: stock.name,
@@ -187,7 +248,8 @@ export function weeklyPlan(input: {
       shares: order.shares,
       stopPrice: order.stopPrice,
       expiresOn: order.expiresOn,
-      expired: order.expiresOn < today,
+      expired,
+      alert: expired ? null : pendingAlert(stock, order, series[stock.code] ?? [], now),
     })
     totalRisk += Math.max(0, order.trigger - order.stopPrice) * order.shares
   }
@@ -304,7 +366,7 @@ export function weeklyPlan(input: {
   const nothingToDo =
     orders.length === 0 &&
     positions.every((item) => item.kind === 'hold-stop' && item.warnings.length === 0) &&
-    pending.every((item) => !item.expired)
+    pending.every((item) => !item.expired && item.alert?.level !== 'cancel')
 
   return { positions, pending, orders, skipped, totalRisk, nothingToDo }
 }

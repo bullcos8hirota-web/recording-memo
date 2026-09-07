@@ -507,6 +507,7 @@ export function TradePlan({
                         stopPrice: plan.stop,
                         expiresOn: comingFriday(),
                         placedOn: today(),
+                        scoreAtOrder: analysis?.score,
                       },
                     })
                   }

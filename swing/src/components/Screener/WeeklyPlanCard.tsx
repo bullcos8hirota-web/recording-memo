@@ -113,6 +113,7 @@ export function WeeklyPlanCard({ onOpen }: { onOpen: (code: string) => void }) {
                     stopPrice: order.stopPrice,
                     expiresOn: comingFriday(),
                     placedOn: today(),
+                    scoreAtOrder: order.score,
                   },
                 })
               }
@@ -124,26 +125,50 @@ export function WeeklyPlanCard({ onOpen }: { onOpen: (code: string) => void }) {
       ))}
 
       {/* 証券会社に出してある注文 */}
-      {plan.pending.map((item) => (
-        <button
-          key={item.code}
-          type="button"
-          onClick={() => onOpen(item.code)}
-          className={`mb-3 block w-full rounded-xl px-3 py-2.5 text-left text-sm ${
-            item.expired
-              ? 'bg-amber-100 text-amber-900 dark:bg-amber-950/50 dark:text-amber-200'
-              : 'bg-sky-100 text-sky-900 dark:bg-sky-950/50 dark:text-sky-200'
-          }`}
-        >
-          <span className="font-medium">
-            {item.name}：{item.expired ? '注文の期限切れ' : '注文中'}
-          </span>
-          <span className="mt-0.5 block tabular-nums">
-            逆指値 {price(item.trigger)}円以上 / {item.shares.toLocaleString('ja-JP')}株 /{' '}
-            {shortDate(item.expiresOn)}まで
-          </span>
-        </button>
-      ))}
+      {plan.pending.map((item) => {
+        const warn = item.expired || item.alert?.level === 'cancel'
+        return (
+          <div
+            key={item.code}
+            className={`mb-3 rounded-xl px-3 py-2.5 text-sm ${
+              warn
+                ? 'bg-amber-100 text-amber-900 dark:bg-amber-950/50 dark:text-amber-200'
+                : 'bg-sky-100 text-sky-900 dark:bg-sky-950/50 dark:text-sky-200'
+            }`}
+          >
+            <button
+              type="button"
+              onClick={() => onOpen(item.code)}
+              className="block w-full text-left"
+            >
+              <span className="font-medium">
+                {item.name}：
+                {item.expired
+                  ? '注文の期限切れ'
+                  : item.alert?.level === 'cancel'
+                    ? '注文を取り消してください'
+                    : '注文中'}
+              </span>
+              <span className="mt-0.5 block tabular-nums">
+                逆指値 {price(item.trigger)}円以上 / {item.shares.toLocaleString('ja-JP')}株 /{' '}
+                {shortDate(item.expiresOn)}まで
+              </span>
+            </button>
+
+            {item.alert && <p className="mt-1.5">{item.alert.message}</p>}
+
+            {(item.expired || item.alert) && (
+              <button
+                type="button"
+                className={`${subtleButtonClass} mt-2 w-full`}
+                onClick={() => void updateStock(item.code, { pendingOrder: null })}
+              >
+                {item.expired ? '消す' : '注文を取り消した'}
+              </button>
+            )}
+          </div>
+        )
+      })}
 
       {/* 手当てが要る建玉 */}
       {acting.map((item) => (

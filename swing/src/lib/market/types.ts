@@ -20,6 +20,8 @@ export type PendingOrder = {
   expiresOn: string
   /** 注文を出した日(YYYY-MM-DD)。 */
   placedOn: string
+  /** 注文を出したときのスコア。あとで「崩れたか」を比べるために残す。 */
+  scoreAtOrder?: number
 }
 
 /** ウォッチリストに登録した銘柄。 */
