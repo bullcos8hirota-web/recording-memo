@@ -1,7 +1,8 @@
 import { useState } from 'react'
 import { useAppStore } from '../../stores/appStore'
-import { daysAgo, fetchDailyBars } from '../../lib/market/jquants'
+import { daysAgo, fetchDailyBars, fetchEarningsDate } from '../../lib/market/jquants'
 import { updateSeries, type UpdateResult } from '../../lib/market/updateSeries'
+import { today } from '../../lib/format'
 import { subtleButtonClass } from '../ui/Primitives'
 
 /** 初回に取りに行く期間。指標は80本あれば足りるので、1年分あれば十分。 */
@@ -15,24 +16,44 @@ export function UpdateAllButton({ onDone }: { onDone?: () => void }) {
   const stocks = useAppStore((s) => s.stocks)
   const apiKey = useAppStore((s) => s.settings.jquantsApiKey ?? '')
   const replaceBars = useAppStore((s) => s.replaceBars)
-  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null)
+  const updateStock = useAppStore((s) => s.updateStock)
+  const [progress, setProgress] = useState<{
+    done: number
+    total: number
+    label: string
+  } | null>(null)
   const [results, setResults] = useState<UpdateResult[] | null>(null)
 
   if (!apiKey) return null
 
   const run = async () => {
     setResults(null)
-    setProgress({ done: 0, total: stocks.length })
+    setProgress({ done: 0, total: stocks.length, label: '株価を更新中' })
     const from = daysAgo(HISTORY_DAYS)
     const to = daysAgo(0)
     const done = await updateSeries({
       targets: stocks.map((stock) => ({ code: stock.code, name: stock.name })),
       fetchBars: (code) => fetchDailyBars({ apiKey, code, from, to }),
       save: (code, bars) => replaceBars(code, bars),
-      onProgress: (count, total) => setProgress({ done: count, total }),
+      onProgress: (count, total) =>
+        setProgress({ done: count, total, label: '株価を更新中' }),
     })
-    setProgress(null)
     setResults(done)
+
+    // 決算発表日は、無いものと過ぎたものだけ取りに行く。一度入れば次の決算まで変わらない。
+    const now = today()
+    const stale = stocks.filter((stock) => !stock.earningsDate || stock.earningsDate < now)
+    for (const [index, stock] of stale.entries()) {
+      setProgress({ done: index + 1, total: stale.length, label: '決算発表日を調べています' })
+      try {
+        const date = await fetchEarningsDate({ apiKey, code: stock.code, today: now })
+        if (date) await updateStock(stock.code, { earningsDate: date })
+      } catch {
+        // 取れなくても株価の更新は済んでいる。決算日は手で入れられる。
+      }
+    }
+
+    setProgress(null)
     onDone?.()
   }
 
@@ -47,7 +68,7 @@ export function UpdateAllButton({ onDone }: { onDone?: () => void }) {
         onClick={() => void run()}
         disabled={progress !== null || stocks.length === 0}
       >
-        {progress ? `更新中 ${progress.done}/${progress.total}` : '全銘柄を更新'}
+        {progress ? `${progress.label} ${progress.done}/${progress.total}` : '全銘柄を更新'}
       </button>
 
       {results && (

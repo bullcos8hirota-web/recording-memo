@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { fetchDailyBars, JQuantsError, rowsToBars } from '../market/jquants'
+import { fetchDailyBars, JQuantsError, nextEarningsDate, rowsToBars } from '../market/jquants'
 
 const row = (date: string, close: number, extra: Record<string, unknown> = {}) => ({
   Date: date,
@@ -111,5 +111,49 @@ describe('fetchDailyBars', () => {
       fetchDailyBars({ ...base, apiKey: '', fetchImpl: fetchImpl as unknown as typeof fetch }),
     ).rejects.toMatchObject({ kind: 'auth' })
     expect(fetchImpl).not.toHaveBeenCalled()
+  })
+})
+
+
+describe('nextEarningsDate', () => {
+  const today = '2026-09-13'
+
+  it('今日以降でいちばん早い予定日を返す', () => {
+    const rows = [
+      { PubDate: '2026-05-01', SchDate: '2026-11-06', FQName: '2Q', FYE: '0331' },
+      { PubDate: '2026-05-01', SchDate: '2027-02-05', FQName: '3Q', FYE: '0331' },
+    ]
+    expect(nextEarningsDate(rows, today)).toBe('2026-11-06')
+  })
+
+  it('予定日が変更されていたら、後から公表されたほうを使う', () => {
+    const rows = [
+      { PubDate: '2026-05-01', SchDate: '2026-11-06', FQName: '2Q', FYE: '0331' },
+      { PubDate: '2026-09-01', SchDate: '2026-11-13', FQName: '2Q', FYE: '0331' },
+    ]
+    expect(nextEarningsDate(rows, today)).toBe('2026-11-13')
+  })
+
+  it('未定(空文字)に変更されたら、その区分は使わない', () => {
+    const rows = [
+      { PubDate: '2026-05-01', SchDate: '2026-11-06', FQName: '2Q', FYE: '0331' },
+      { PubDate: '2026-09-01', SchDate: '', FQName: '2Q', FYE: '0331' },
+      { PubDate: '2026-05-01', SchDate: '2027-02-05', FQName: '3Q', FYE: '0331' },
+    ]
+    expect(nextEarningsDate(rows, today)).toBe('2027-02-05')
+  })
+
+  it('過ぎた予定日は返さない', () => {
+    const rows = [{ PubDate: '2026-05-01', SchDate: '2026-08-06', FQName: '1Q', FYE: '0331' }]
+    expect(nextEarningsDate(rows, today)).toBeNull()
+  })
+
+  it('今日ちょうどなら返す', () => {
+    const rows = [{ PubDate: '2026-05-01', SchDate: today, FQName: '2Q', FYE: '0331' }]
+    expect(nextEarningsDate(rows, today)).toBe(today)
+  })
+
+  it('空なら null', () => {
+    expect(nextEarningsDate([], today)).toBeNull()
   })
 })
