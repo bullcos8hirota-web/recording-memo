@@ -250,14 +250,20 @@ export function nextEarningsDate(rows: EarningsRow[], today: string): string | n
   return ahead[0] ?? null
 }
 
-/** 1銘柄の次回決算発表日。分からなければ null。 */
+/**
+ * 1銘柄の次回決算発表日。
+ *
+ * 日付が決まらなかったときに、そもそもデータが無いのか、過去の予定しか無いのかで
+ * 意味が違う(前者はこの銘柄の情報が取れていない、後者は次回がまだ公表されていない)。
+ * 区別できるように件数も返す。
+ */
 export async function fetchEarningsDate(input: {
   apiKey: string
   code: string
   today: string
   fetchImpl?: FetchLike
   allowRelay?: boolean
-}): Promise<string | null> {
+}): Promise<{ date: string | null; rows: number }> {
   const rows = await fetchAll({
     apiKey: input.apiKey,
     path: EARNINGS_PATH,
@@ -266,7 +272,10 @@ export async function fetchEarningsDate(input: {
     fetchImpl: input.fetchImpl,
     allowRelay: input.allowRelay,
   })
-  return nextEarningsDate(rows as EarningsRow[], input.today)
+  return {
+    date: nextEarningsDate(rows as EarningsRow[], input.today),
+    rows: rows.length,
+  }
 }
 
 /**

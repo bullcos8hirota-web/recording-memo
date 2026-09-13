@@ -32,6 +32,7 @@ export function UpdateAllButton({ onDone }: { onDone?: () => void }) {
     tried: number
     filled: number
     unpublished: number
+    missing: number
     failure: string | null
   } | null>(null)
 
@@ -57,17 +58,21 @@ export function UpdateAllButton({ onDone }: { onDone?: () => void }) {
     const stale = stocks.filter((stock) => !stock.earningsDate || stock.earningsDate < now)
     let filled = 0
     let unpublished = 0
+    let missing = 0
     let failure: string | null = null
     for (const [index, stock] of stale.entries()) {
       setProgress({ done: index + 1, total: stale.length, label: '決算発表日を調べています' })
       try {
-        const date = await fetchEarningsDate({ apiKey, code: stock.code, today: now })
-        if (date) {
-          await updateStock(stock.code, { earningsDate: date })
+        const found = await fetchEarningsDate({ apiKey, code: stock.code, today: now })
+        if (found.date) {
+          await updateStock(stock.code, { earningsDate: found.date })
           filled += 1
-        } else {
-          // データは返ったが、先の予定がまだ公表されていない。
+        } else if (found.rows > 0) {
+          // 過去の予定は返ったが、次回はまだ公表されていない。
           unpublished += 1
+        } else {
+          // この銘柄のデータが1件も返らない。参照できる範囲の外かもしれない。
+          missing += 1
         }
       } catch (error) {
         // 握りつぶすと「入らない理由」が分からなくなる。1件目の理由を残して打ち切る。
@@ -75,7 +80,9 @@ export function UpdateAllButton({ onDone }: { onDone?: () => void }) {
         if (error instanceof JQuantsError && (error.kind === 'rate' || error.kind === 'auth')) break
       }
     }
-    setEarnings(stale.length > 0 ? { filled, unpublished, failure, tried: stale.length } : null)
+    setEarnings(
+      stale.length > 0 ? { filled, unpublished, missing, failure, tried: stale.length } : null,
+    )
 
     setProgress(null)
     onDone?.()
@@ -110,7 +117,9 @@ export function UpdateAllButton({ onDone }: { onDone?: () => void }) {
             <p className="mt-1 text-slate-600 dark:text-slate-300">
               決算発表日：{earnings.filled}銘柄に入りました。
               {earnings.unpublished > 0 &&
-                `${earnings.unpublished}銘柄は次回の予定がまだ公表されていません。`}
+                `${earnings.unpublished}銘柄は過去の予定しか返らず、次回がまだ公表されていません。`}
+              {earnings.missing > 0 &&
+                `${earnings.missing}銘柄はデータが1件も返りませんでした（プランで参照できる範囲の外かもしれません）。`}
               {earnings.failure && `取得に失敗：${earnings.failure}`}
             </p>
           )}
