@@ -5,7 +5,10 @@
  * 同じオリジンから呼べる入口を1つ置く。APIキーは受け取ったリクエストのヘッダを
  * そのまま渡すだけで、ここには保存しない。転送先は株価の1エンドポイントに固定する。
  */
-const UPSTREAM = 'https://api.jquants.com/v2/equities/bars/daily'
+const BASE = 'https://api.jquants.com'
+/** 通してよいAPIはこれだけ。中継を万能の踏み台にしない。 */
+const ALLOWED_PATHS = new Set(['/v2/equities/bars/daily', '/v2/equities/master'])
+const DEFAULT_PATH = '/v2/equities/bars/daily'
 const ALLOWED_PARAMS = new Set(['code', 'date', 'from', 'to', 'pagination_key'])
 
 export default async function handler(request, response) {
@@ -28,8 +31,15 @@ export default async function handler(request, response) {
     params.set(key, Array.isArray(value) ? value[0] : String(value))
   }
 
+  const requested = request.query?.path
+  const path = typeof requested === 'string' ? requested : DEFAULT_PATH
+  if (!ALLOWED_PATHS.has(path)) {
+    response.status(400).json({ message: 'unsupported path' })
+    return
+  }
+
   try {
-    const upstream = await fetch(`${UPSTREAM}?${params.toString()}`, {
+    const upstream = await fetch(`${BASE}${path}?${params.toString()}`, {
       headers: { 'x-api-key': apiKey },
     })
     const body = await upstream.text()

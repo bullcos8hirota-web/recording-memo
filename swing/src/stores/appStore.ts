@@ -45,7 +45,13 @@ type AppState = {
   load: () => Promise<void>
   select: (code: string | null) => void
   saveSettings: (patch: Partial<Settings>) => Promise<void>
-  addStock: (input: { code: string; name: string; lot?: number; memo?: string }) => Promise<void>
+  addStock: (input: {
+    code: string
+    name: string
+    lot?: number
+    memo?: string
+    sector?: string
+  }) => Promise<void>
   updateStock: (code: string, patch: Partial<Stock>) => Promise<void>
   removeStock: (code: string) => Promise<void>
   clearSeries: (code: string) => Promise<void>
@@ -135,7 +141,7 @@ export const useAppStore = create<AppState>((set, get) => ({
     set({ settings: next })
   },
 
-  async addStock({ code, name, lot, memo }) {
+  async addStock({ code, name, lot, memo, sector }) {
     const normalized = code.trim().toUpperCase()
     if (!normalized) return
     const existing = get().stocks.find((s) => s.code === normalized)
@@ -144,6 +150,7 @@ export const useAppStore = create<AppState>((set, get) => ({
       name: name.trim() || normalized,
       lot: lot ?? existing?.lot ?? get().settings.defaultLot,
       memo: memo ?? existing?.memo,
+      sector: sector ?? existing?.sector,
       demo: existing?.demo,
       createdAt: existing?.createdAt ?? Date.now(),
     }

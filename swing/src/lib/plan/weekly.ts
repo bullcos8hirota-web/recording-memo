@@ -254,6 +254,13 @@ export function weeklyPlan(input: {
     totalRisk += Math.max(0, order.trigger - order.stopPrice) * order.shares
   }
 
+  // すでに抱えている業種。同じ業種を並べると、materialが1つ動いただけで全部やられる。
+  const takenSectors = new Map<string, string>()
+  for (const code of [...held, ...pending.map((item) => item.code)]) {
+    const sector = stocks.find((stock) => stock.code === code)?.sector
+    if (sector) takenSectors.set(sector, stocks.find((stock) => stock.code === code)!.name)
+  }
+
   // 新規の候補。落ちた理由は、落ちたぶんだけ残して見せる。
   const skipped: Skipped[] = []
   const candidates: (OrderAction & { volumeOk: boolean; turnover: number })[] = []
@@ -272,6 +279,15 @@ export function weeklyPlan(input: {
         code: stock.code,
         name: stock.name,
         reason: `決算発表が${earnings.days}日後（${stock.earningsDate}）。損切りを飛び越えて始まることがあるので見送ります。`,
+      })
+      continue
+    }
+
+    if (stock.sector && takenSectors.has(stock.sector)) {
+      skipped.push({
+        code: stock.code,
+        name: stock.name,
+        reason: `${stock.sector}では ${takenSectors.get(stock.sector)} を持っています。同じ業種は1つまでにしています（同じ材料でまとめてやられるため）。`,
       })
       continue
     }
@@ -361,6 +377,8 @@ export function weeklyPlan(input: {
     }
     orders.push(order)
     totalRisk += order.risk
+    const sector = stocks.find((stock) => stock.code === order.code)?.sector
+    if (sector) takenSectors.set(sector, order.name)
   }
 
   const nothingToDo =
