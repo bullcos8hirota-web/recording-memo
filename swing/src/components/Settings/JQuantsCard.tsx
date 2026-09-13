@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useAppStore } from '../../stores/appStore'
-import { daysAgo, fetchDailyBars } from '../../lib/market/jquants'
+import { daysAgo, fetchDailyBars, fetchMaster } from '../../lib/market/jquants'
+import { shortCode } from '../../lib/plan/screener'
 import { shortDate } from '../../lib/format'
 import { Card, inputClass, subtleButtonClass } from '../ui/Primitives'
 
@@ -11,6 +12,9 @@ import { Card, inputClass, subtleButtonClass } from '../ui/Primitives'
 export function JQuantsCard() {
   const settings = useAppStore((s) => s.settings)
   const saveSettings = useAppStore((s) => s.saveSettings)
+  const stocks = useAppStore((s) => s.stocks)
+  const updateStock = useAppStore((s) => s.updateStock)
+  const [naming, setNaming] = useState(false)
   const [input, setInput] = useState(settings.jquantsApiKey ?? '')
   const [reveal, setReveal] = useState(false)
   const [checking, setChecking] = useState(false)
@@ -39,6 +43,30 @@ export function JQuantsCard() {
       setResult({ ok: false, text: error instanceof Error ? error.message : String(error) })
     } finally {
       setChecking(false)
+    }
+  }
+
+  // 登録済みの銘柄に、正式な会社名と業種を入れる。手入力の揺れや誤字もここで直る。
+  const fillNames = async () => {
+    setNaming(true)
+    setResult(null)
+    try {
+      const master = new Map(
+        (await fetchMaster({ apiKey: saved })).map((row) => [shortCode(row.code), row]),
+      )
+      let updated = 0
+      for (const stock of stocks) {
+        const info = master.get(shortCode(stock.code))
+        if (!info) continue
+        if (stock.name === info.name && stock.sector === info.sector) continue
+        await updateStock(stock.code, { name: info.name, sector: info.sector })
+        updated += 1
+      }
+      setResult({ ok: true, text: `${updated}銘柄の会社名と業種を入れました。` })
+    } catch (error) {
+      setResult({ ok: false, text: error instanceof Error ? error.message : String(error) })
+    } finally {
+      setNaming(false)
     }
   }
 
@@ -77,6 +105,16 @@ export function JQuantsCard() {
         >
           {checking ? '確認中…' : '接続を確認'}
         </button>
+        {saved && stocks.length > 0 && (
+          <button
+            type="button"
+            className={subtleButtonClass}
+            onClick={() => void fillNames()}
+            disabled={naming}
+          >
+            {naming ? '取得中…' : '会社名と業種を入れる'}
+          </button>
+        )}
         <button type="button" className={subtleButtonClass} onClick={() => setReveal(!reveal)}>
           {reveal ? '隠す' : '表示'}
         </button>

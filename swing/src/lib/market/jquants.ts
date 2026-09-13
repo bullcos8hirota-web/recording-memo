@@ -8,7 +8,8 @@ import type { Bar } from './types'
  * 手で貼っていたときの「分割で価格が飛ぶ」問題がそもそも起きない。
  */
 const BASE_URL = 'https://api.jquants.com'
-const PATH = '/v2/equities/bars/daily'
+const BARS_PATH = '/v2/equities/bars/daily'
+const MASTER_PATH = '/v2/equities/master'
 /** 自前の中継(ブラウザから直接叩けないとき用)。 */
 const RELAY_PATH = '/api/jquants'
 /** 1銘柄で回すページ数の上限。無限ループにしない。 */
@@ -154,6 +155,7 @@ export async function fetchMarketDay(input: {
 }): Promise<MarketRow[]> {
   const rows = await fetchAll({
     apiKey: input.apiKey,
+    path: BARS_PATH,
     params: { date: input.date },
     maxPages: MAX_MARKET_PAGES,
     fetchImpl: input.fetchImpl,
@@ -162,17 +164,67 @@ export async function fetchMarketDay(input: {
   return rowsToMarket(rows as MarketApiRow[])
 }
 
+/** 上場銘柄一覧。会社名と業種を引くのに使う。 */
+export type MasterRow = {
+  code: string
+  name: string
+  /** 33業種コード名。同じ業種を持ちすぎないための判定に使う。 */
+  sector: string
+  market: string
+}
+
+type MasterApiRow = {
+  Code?: string
+  CoName?: string
+  S33Nm?: string
+  MktNm?: string
+}
+
+export function rowsToMaster(rows: MasterApiRow[]): MasterRow[] {
+  const out: MasterRow[] = []
+  for (const row of rows) {
+    if (!row.Code || !row.CoName) continue
+    out.push({
+      code: row.Code,
+      name: row.CoName,
+      sector: row.S33Nm ?? '',
+      market: row.MktNm ?? '',
+    })
+  }
+  return out
+}
+
+/**
+ * 全上場銘柄の会社名と業種を取る。日付を省くと当日時点の一覧が返る。
+ */
+export async function fetchMaster(input: {
+  apiKey: string
+  fetchImpl?: FetchLike
+  allowRelay?: boolean
+}): Promise<MasterRow[]> {
+  const rows = await fetchAll({
+    apiKey: input.apiKey,
+    path: MASTER_PATH,
+    params: {},
+    maxPages: MAX_MARKET_PAGES,
+    fetchImpl: input.fetchImpl,
+    allowRelay: input.allowRelay,
+  })
+  return rowsToMaster(rows as MasterApiRow[])
+}
+
 /**
  * pagination_key を辿って全ページ取る。直接叩けなければ中継に切り替える。
  */
 async function fetchAll(input: {
   apiKey: string
+  path: string
   params: Record<string, string>
   maxPages: number
   fetchImpl?: FetchLike
   allowRelay?: boolean
 }): Promise<Row[]> {
-  const { apiKey, params, maxPages } = input
+  const { apiKey, path, params, maxPages } = input
   const fetchImpl = input.fetchImpl ?? fetch
   const allowRelay = input.allowRelay ?? true
   if (!apiKey) {
@@ -186,7 +238,9 @@ async function fetchAll(input: {
   for (let page = 0; page < maxPages; page += 1) {
     const query: Record<string, string> = { ...params }
     if (paginationKey) query.pagination_key = paginationKey
-    const base = viaRelay ? RELAY_PATH : `${BASE_URL}${PATH}`
+    // 中継を通すときは、どのAPIかを path で伝える(中継側は許可した2つしか通さない)。
+    if (viaRelay) query.path = path
+    const base = viaRelay ? RELAY_PATH : `${BASE_URL}${path}`
 
     let body: Page
     try {
@@ -231,6 +285,7 @@ export async function fetchDailyBars(input: {
   const { apiKey, code, from, to } = input
   const rows = await fetchAll({
     apiKey,
+    path: BARS_PATH,
     params: { code, from, to },
     maxPages: MAX_PAGES,
     fetchImpl: input.fetchImpl,

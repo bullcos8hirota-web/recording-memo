@@ -1,10 +1,11 @@
 import { useState } from 'react'
 import { useAppStore } from '../../stores/appStore'
-import { daysAgo, fetchDailyBars, fetchMarketDay } from '../../lib/market/jquants'
+import { daysAgo, fetchDailyBars, fetchMarketDay, fetchMaster } from '../../lib/market/jquants'
 import { JQuantsError } from '../../lib/market/jquants'
 import { screenMarket, shortCode } from '../../lib/plan/screener'
 import { analyze, VERDICT_LABEL, type Verdict } from '../../lib/market/signals'
 import { universeFor } from '../../lib/money/universe'
+import { affordability } from '../../lib/money/position'
 import { count, percent, price } from '../../lib/format'
 import type { Bar } from '../../lib/market/types'
 import { Badge, Card, buttonClass, subtleButtonClass } from '../ui/Primitives'
@@ -18,6 +19,8 @@ const LOOKBACK_DAYS = 10
 
 type Found = {
   code: string
+  name: string
+  sector: string
   close: number
   turnover: number
   score: number
@@ -44,6 +47,7 @@ export function FindStocksCard() {
   const [found, setFound] = useState<Found[] | null>(null)
   const [picked, setPicked] = useState<Set<string>>(new Set())
   const [added, setAdded] = useState<string | null>(null)
+  const [skippedCount, setSkippedCount] = useState(0)
 
   if (!apiKey) return null
 
@@ -55,6 +59,12 @@ export function FindStocksCard() {
     setAdded(null)
     setPicked(new Set())
     try {
+      // 会社名と業種。コードだけ並べても選べない。
+      setProgress('銘柄一覧を取得しています')
+      const master = new Map(
+        (await fetchMaster({ apiKey })).map((row) => [shortCode(row.code), row]),
+      )
+
       // 直近の営業日を探す。休場日は空で返ってくる。
       setProgress('市場全体を取得しています')
       let rows: Awaited<ReturnType<typeof fetchMarketDay>> = []
@@ -82,6 +92,7 @@ export function FindStocksCard() {
       }
 
       const results: Found[] = []
+      let unaffordable = 0
       const from = daysAgo(HISTORY_DAYS)
       const to = daysAgo(0)
       for (const [index, candidate] of screened.candidates.entries()) {
@@ -90,8 +101,26 @@ export function FindStocksCard() {
           const bars = await fetchDailyBars({ apiKey, code: candidate.code, from, to })
           if (bars.length < 80) continue
           const { score, verdict, snapshot } = analyze(bars)
+          // 1日の値幅では荒さを測りきれない。履歴が来た時点で本当のATRで判定し、
+          // この資金で単元を買えないものは出さない(並べても選べないので邪魔になる)。
+          const affordable = affordability({
+            close: snapshot.close,
+            atr: snapshot.atr14,
+            lot: settings.defaultLot,
+            capital: settings.capital,
+            riskPercent: settings.riskPercent,
+            maxPositionPercent: settings.maxPositionPercent,
+            atrMultiple: settings.atrMultiple,
+          })
+          if (!affordable.ok) {
+            unaffordable += 1
+            continue
+          }
+          const info = master.get(shortCode(candidate.code))
           results.push({
             code: shortCode(candidate.code),
+            name: info?.name ?? shortCode(candidate.code),
+            sector: info?.sector ?? '',
             close: candidate.close,
             turnover: candidate.turnover,
             score,
@@ -109,6 +138,7 @@ export function FindStocksCard() {
       }
       results.sort((a, b) => b.score - a.score)
       setFound(results)
+      setSkippedCount(unaffordable)
       setPicked(new Set(results.filter((item) => item.verdict !== 'avoid').map((item) => item.code)))
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : String(caught))
@@ -121,7 +151,12 @@ export function FindStocksCard() {
     if (!found) return
     const targets = found.filter((item) => picked.has(item.code))
     for (const item of targets) {
-      await addStock({ code: item.code, name: item.code, lot: settings.defaultLot })
+      await addStock({
+        code: item.code,
+        name: item.name,
+        sector: item.sector,
+        lot: settings.defaultLot,
+      })
       await replaceBars(item.code, item.bars)
     }
     setAdded(`${targets.length}銘柄を監視リストに追加しました。`)
@@ -154,7 +189,8 @@ export function FindStocksCard() {
         <div className="mt-3">
           <p className="text-sm text-slate-600 dark:text-slate-300">
             {found.length}銘柄が見つかりました。チェックしたものを追加します。
-            銘柄名は追加後に「銘柄」タブで直せます。
+            {skippedCount > 0 &&
+              `（値動きが大きく、この資金では単元を買えない${skippedCount}銘柄は除いています）`}
           </p>
           <ul className="mt-2 divide-y divide-slate-200 dark:divide-slate-700">
             {found.map((item) => (
@@ -173,7 +209,12 @@ export function FindStocksCard() {
                   />
                   <span className="min-w-0 flex-1">
                     <span className="flex items-baseline justify-between gap-2">
-                      <span className="font-mono font-medium">{item.code}</span>
+                      <span className="min-w-0 truncate">
+                        <span className="font-mono text-xs text-slate-600 dark:text-slate-300">
+                          {item.code}
+                        </span>{' '}
+                        <span className="font-medium">{item.name}</span>
+                      </span>
                       <span className="text-lg font-semibold tabular-nums">{item.score}</span>
                     </span>
                     <span className="mt-0.5 flex flex-wrap items-center gap-2 text-sm text-slate-600 dark:text-slate-300">
@@ -188,6 +229,7 @@ export function FindStocksCard() {
                       >
                         {VERDICT_LABEL[item.verdict]}
                       </Badge>
+                      {item.sector && <span>{item.sector}</span>}
                       <span className="tabular-nums">{price(item.close)}円</span>
                       <span className="tabular-nums">値幅 {percent(item.atrRate)}</span>
                       <span className="tabular-nums">

@@ -39,6 +39,8 @@ export type Stock = {
   exRightsDate?: string | null
   /** 証券会社に出してある注文。約定するか取り消すまで残る。 */
   pendingOrder?: PendingOrder | null
+  /** 33業種コード名。同じ業種に偏らないための判定に使う。 */
+  sector?: string
   /** サンプルデータとして投入した銘柄かどうか。 */
   demo?: boolean
   createdAt: number

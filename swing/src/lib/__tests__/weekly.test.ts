@@ -161,6 +161,60 @@ describe('weeklyPlan / 新規の注文', () => {
     expect(result.orders).toHaveLength(1)
   })
 
+  it('建玉と同じ業種の銘柄は見送る', () => {
+    // 条件を満たす銘柄を2つ作り、片方を建玉にする。業種は同じ。
+    const source = samples.find((sample) => sample.stock.code === 'SMPL1')!
+    const stocks: Stock[] = [
+      { ...source.stock, code: 'HOLD', name: '持っている方', sector: '銀行業' },
+      { ...source.stock, code: 'NEXT', name: '次の候補', sector: '銀行業' },
+    ]
+    const bars = { HOLD: source.bars, NEXT: source.bars }
+    const result = weeklyPlan({
+      stocks,
+      series: bars,
+      trades: [trade({ code: 'HOLD', name: '持っている方' })],
+      settings,
+      now,
+    })
+    expect(result.orders).toHaveLength(0)
+    const reason = result.skipped.find((item) => item.code === 'NEXT')?.reason ?? ''
+    expect(reason).toContain('銀行業')
+    expect(reason).toContain('持っている方')
+    expect(reason).toContain('同じ業種は1つまで')
+  })
+
+  it('業種が違えば出す', () => {
+    const source = samples.find((sample) => sample.stock.code === 'SMPL1')!
+    const stocks: Stock[] = [
+      { ...source.stock, code: 'HOLD', name: '持っている方', sector: '銀行業' },
+      { ...source.stock, code: 'NEXT', name: '次の候補', sector: '電気機器' },
+    ]
+    const result = weeklyPlan({
+      stocks,
+      series: { HOLD: source.bars, NEXT: source.bars },
+      trades: [trade({ code: 'HOLD', name: '持っている方' })],
+      settings,
+      now,
+    })
+    expect(result.orders.map((order) => order.code)).toEqual(['NEXT'])
+  })
+
+  it('業種が未登録なら止めない', () => {
+    const source = samples.find((sample) => sample.stock.code === 'SMPL1')!
+    const stocks: Stock[] = [
+      { ...source.stock, code: 'HOLD', name: '持っている方' },
+      { ...source.stock, code: 'NEXT', name: '次の候補' },
+    ]
+    const result = weeklyPlan({
+      stocks,
+      series: { HOLD: source.bars, NEXT: source.bars },
+      trades: [trade({ code: 'HOLD', name: '持っている方' })],
+      settings,
+      now,
+    })
+    expect(result.orders.map((order) => order.code)).toEqual(['NEXT'])
+  })
+
   it('資金が小さければ買える銘柄が無く、理由が残る', () => {
     const result = plan({ settings: { ...settings, capital: 200_000 } })
     expect(result.orders).toHaveLength(0)
