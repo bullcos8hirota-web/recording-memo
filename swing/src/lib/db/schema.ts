@@ -37,6 +37,8 @@ export type Settings = {
    * 「状態をコピー」の出力には入れない(あの文章は人に渡すため)。
    */
   jquantsApiKey?: string
+  /** 最後にバックアップを書き出した時刻。放置に気づけるように持つ。 */
+  lastBackupAt?: number
   updatedAt: number
 }
 

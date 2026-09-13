@@ -13,6 +13,8 @@ const PATH = '/v2/equities/bars/daily'
 const RELAY_PATH = '/api/jquants'
 /** 1銘柄で回すページ数の上限。無限ループにしない。 */
 const MAX_PAGES = 20
+/** 全銘柄ぶんは件数が桁違いなので、こちらは多めに見る。 */
+const MAX_MARKET_PAGES = 60
 
 export type JQuantsFailure =
   | { kind: 'auth'; message: string }
@@ -113,23 +115,64 @@ function buildUrl(base: string, params: Record<string, string>): string {
   return `${base}?${query.toString()}`
 }
 
-/**
- * 1銘柄の日足を、期間を指定して取る。
- *
- * ブラウザから api.jquants.com を直接叩けるかどうか(CORS)は環境次第なので、
- * 直接が駄目なら同じオリジンの中継に切り替える。HTTPエラーで返ってきたときは
- * 通信自体は成立しているので、切り替えずにそのまま伝える。
- */
-export async function fetchDailyBars(input: {
-  apiKey: string
+/** 1日分の全銘柄。銘柄を探すときに使う、ふるいの1段目。 */
+export type MarketRow = {
   code: string
-  from: string
-  to: string
+  close: number
+  high: number
+  low: number
+  /** その日の売買代金(円)。出入りのしやすさ。 */
+  turnover: number
+}
+
+type MarketApiRow = Row & { Code?: string; C?: number | null; H?: number | null; L?: number | null; Va?: number | null }
+
+export function rowsToMarket(rows: MarketApiRow[]): MarketRow[] {
+  const out: MarketRow[] = []
+  for (const row of rows) {
+    // 調整前の値でよい。その日の水準と商いを見るだけで、指標は計算しない。
+    if (!row.Code || row.C == null || row.H == null || row.L == null) continue
+    out.push({
+      code: row.Code,
+      close: row.C,
+      high: row.H,
+      low: row.L,
+      turnover: row.Va ?? 0,
+    })
+  }
+  return out
+}
+
+/**
+ * 指定した日の全上場銘柄を取る。休場日は空で返るので、呼ぶ側で前日へさかのぼる。
+ */
+export async function fetchMarketDay(input: {
+  apiKey: string
+  date: string
   fetchImpl?: FetchLike
-  /** テスト用。直接が失敗したときに中継へ切り替えるか。 */
   allowRelay?: boolean
-}): Promise<Bar[]> {
-  const { apiKey, code, from, to } = input
+}): Promise<MarketRow[]> {
+  const rows = await fetchAll({
+    apiKey: input.apiKey,
+    params: { date: input.date },
+    maxPages: MAX_MARKET_PAGES,
+    fetchImpl: input.fetchImpl,
+    allowRelay: input.allowRelay,
+  })
+  return rowsToMarket(rows as MarketApiRow[])
+}
+
+/**
+ * pagination_key を辿って全ページ取る。直接叩けなければ中継に切り替える。
+ */
+async function fetchAll(input: {
+  apiKey: string
+  params: Record<string, string>
+  maxPages: number
+  fetchImpl?: FetchLike
+  allowRelay?: boolean
+}): Promise<Row[]> {
+  const { apiKey, params, maxPages } = input
   const fetchImpl = input.fetchImpl ?? fetch
   const allowRelay = input.allowRelay ?? true
   if (!apiKey) {
@@ -140,14 +183,14 @@ export async function fetchDailyBars(input: {
   let viaRelay = false
   let paginationKey: string | undefined
 
-  for (let page = 0; page < MAX_PAGES; page += 1) {
-    const params: Record<string, string> = { code, from, to }
-    if (paginationKey) params.pagination_key = paginationKey
+  for (let page = 0; page < maxPages; page += 1) {
+    const query: Record<string, string> = { ...params }
+    if (paginationKey) query.pagination_key = paginationKey
     const base = viaRelay ? RELAY_PATH : `${BASE_URL}${PATH}`
 
     let body: Page
     try {
-      body = await requestPage(fetchImpl, buildUrl(base, params), apiKey, viaRelay)
+      body = await requestPage(fetchImpl, buildUrl(base, query), apiKey, viaRelay)
     } catch (error) {
       if (error instanceof JQuantsError) throw error
       // fetch が例外を投げるのは、通信できなかったときとCORSで止められたとき。
@@ -166,6 +209,33 @@ export async function fetchDailyBars(input: {
     paginationKey = body.pagination_key ?? undefined
     if (!paginationKey) break
   }
+  return rows
+}
+
+/**
+ * 1銘柄の日足を、期間を指定して取る。
+ *
+ * ブラウザから api.jquants.com を直接叩けるかどうか(CORS)は環境次第なので、
+ * 直接が駄目なら同じオリジンの中継に切り替える。HTTPエラーで返ってきたときは
+ * 通信自体は成立しているので、切り替えずにそのまま伝える。
+ */
+export async function fetchDailyBars(input: {
+  apiKey: string
+  code: string
+  from: string
+  to: string
+  fetchImpl?: FetchLike
+  /** テスト用。直接が失敗したときに中継へ切り替えるか。 */
+  allowRelay?: boolean
+}): Promise<Bar[]> {
+  const { apiKey, code, from, to } = input
+  const rows = await fetchAll({
+    apiKey,
+    params: { code, from, to },
+    maxPages: MAX_PAGES,
+    fetchImpl: input.fetchImpl,
+    allowRelay: input.allowRelay,
+  })
 
   const bars = rowsToBars(rows)
   if (bars.length === 0) {

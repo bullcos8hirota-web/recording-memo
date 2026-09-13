@@ -91,6 +91,8 @@ function JournalRow({ trade }: { trade: Trade }) {
   const removeTrade = useAppStore((s) => s.removeTrade)
   const result = evaluateTrade(trade)
   const [review, setReview] = useState(trade.review)
+  // 手数料は記録した時点の設定で入る。あとから実際の金額に直せるようにしておく。
+  const [fees, setFees] = useState(String(trade.fees || 0))
   const [editing, setEditing] = useState(false)
 
   return (
@@ -105,6 +107,7 @@ function JournalRow({ trade }: { trade: Trade }) {
             {shortDate(trade.entryDate)} {price(trade.entryPrice)}円 → {shortDate(trade.exitDate)}{' '}
             {price(trade.exitPrice)}円 / {trade.shares.toLocaleString('ja-JP')}株
             {result.holdingDays !== null && ` / ${result.holdingDays}日`}
+            {trade.fees > 0 && ` / 手数料 ${yen(trade.fees)}`}
           </p>
           {trade.reason && (
             <p className="mt-1 text-sm text-slate-600 dark:text-slate-300">根拠: {trade.reason}</p>
@@ -127,12 +130,24 @@ function JournalRow({ trade }: { trade: Trade }) {
             onChange={(e) => setReview(e.target.value)}
             placeholder="計画どおりに損切りできたか、待てたか、次はどうするか"
           />
+          <label className="mt-2 block text-sm">
+            <span className="text-slate-700 dark:text-slate-200">手数料(往復・円)</span>
+            <input
+              className={`${inputClass} w-32`}
+              value={fees}
+              onChange={(e) => setFees(e.target.value)}
+              inputMode="decimal"
+            />
+            <span className="mt-1 block text-xs text-slate-600 dark:text-slate-300">
+              証券会社の取引履歴にある金額です。記録したときの設定と違っていたら直してください。
+            </span>
+          </label>
           <div className="mt-2 flex gap-2">
             <button
               type="button"
               className={buttonClass}
               onClick={() => {
-                void updateTrade(trade.id, { review })
+                void updateTrade(trade.id, { review, fees: Number(fees) || 0 })
                 setEditing(false)
               }}
             >
