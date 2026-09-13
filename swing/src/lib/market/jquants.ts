@@ -10,6 +10,7 @@ import type { Bar } from './types'
 const BASE_URL = 'https://api.jquants.com'
 const BARS_PATH = '/v2/equities/bars/daily'
 const MASTER_PATH = '/v2/equities/master'
+const EARNINGS_PATH = '/v2/fins/earnings-date'
 /** 自前の中継(ブラウザから直接叩けないとき用)。 */
 const RELAY_PATH = '/api/jquants'
 /** 1銘柄で回すページ数の上限。無限ループにしない。 */
@@ -211,6 +212,61 @@ export async function fetchMaster(input: {
     allowRelay: input.allowRelay,
   })
   return rowsToMaster(rows as MasterApiRow[])
+}
+
+/** 決算発表予定日の1レコード。変更があると、古いものも残ったまま追加される。 */
+export type EarningsRow = {
+  /** この予定日が公表・変更された日。 */
+  PubDate?: string
+  /** 決算発表予定日。未定なら空文字。 */
+  SchDate?: string
+  /** 決算区分(1Q/2Q/3Q/FY)。 */
+  FQName?: string
+  /** 決算期末(MMDD)。 */
+  FYE?: string
+}
+
+/**
+ * 次の決算発表日を1つ選ぶ。
+ *
+ * 同じ決算区分に複数のレコードがあるのは、予定日が変更されたから。最後に公表された
+ * ものが今の予定なので、区分ごとに公表日が最新のものだけを見て、そのうち今日以降で
+ * 一番早い日を返す。未定(空文字)は日付として使えないので落とす。
+ */
+export function nextEarningsDate(rows: EarningsRow[], today: string): string | null {
+  const current = new Map<string, { pub: string; sch: string }>()
+  for (const row of rows) {
+    if (!row.PubDate || !row.FQName) continue
+    const key = `${row.FYE ?? ''}-${row.FQName}`
+    const held = current.get(key)
+    if (!held || row.PubDate > held.pub) {
+      current.set(key, { pub: row.PubDate, sch: row.SchDate ?? '' })
+    }
+  }
+  const ahead = [...current.values()]
+    .map((item) => item.sch)
+    .filter((date) => date !== '' && date >= today)
+    .sort()
+  return ahead[0] ?? null
+}
+
+/** 1銘柄の次回決算発表日。分からなければ null。 */
+export async function fetchEarningsDate(input: {
+  apiKey: string
+  code: string
+  today: string
+  fetchImpl?: FetchLike
+  allowRelay?: boolean
+}): Promise<string | null> {
+  const rows = await fetchAll({
+    apiKey: input.apiKey,
+    path: EARNINGS_PATH,
+    params: { code: input.code },
+    maxPages: MAX_PAGES,
+    fetchImpl: input.fetchImpl,
+    allowRelay: input.allowRelay,
+  })
+  return nextEarningsDate(rows as EarningsRow[], input.today)
 }
 
 /**

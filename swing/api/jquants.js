@@ -7,7 +7,11 @@
  */
 const BASE = 'https://api.jquants.com'
 /** 通してよいAPIはこれだけ。中継を万能の踏み台にしない。 */
-const ALLOWED_PATHS = new Set(['/v2/equities/bars/daily', '/v2/equities/master'])
+const ALLOWED_PATHS = new Set([
+  '/v2/equities/bars/daily',
+  '/v2/equities/master',
+  '/v2/fins/earnings-date',
+])
 const DEFAULT_PATH = '/v2/equities/bars/daily'
 const ALLOWED_PARAMS = new Set(['code', 'date', 'from', 'to', 'pagination_key'])
 
