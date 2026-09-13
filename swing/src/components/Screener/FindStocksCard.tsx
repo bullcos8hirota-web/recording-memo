@@ -5,6 +5,7 @@ import { JQuantsError } from '../../lib/market/jquants'
 import { screenMarket, shortCode } from '../../lib/plan/screener'
 import { analyze, VERDICT_LABEL, type Verdict } from '../../lib/market/signals'
 import { universeFor } from '../../lib/money/universe'
+import { affordability } from '../../lib/money/position'
 import { count, percent, price } from '../../lib/format'
 import type { Bar } from '../../lib/market/types'
 import { Badge, Card, buttonClass, subtleButtonClass } from '../ui/Primitives'
@@ -44,6 +45,7 @@ export function FindStocksCard() {
   const [found, setFound] = useState<Found[] | null>(null)
   const [picked, setPicked] = useState<Set<string>>(new Set())
   const [added, setAdded] = useState<string | null>(null)
+  const [skippedCount, setSkippedCount] = useState(0)
 
   if (!apiKey) return null
 
@@ -82,6 +84,7 @@ export function FindStocksCard() {
       }
 
       const results: Found[] = []
+      let unaffordable = 0
       const from = daysAgo(HISTORY_DAYS)
       const to = daysAgo(0)
       for (const [index, candidate] of screened.candidates.entries()) {
@@ -90,6 +93,21 @@ export function FindStocksCard() {
           const bars = await fetchDailyBars({ apiKey, code: candidate.code, from, to })
           if (bars.length < 80) continue
           const { score, verdict, snapshot } = analyze(bars)
+          // 1日の値幅では荒さを測りきれない。履歴が来た時点で本当のATRで判定し、
+          // この資金で単元を買えないものは出さない(並べても選べないので邪魔になる)。
+          const affordable = affordability({
+            close: snapshot.close,
+            atr: snapshot.atr14,
+            lot: settings.defaultLot,
+            capital: settings.capital,
+            riskPercent: settings.riskPercent,
+            maxPositionPercent: settings.maxPositionPercent,
+            atrMultiple: settings.atrMultiple,
+          })
+          if (!affordable.ok) {
+            unaffordable += 1
+            continue
+          }
           results.push({
             code: shortCode(candidate.code),
             close: candidate.close,
@@ -109,6 +127,7 @@ export function FindStocksCard() {
       }
       results.sort((a, b) => b.score - a.score)
       setFound(results)
+      setSkippedCount(unaffordable)
       setPicked(new Set(results.filter((item) => item.verdict !== 'avoid').map((item) => item.code)))
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : String(caught))
@@ -155,6 +174,8 @@ export function FindStocksCard() {
           <p className="text-sm text-slate-600 dark:text-slate-300">
             {found.length}銘柄が見つかりました。チェックしたものを追加します。
             銘柄名は追加後に「銘柄」タブで直せます。
+            {skippedCount > 0 &&
+              `（値動きが大きく、この資金では単元を買えない${skippedCount}銘柄は除いています）`}
           </p>
           <ul className="mt-2 divide-y divide-slate-200 dark:divide-slate-700">
             {found.map((item) => (
