@@ -9,6 +9,7 @@ import { useIsPhone } from '../../lib/useMediaQuery'
 import { CopyStateButton } from './CopyStateButton'
 import { UpdateAllButton } from './UpdateAllButton'
 import { WeeklyPlanCard } from './WeeklyPlanCard'
+import { FindStocksCard } from './FindStocksCard'
 import { useRegisterSwipeStep } from '../../lib/swipeStepContext'
 import { useActiveChipScroll } from '../../lib/useActiveChipScroll'
 import {
@@ -155,6 +156,8 @@ export function ScreenerView({
             </ul>
           )}
         </Card>
+
+        <FindStocksCard />
 
         <AddStockForm />
         </>
