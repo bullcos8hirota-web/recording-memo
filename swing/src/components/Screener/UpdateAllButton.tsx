@@ -1,6 +1,11 @@
 import { useState } from 'react'
 import { useAppStore } from '../../stores/appStore'
-import { daysAgo, fetchDailyBars, fetchEarningsDate } from '../../lib/market/jquants'
+import {
+  daysAgo,
+  fetchDailyBars,
+  fetchEarningsDate,
+  JQuantsError,
+} from '../../lib/market/jquants'
 import { updateSeries, type UpdateResult } from '../../lib/market/updateSeries'
 import { today } from '../../lib/format'
 import { subtleButtonClass } from '../ui/Primitives'
@@ -23,11 +28,18 @@ export function UpdateAllButton({ onDone }: { onDone?: () => void }) {
     label: string
   } | null>(null)
   const [results, setResults] = useState<UpdateResult[] | null>(null)
+  const [earnings, setEarnings] = useState<{
+    tried: number
+    filled: number
+    unpublished: number
+    failure: string | null
+  } | null>(null)
 
   if (!apiKey) return null
 
   const run = async () => {
     setResults(null)
+    setEarnings(null)
     setProgress({ done: 0, total: stocks.length, label: '株価を更新中' })
     const from = daysAgo(HISTORY_DAYS)
     const to = daysAgo(0)
@@ -43,15 +55,27 @@ export function UpdateAllButton({ onDone }: { onDone?: () => void }) {
     // 決算発表日は、無いものと過ぎたものだけ取りに行く。一度入れば次の決算まで変わらない。
     const now = today()
     const stale = stocks.filter((stock) => !stock.earningsDate || stock.earningsDate < now)
+    let filled = 0
+    let unpublished = 0
+    let failure: string | null = null
     for (const [index, stock] of stale.entries()) {
       setProgress({ done: index + 1, total: stale.length, label: '決算発表日を調べています' })
       try {
         const date = await fetchEarningsDate({ apiKey, code: stock.code, today: now })
-        if (date) await updateStock(stock.code, { earningsDate: date })
-      } catch {
-        // 取れなくても株価の更新は済んでいる。決算日は手で入れられる。
+        if (date) {
+          await updateStock(stock.code, { earningsDate: date })
+          filled += 1
+        } else {
+          // データは返ったが、先の予定がまだ公表されていない。
+          unpublished += 1
+        }
+      } catch (error) {
+        // 握りつぶすと「入らない理由」が分からなくなる。1件目の理由を残して打ち切る。
+        failure = error instanceof Error ? error.message : String(error)
+        if (error instanceof JQuantsError && (error.kind === 'rate' || error.kind === 'auth')) break
       }
     }
+    setEarnings(stale.length > 0 ? { filled, unpublished, failure, tried: stale.length } : null)
 
     setProgress(null)
     onDone?.()
@@ -82,6 +106,14 @@ export function UpdateAllButton({ onDone }: { onDone?: () => void }) {
               {item.code} {item.name}: {item.skipped ? '未取得(手前で止まりました)' : item.error}
             </p>
           ))}
+          {earnings && (
+            <p className="mt-1 text-slate-600 dark:text-slate-300">
+              決算発表日：{earnings.filled}銘柄に入りました。
+              {earnings.unpublished > 0 &&
+                `${earnings.unpublished}銘柄は次回の予定がまだ公表されていません。`}
+              {earnings.failure && `取得に失敗：${earnings.failure}`}
+            </p>
+          )}
           {failed.length > 0 && (
             <p className="mt-1 text-slate-600 dark:text-slate-300">
               取れなかった銘柄は、銘柄タブの「株価を貼り付ける」で今までどおり取り込めます。
