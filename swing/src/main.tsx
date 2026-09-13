@@ -5,6 +5,7 @@ import App from './App'
 import { ErrorBoundary } from './components/Layout/ErrorBoundary'
 import { registerPwa } from './registerPwa'
 import { applyTheme, readTheme } from './lib/theme'
+import { requestPersistence } from './lib/storage'
 
 // 最初の描画前に当てる。あとから当てると一瞬ちらつく。
 applyTheme(readTheme())
@@ -26,3 +27,6 @@ createRoot(document.getElementById('root')!).render(
 )
 
 registerPwa()
+
+// 保存領域を消されないように申請しておく。断られても動作は変わらない。
+void requestPersistence()

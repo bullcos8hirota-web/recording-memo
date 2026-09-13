@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useAppStore } from '../../stores/appStore'
 import { db } from '../../lib/db'
 import {
@@ -8,7 +8,12 @@ import {
   parseBackup,
   type Backup,
 } from '../../lib/db/backup'
+import { requestPersistence, storageState, type StorageState } from '../../lib/storage'
 import { Card, subtleButtonClass } from '../ui/Primitives'
+
+const DAY = 24 * 60 * 60 * 1000
+/** これ以上放置していたら、書き出しを促す。 */
+const STALE_DAYS = 14
 
 /**
  * 端末の中身を1ファイルに書き出す・読み戻す。
@@ -17,6 +22,12 @@ import { Card, subtleButtonClass } from '../ui/Primitives'
 export function BackupCard() {
   const settings = useAppStore((s) => s.settings)
   const restoreBackup = useAppStore((s) => s.restoreBackup)
+  const saveSettings = useAppStore((s) => s.saveSettings)
+  const [storage, setStorage] = useState<StorageState | null>(null)
+
+  useEffect(() => {
+    void storageState().then(setStorage)
+  }, [])
   const [includeApiKey, setIncludeApiKey] = useState(false)
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null)
   const [pending, setPending] = useState<Backup | null>(null)
@@ -39,6 +50,7 @@ export function BackupCard() {
       link.download = backupFileName()
       link.click()
       URL.revokeObjectURL(url)
+      await saveSettings({ lastBackupAt: Date.now() })
       setMessage({ ok: true, text: `${describeBackup(backup)} を書き出しました。` })
     } catch (error) {
       setMessage({ ok: false, text: error instanceof Error ? error.message : String(error) })
@@ -134,6 +146,59 @@ export function BackupCard() {
           {message.text}
         </p>
       )}
+
+      <BackupAge lastBackupAt={settings.lastBackupAt} />
+
+      {storage && !storage.persisted && (
+        <div className="mt-2 rounded-xl bg-amber-100 px-3 py-2.5 text-sm text-amber-900 dark:bg-amber-950/50 dark:text-amber-200">
+          <p>
+            このデータは、ブラウザの空き容量が足りなくなったときに消される可能性があります。
+            ホーム画面に追加してあると消されにくくなります。
+          </p>
+          {storage.supported && (
+            <button
+              type="button"
+              className={`${subtleButtonClass} mt-2`}
+              onClick={() => {
+                void requestPersistence().then((ok) =>
+                  setStorage({ persisted: ok, supported: true }),
+                )
+              }}
+            >
+              消さないように申請する
+            </button>
+          )}
+        </div>
+      )}
+      {storage?.persisted && (
+        <p className="mt-2 text-xs text-emerald-700 dark:text-emerald-300">
+          このブラウザは、このアプリのデータを勝手に消さない設定になっています。
+        </p>
+      )}
     </Card>
+  )
+}
+
+
+/** 最後に書き出してから何日経ったか。放置していると気づけないので出す。 */
+function BackupAge({ lastBackupAt }: { lastBackupAt?: number }) {
+  if (!lastBackupAt) {
+    return (
+      <p className="mt-2 text-sm text-amber-700 dark:text-amber-300">
+        まだ一度も書き出していません。今の中身が消えると元に戻せません。
+      </p>
+    )
+  }
+  const days = Math.floor((Date.now() - lastBackupAt) / DAY)
+  const stale = days >= STALE_DAYS
+  return (
+    <p
+      className={`mt-2 text-sm ${
+        stale ? 'text-amber-700 dark:text-amber-300' : 'text-slate-600 dark:text-slate-300'
+      }`}
+    >
+      最後に書き出したのは{days === 0 ? '今日' : `${days}日前`}です。
+      {stale && 'そろそろ書き出しておいてください。'}
+    </p>
   )
 }
