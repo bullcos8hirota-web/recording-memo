@@ -1,5 +1,6 @@
 import { analyze } from '../market/signals'
 import { earningsAlert } from '../market/earnings'
+import { marketBreadth, type Breadth } from './breadth'
 import { chandelierStop, trailingAdvice } from '../money/position'
 import { atr as atrSeries } from '../market/indicators'
 import { calculatePosition, entryCandidates } from '../money/position'
@@ -73,6 +74,8 @@ export type WeeklyPlan = {
   pending: PendingAction[]
   orders: OrderAction[]
   skipped: Skipped[]
+  /** 相場全体の地合い。銘柄を選ぶ前の、買う場面かどうかの判定。 */
+  breadth: Breadth
   /** 建玉と新規を合わせた想定損失(円)。 */
   totalRisk: number
   /** 何も手を動かさなくていい週か。 */
@@ -148,6 +151,9 @@ export function weeklyPlan(input: {
   const now = input.now ?? new Date()
   const open = input.trades.filter((trade) => !isClosed(trade))
   const held = new Set(open.map((trade) => trade.code))
+  // 銘柄を選ぶ前に、そもそも買う場面かを決める。建玉の扱いには関係しない。
+  // 持っているものは、地合いではなく損切りで降りる。
+  const breadth = marketBreadth({ stocks, series })
 
   const positions: PositionAction[] = []
   let totalRisk = 0
@@ -356,6 +362,15 @@ export function weeklyPlan(input: {
 
   for (const candidate of candidates) {
     const { volumeOk: _volumeOk, turnover: _turnover, ...order } = candidate
+    // 地合いで止めるのは、銘柄の良し悪しより前の話。点数が高くても出さない。
+    if (breadth.blocksNewOrders) {
+      skipped.push({
+        code: order.code,
+        name: order.name,
+        reason: `${breadth.summary}${breadth.note}`,
+      })
+      continue
+    }
     if (orders.length + placed.length >= MAX_NEW_ORDERS) {
       const already = placed.map((item) => item.name).join('・')
       skipped.push({
@@ -386,5 +401,5 @@ export function weeklyPlan(input: {
     positions.every((item) => item.kind === 'hold-stop' && item.warnings.length === 0) &&
     pending.every((item) => !item.expired && item.alert?.level !== 'cancel')
 
-  return { positions, pending, orders, skipped, totalRisk, nothingToDo }
+  return { positions, pending, orders, skipped, breadth, totalRisk, nothingToDo }
 }
