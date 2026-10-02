@@ -1,5 +1,6 @@
 import { analyze, VERDICT_LABEL } from '../market/signals'
 import { earningsAlert } from '../market/earnings'
+import { marketBreadth, BREADTH_LABEL } from '../plan/breadth'
 import { affordability } from '../money/position'
 import { evaluateTrade, isClosed, type Trade } from '../money/trade'
 import type { Bar, Stock } from '../market/types'
@@ -47,6 +48,17 @@ export function buildWatchlistText(input: {
   ]
 
   const holding = new Set(trades.filter((trade) => !isClosed(trade)).map((trade) => trade.code))
+
+  // 個別の点数より先に、相場全体の状態。1銘柄ずつ読んでいると見落とすので冒頭に置く。
+  const breadth = marketBreadth({ stocks, series })
+  if (breadth.level !== 'unknown') {
+    lines.push(
+      '',
+      `【地合い】${BREADTH_LABEL[breadth.level]}(25日線より上 ${breadth.abovePercent}%)`,
+      `  ${breadth.summary}`,
+      `  → ${breadth.note}`,
+    )
+  }
 
   const rows = stocks
     .map((stock) => {

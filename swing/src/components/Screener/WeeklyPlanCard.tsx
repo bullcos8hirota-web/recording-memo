@@ -1,6 +1,7 @@
 import { useMemo } from 'react'
 import { useAppStore } from '../../stores/appStore'
 import { weeklyPlan, type PositionAction } from '../../lib/plan/weekly'
+import { BREADTH_LABEL, type Breadth } from '../../lib/plan/breadth'
 import { comingFriday, price, shortDate, today, yen } from '../../lib/format'
 import { Card, Disclosure, subtleButtonClass } from '../ui/Primitives'
 
@@ -46,11 +47,15 @@ export function WeeklyPlanCard({ onOpen }: { onOpen: (code: string) => void }) {
       title="今週やること"
       description={asOf ? `${shortDate(asOf)}の終値で計算しています` : undefined}
     >
+      <BreadthBand breadth={plan.breadth} />
+
       {plan.nothingToDo && (
         <p className="mb-3 rounded-xl bg-slate-100 px-3 py-3 text-sm dark:bg-slate-700/40">
           {plan.pending.length > 0
             ? '新しく出す注文はありません。出してある注文の約定を待ちます。'
-            : '今週は何もしません。条件が揃った銘柄が無く、損切りも動かす必要がありません。'}
+            : plan.breadth.blocksNewOrders
+              ? '今週は何もしません。地合いが悪いので新規は出さず、損切りも動かす必要がありません。'
+              : '今週は何もしません。条件が揃った銘柄が無く、損切りも動かす必要がありません。'}
         </p>
       )}
 
@@ -251,6 +256,50 @@ export function WeeklyPlanCard({ onOpen }: { onOpen: (code: string) => void }) {
         合計リスク {yen(plan.totalRisk)}（資金の{riskPercent.toFixed(2)}%）／ 新規は週1銘柄・合計3%まで
       </p>
     </Card>
+  )
+}
+
+/**
+ * 地合いの帯。
+ *
+ * 「この銘柄が悪い」と「相場全体が悪い」は、1銘柄ずつ見ていると区別がつかない。
+ * 数えれば分かることなので、銘柄より先に、いちばん上に出す。
+ */
+function BreadthBand({ breadth }: { breadth: Breadth }) {
+  if (breadth.level === 'unknown') return null
+  const poor = breadth.level === 'poor'
+
+  return (
+    <div
+      className={`mb-3 rounded-xl px-3 py-2.5 text-sm ${
+        poor
+          ? 'bg-amber-100 text-amber-900 dark:bg-amber-950/50 dark:text-amber-200'
+          : 'bg-slate-100 text-slate-700 dark:bg-slate-700/40 dark:text-slate-200'
+      }`}
+    >
+      <p className="flex items-baseline justify-between gap-2">
+        <span className="min-w-0 font-medium">地合い：{BREADTH_LABEL[breadth.level]}</span>
+        <span className="shrink-0 text-base font-semibold tabular-nums">
+          {breadth.abovePercent}%
+        </span>
+      </p>
+
+      <div
+        className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-slate-300 dark:bg-slate-600"
+        role="img"
+        aria-label={`25日線より上にいるのは${breadth.total}銘柄中${breadth.above}銘柄です`}
+      >
+        <div
+          className={`h-full rounded-full ${
+            poor ? 'bg-amber-500' : breadth.level === 'mixed' ? 'bg-slate-500' : 'bg-emerald-500'
+          }`}
+          style={{ width: `${breadth.abovePercent}%` }}
+        />
+      </div>
+
+      <p className="mt-1.5 tabular-nums">{breadth.summary}</p>
+      <p className="mt-1">{breadth.note}</p>
+    </div>
   )
 }
 
