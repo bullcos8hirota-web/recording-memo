@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { useAppStore } from '../../stores/appStore'
+import { BacktestCard } from './BacktestCard'
 import { equityCurve, summarize } from '../../lib/money/stats'
 import { evaluateTrade, isClosed, type Trade } from '../../lib/money/trade'
 import { percent, price, ratio, shortDate, today, toneClass, yen } from '../../lib/format'
@@ -29,6 +30,7 @@ export function JournalView() {
   return (
     <div className="space-y-4">
       <ManualTradeForm />
+      <BacktestCard />
 
       {closed.length === 0 ? (
         <EmptyState title="まだ売却まで終わったトレードがありません">
